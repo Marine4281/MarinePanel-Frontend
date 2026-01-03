@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: "https://marinepanel-backend.onrender.com", // Backend base URL
+  baseURL: process.env.REACT_APP_API_URL, // use environment variable
   headers: {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache",
@@ -17,7 +17,7 @@ api.interceptors.request.use(
   (config) => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user?.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
+      config.headers.Authorization = Bearer ${user.token};
     }
     return config;
   },
