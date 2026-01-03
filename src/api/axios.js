@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL, // use environment variable
+  baseURL: import.meta.env.VITE_API_URL, // ✅ Vite env variable
   headers: {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache",
@@ -12,19 +12,19 @@ const api = axios.create({
   withCredentials: true, // If you plan to use cookies
 });
 
-// Optional: Add a request interceptor (e.g., add auth token)
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user?.token) {
-      config.headers.Authorization = Bearer ${user.token};
+      config.headers.Authorization = `Bearer ${user.token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Optional: Add a response interceptor (handle errors globally)
+// Response interceptor for global error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
