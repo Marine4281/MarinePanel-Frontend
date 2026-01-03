@@ -56,7 +56,7 @@ const AdminDashboard = () => {
   // Real-time wallet updates
   // ------------------------------
   useEffect(() => {
-    const socket = io("http://localhost:5000"); // <-- backend server URL
+    const socket = io(import.meta.env.VITE_API_URL); // <-- backend server URL
 
     socket.on("connect", () => {
       console.log("Connected to Socket.IO server:", socket.id);

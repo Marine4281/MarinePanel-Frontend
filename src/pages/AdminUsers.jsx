@@ -17,7 +17,7 @@ const AdminUsers = () => {
 
   // Initialize Socket.IO
   useEffect(() => {
-    const socket = io("https://marinepanel-backend.onrender.com");
+    const socket = io(import.meta.env.VITE_API_URL);
 
     // Listen for wallet updates
     socket.on("wallet:update", ({ balance, transactions, userId }) => {

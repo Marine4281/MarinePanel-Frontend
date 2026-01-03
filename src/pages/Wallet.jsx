@@ -61,7 +61,7 @@ const Wallet = () => {
       setCountryOptions(countryList().getData());
 
       // 🔔 Initialize Socket.IO
-      const socket = io("https://marinepanel-backend.onrender.com"); // change URL if deployed
+      const socket = io(import.meta.env.VITE_API_URL); // change URL if deployed
 
       // Listen for wallet updates
       socket.on("wallet:update", ({ userId, balance: newBalance, transactions: newTxs }) => {
