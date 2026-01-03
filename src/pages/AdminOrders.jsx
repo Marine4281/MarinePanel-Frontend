@@ -5,7 +5,7 @@ import { io } from "socket.io-client";
 import Sidebar from "../components/Sidebar";
 import debounce from "lodash.debounce";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://marinepanel-backend.onrender.com");
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);

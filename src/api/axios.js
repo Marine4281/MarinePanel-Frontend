@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // Backend base URL
+  baseURL: "https://marinepanel-backend.onrender.com", // Backend base URL
   headers: {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache",
