@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // ✅ Vite env variable
+  baseURL: import.meta.env.VITE_API_URL + "/api", // ✅ Vite env variable
   headers: {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache",
