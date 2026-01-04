@@ -34,7 +34,7 @@ const Orders = () => {
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
 
-      <main className="max-w-6xl mx-auto mt-6 flex-1">
+      <main className="max-w-6xl  mt-6 flex-1">
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
           {/* Header */}

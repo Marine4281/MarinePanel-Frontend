@@ -213,7 +213,7 @@ const Home = () => {
           <div className="mb-4">
             <label className="font-semibold block mb-1">Category</label>
             <select
-              className="p-3 w-[70%] rounded-xl shadow"
+              className="p-3 w-[90%] rounded-xl shadow"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
@@ -230,7 +230,7 @@ const Home = () => {
           <div className="mb-4">
             <label className="font-semibold block mb-1">Service</label>
             <select
-              className="p-3 w-[70%] rounded-xl shadow"
+              className="p-3 w-[90%] rounded-xl shadow"
               value={service}
               onChange={(e) => setService(e.target.value)}
               disabled={servicesList.length === 0}
@@ -248,7 +248,7 @@ const Home = () => {
           <div className="mb-4">
             <label className="font-semibold block mb-1">Description</label>
             <textarea
-              className="p-3 w-[70%] rounded-xl shadow bg-gray-100"
+              className="p-3 w-[90%] rounded-xl shadow bg-gray-100"
               rows={3}
               value={selectedServiceData?.description || ""}
               readOnly
@@ -261,7 +261,7 @@ const Home = () => {
             <label className="font-semibold block mb-1">Min / Max Order</label>
             <input
               type="text"
-              className="p-3 w-[70%] rounded-xl shadow bg-gray-100"
+              className="p-3 w-[90%] rounded-xl shadow bg-gray-100"
               value={
                 selectedServiceData
                   ? `Min: ${selectedServiceData.min} | Max: ${selectedServiceData.max}`
@@ -276,7 +276,7 @@ const Home = () => {
             <label className="font-semibold block mb-1">Link</label>
             <input
               type="text"
-              className="p-3 w-[70%] rounded-xl shadow"
+              className="p-3 w-[90%] rounded-xl shadow"
               placeholder="Enter link"
               value={link}
               onChange={(e) => setLink(e.target.value)}
@@ -290,7 +290,7 @@ const Home = () => {
               type="number"
               min={selectedServiceData?.min || 0}
               max={selectedServiceData?.max || 1000000}
-              className="p-3 w-[70%] rounded-xl shadow"
+              className="p-3 w-[90%] rounded-xl shadow"
               placeholder="Enter quantity"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
@@ -303,7 +303,7 @@ const Home = () => {
             <label className="font-semibold block mb-1">Charge ($)</label>
             <input
               type="text"
-              className="p-3 w-[70%] rounded-xl shadow bg-gray-100"
+              className="p-3 w-[90%] rounded-xl shadow bg-gray-100"
               value={charge}
               readOnly
             />
@@ -311,7 +311,7 @@ const Home = () => {
 
           <button
             type="submit"
-            className="w-[70%] bg-green-600 text-white p-3 rounded-xl font-bold mb-20"
+            className="w-[90%] bg-green-600 text-white p-3 rounded-xl font-bold mb-20"
             disabled={!selectedServiceData || !quantity}
           >
             Place Order

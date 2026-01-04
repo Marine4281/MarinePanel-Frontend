@@ -126,7 +126,7 @@ const Wallet = () => {
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col pb-24">
       <Header />
-      <main className="flex-1 max-w-4xl mx-auto mt-8 px-4 space-y-6">
+      <main className="flex-1 max-w-4xl mt-8  space-y-6">
         {/* Balance Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
