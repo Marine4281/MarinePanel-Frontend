@@ -14,7 +14,8 @@ const Footer = () => {
       name: "Support",
       icon: "fab fa-whatsapp",
       external: true,
-      path: "https://wa.me/254742864543?text=Hello%20Marine%20Panel%20Support", // WhatsApp link
+      path: "https://wa.me/254741148620?text=Hello%20MarinePanel%20Support",
+      badge: "24/7 Support", // ✅ Add a badge
     },
     { name: "Profile", icon: "fas fa-user", path: "/profile" },
   ];
@@ -29,10 +30,17 @@ const Footer = () => {
               href={link.path}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center gap-1 text-white"
+              className="flex flex-col items-center gap-1 text-white relative"
             >
               <i className={`${link.icon} text-lg`}></i>
               <span className="text-xs">{link.name}</span>
+
+              {/* ✅ Badge for WhatsApp */}
+              {link.badge && (
+                <span className="absolute -top-2 right-0 bg-green-500 text-white text-[9px] px-1 rounded-full">
+                  {link.badge}
+                </span>
+              )}
             </a>
           ) : (
             <button
