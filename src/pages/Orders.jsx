@@ -70,8 +70,8 @@ const Orders = () => {
                       #{order._id.slice(-6)}
                     </td>
                     <td className="px-4 py-3">{order.service}</td>
+                    <td className="px-4 py-3">{order.quantity}</td>
                     <td className="px-4 py-3">${Number(order.charge).toFixed(2)}</td>
-                    <td className="px-4 py-3">${order.charge}</td>
                     <td className="px-4 py-3">
                       {statusBadge(order.status)}
                     </td>
