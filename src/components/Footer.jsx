@@ -14,7 +14,7 @@ const Footer = () => {
       name: "Support",
       icon: "fab fa-whatsapp",
       external: true,
-      path: "https://wa.me/254741148620?text=Hello%20MarinePanel%20Support",
+      path: "https://wa.me/254736790305?text=Hello%20MarinePanel%20Support",
       badge: "24/7 Support", // ✅ Add a badge
     },
     { name: "Profile", icon: "fas fa-user", path: "/profile" },
