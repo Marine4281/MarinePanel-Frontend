@@ -50,7 +50,7 @@ const Orders = () => {
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
+          <div>
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-100 text-gray-600 uppercase">
                 <tr>
@@ -70,7 +70,7 @@ const Orders = () => {
                       #{order._id.slice(-6)}
                     </td>
                     <td className="px-4 py-3">{order.service}</td>
-                    <td className="px-4 py-3">{order.quantity}</td>
+                    <td className="px-4 py-3">${Number(order.charge).toFixed(2)}</td>
                     <td className="px-4 py-3">${order.charge}</td>
                     <td className="px-4 py-3">
                       {statusBadge(order.status)}
