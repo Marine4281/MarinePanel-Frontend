@@ -6,6 +6,7 @@ import API from "../api/axios";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [showAll, setShowAll] = useState(false); // ✅ NEW
 
   useEffect(() => {
     API.get("/orders/my-orders")
@@ -30,11 +31,14 @@ const Orders = () => {
     );
   };
 
+  // ✅ Show only 2 by default
+  const displayedOrders = showAll ? orders : orders.slice(0, 2);
+
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
 
-      <main className="max-w-6xl  mt-6 flex-1">
+      <main className="max-w-6xl mt-6 flex-1">
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
           {/* Header */}
@@ -64,14 +68,16 @@ const Orders = () => {
               </thead>
 
               <tbody className="divide-y">
-                {orders.map((order) => (
+                {displayedOrders.map((order) => (
                   <tr key={order._id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">
                       #{order._id.slice(-6)}
                     </td>
                     <td className="px-4 py-3">{order.service}</td>
                     <td className="px-4 py-3">{order.quantity}</td>
-                    <td className="px-4 py-3">${Number(order.charge).toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      ${Number(order.charge).toFixed(2)}
+                    </td>
                     <td className="px-4 py-3">
                       {statusBadge(order.status)}
                     </td>
@@ -90,6 +96,18 @@ const Orders = () => {
                 )}
               </tbody>
             </table>
+
+            {/* ✅ View more / View less */}
+            {orders.length > 2 && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() => setShowAll(!showAll)}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition"
+                >
+                  {showAll ? "View less" : "View more"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </main>
