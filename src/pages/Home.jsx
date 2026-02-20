@@ -1,3 +1,4 @@
+ flex // src/pages/Home.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
@@ -74,19 +75,6 @@ const Home = () => {
       });
   }, [category]);
 
-  function Home() {
-  return (
-    <div className="relative min-h-screen">
-      {/* Your Home Content */}
-      <h1>Welcome to MarinePanel</h1>
-      {/* ...other content */}
-
-      {/* Floating Support Button */}
-      <FloatingSupport />
-    </div>
-  );
-  }
-
   // Update selected service details
   useEffect(() => {
     const selected = servicesList.find((s) => s.name === service) || null;
@@ -95,7 +83,7 @@ const Home = () => {
     setCharge(0);
   }, [service, servicesList]);
 
-  // ==================== CALCULATE CHARGE (backend) ====================
+  // Calculate charge backend
   const calculateChargeBackend = async (qty, serviceName) => {
     if (!qty || !serviceName) {
       setCharge(0);
@@ -106,7 +94,9 @@ const Home = () => {
         service: serviceName,
         quantity: Number(qty),
       });
-      setCharge(res.data?.finalCharge ? Number(res.data.finalCharge).toFixed(2) : 0);
+      setCharge(
+        res.data?.finalCharge ? Number(res.data.finalCharge).toFixed(2) : 0
+      );
     } catch (err) {
       console.error("Failed to calculate charge", err);
       setCharge(0);
@@ -114,7 +104,7 @@ const Home = () => {
     }
   };
 
-  // ==================== DEBOUNCE HELPER ====================
+  // Debounce helper
   function debounce(fn, delay) {
     let timer;
     return (...args) => {
@@ -138,7 +128,7 @@ const Home = () => {
     }
   }, [service, quantity, selectedServiceData, calculateChargeDebounced]);
 
-  // ==================== SUBMIT ORDER ====================
+  // Submit Order
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -181,21 +171,25 @@ const Home = () => {
   };
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading user...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading user...
+      </div>
+    );
   }
 
   return (
-    <div className="bg-gray-200 min-h-screen flex flex-col">
+    <div className="bg-gray-200 min-h-screen flex flex-col relative">
       <Header />
 
       <main className="flex-1 overflow-y-auto p-4">
         {/* Info Banner */}
         <div className="bg-white shadow-xl rounded-xl p-4 mb-4">
-          <strong>Marine Panel</strong> is the best and cheapest SMM panel  
-      currently, trusted by influencers, businesses, agencies, freelancers,  
-      and resellers. We deliver real engagement, instant results, and  
-      high-quality SMM services for Facebook, Instagram, YouTube, TikTok,  
-      Telegram, X/Twitter and more.
+          <strong>Marine Panel</strong> is the best and cheapest SMM panel, trusted
+          by influencers, businesses, agencies, freelancers, and resellers. We
+          deliver real engagement, instant results, and high-quality SMM
+          services for Facebook, Instagram, YouTube, TikTok, Telegram, X/Twitter
+          and more.
         </div>
 
         {/* Category Grid */}
@@ -217,8 +211,8 @@ const Home = () => {
           ))}
         </div>
 
-        {/* New Order */}
-        <h2 className="text-xl font-bold m-4 p-2 mx-8 bg-green-400 text-center rounded-2xl ">
+        {/* New Order Form */}
+        <h2 className="text-xl font-bold m-4 p-2 mx-8 bg-green-400 text-center rounded-2xl">
           New Order
         </h2>
 
@@ -334,8 +328,11 @@ const Home = () => {
       </main>
 
       <Footer />
+
+      {/* Floating WhatsApp / Telegram / Support */}
+      <FloatingSupport />
     </div>
   );
 };
 
-export default Home;
+export default Home;items-center justify-center">Loading user...</div>;
