@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
+import FloatingSupport from "../components/FloatingSupport";
 
 const Home = () => {
   const { user, setUser } = useAuth();
@@ -72,6 +73,19 @@ const Home = () => {
         setCharge(0);
       });
   }, [category]);
+
+  function Home() {
+  return (
+    <div className="relative min-h-screen">
+      {/* Your Home Content */}
+      <h1>Welcome to MarinePanel</h1>
+      {/* ...other content */}
+
+      {/* Floating Support Button */}
+      <FloatingSupport />
+    </div>
+  );
+  }
 
   // Update selected service details
   useEffect(() => {
