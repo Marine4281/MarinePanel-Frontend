@@ -9,7 +9,7 @@ const LandingPage = () => {
       <section className="flex-1 flex flex-col justify-center items-center text-center 
         bg-gradient-to-br from-orange-400 via-orange-300 to-yellow-200 
         text-white px-6 py-20 relative overflow-hidden">
-        
+
         {/* Hero Illustration */}
         <div className="absolute -top-10 -left-10 opacity-20 animate-spin-slow">
           <svg width="200" height="200" fill="none">
@@ -61,8 +61,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="text-center py-6 bg-orange-500 text-white font-medium">
+      {/* Sticky Footer */}
+      <footer className="mt-auto w-full text-center py-6 bg-orange-500 text-white font-medium">
         &copy; 2026 MarinePanel. All rights reserved.
       </footer>
 
