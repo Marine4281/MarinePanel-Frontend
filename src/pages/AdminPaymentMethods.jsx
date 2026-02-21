@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import API from "../api/axios"; // ✅ use your axios instance
-import Header from "../components/Sidebar"; // ✅ use Sidebar
+import API from "../api/axios"; // Axios instance
+import Header from "../components/Sidebar"; // Sidebar component
 import toast from "react-hot-toast";
 
 const AdminPaymentMethods = () => {
@@ -10,16 +10,14 @@ const AdminPaymentMethods = () => {
     type: "",
     minDeposit: "",
     description: "",
-    apiUrl: "",
-    apiKey: "",
-    serviceId: "",
     isVisible: true,
   });
 
+  // Fetch all payment methods
   const fetchMethods = async () => {
     try {
       const response = await API.get("/admin/payment-methods");
-      setMethods(response.data.methods || []); // ✅ fixed: access the array
+      setMethods(response.data.methods || []);
     } catch (err) {
       toast.error("Failed to load methods");
       console.error(err);
@@ -30,6 +28,7 @@ const AdminPaymentMethods = () => {
     fetchMethods();
   }, []);
 
+  // Toggle visibility
   const handleToggleVisibility = async (id, current) => {
     try {
       await API.patch(`/admin/payment-methods/${id}`, { isVisible: !current });
@@ -40,8 +39,12 @@ const AdminPaymentMethods = () => {
     }
   };
 
+  // Add new provider
   const handleAddProvider = async () => {
-    // ✅ Frontend validation for minDeposit
+    if (!newMethod.name || !newMethod.type) {
+      return toast.error("Name and type are required");
+    }
+
     if (newMethod.minDeposit && Number(newMethod.minDeposit) < 0) {
       return toast.error("Min Deposit must be at least 0");
     }
@@ -49,37 +52,26 @@ const AdminPaymentMethods = () => {
     try {
       const payload = {
         name: newMethod.name,
-        type: newMethod.type,
-        minDeposit: Number(newMethod.minDeposit), // ✅ ensure number
+        type: newMethod.type.toLowerCase(),
+        minDeposit: Number(newMethod.minDeposit),
         description: newMethod.description,
         isVisible: newMethod.isVisible,
-        providerAPI: {
-          providerName: newMethod.name,
-          apiUrl: newMethod.apiUrl,
-          apiKey: newMethod.apiKey,
-          serviceId: newMethod.serviceId,
-        },
       };
 
       await API.post("/admin/payment-methods", payload);
-      toast.success("Provider added");
+      toast.success("Payment method added");
+
       setNewMethod({
         name: "",
         type: "",
         minDeposit: "",
         description: "",
-        apiUrl: "",
-        apiKey: "",
-        serviceId: "",
         isVisible: true,
       });
+
       fetchMethods();
     } catch (err) {
-      if (err.response?.data?.message) {
-        toast.error(err.response.data.message); // ✅ show backend minDeposit message
-      } else {
-        toast.error("Failed to add provider");
-      }
+      toast.error(err.response?.data?.message || "Failed to add method");
       console.error(err);
     }
   };
@@ -139,15 +131,13 @@ const AdminPaymentMethods = () => {
 
         {/* Add Provider Form */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">Add Provider / API</h3>
+          <h3 className="text-xl font-semibold mb-4">Add Payment Method</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="Provider Name"
               value={newMethod.name}
-              onChange={(e) =>
-                setNewMethod({ ...newMethod, name: e.target.value })
-              }
+              onChange={(e) => setNewMethod({ ...newMethod, name: e.target.value })}
               className="p-3 border rounded-xl"
             />
 
@@ -174,6 +164,7 @@ const AdminPaymentMethods = () => {
               }
               className="p-3 border rounded-xl"
             />
+
             <input
               type="text"
               placeholder="Description / Instructions"
@@ -183,39 +174,13 @@ const AdminPaymentMethods = () => {
               }
               className="p-3 border rounded-xl"
             />
-            <input
-              type="text"
-              placeholder="API POST URL"
-              value={newMethod.apiUrl}
-              onChange={(e) =>
-                setNewMethod({ ...newMethod, apiUrl: e.target.value })
-              }
-              className="p-3 border rounded-xl"
-            />
-            <input
-              type="text"
-              placeholder="API Key"
-              value={newMethod.apiKey}
-              onChange={(e) =>
-                setNewMethod({ ...newMethod, apiKey: e.target.value })
-              }
-              className="p-3 border rounded-xl"
-            />
-            <input
-              type="text"
-              placeholder="Provider Service ID"
-              value={newMethod.serviceId}
-              onChange={(e) =>
-                setNewMethod({ ...newMethod, serviceId: e.target.value })
-              }
-              className="p-3 border rounded-xl"
-            />
           </div>
+
           <button
             onClick={handleAddProvider}
             className="mt-4 w-full bg-green-500 text-white py-3 rounded-xl hover:bg-green-600"
           >
-            Add Provider
+            Add Payment Method
           </button>
         </div>
       </main>
