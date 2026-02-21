@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
+import FloatingSupport from "../components/FloatingSupport";
 
 const Home = () => {
   const { user, setUser } = useAuth();
@@ -320,8 +321,11 @@ const Home = () => {
       </main>
 
       <Footer />
+      {/* Floating WhatsApp / Telegram / Support */}
+      <FloatingSupport />
     </div>
   );
 };
+
 
 export default Home;
