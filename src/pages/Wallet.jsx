@@ -96,7 +96,7 @@ const Wallet = () => {
         detailsWithCountry.country = selectedCountry.value;
       }
 
-      const response = await API.post("/wallet/deposit", {
+      const response = await API.post("/payment/initialize", {
         amount: Number(amount),
         methodId: selectedMethod?._id,
         paymentDetails: detailsWithCountry,
@@ -109,6 +109,9 @@ const Wallet = () => {
       setPaymentDetails({});
       setSelectedCountry(null);
       fetchWallet();
+      // 🔹 Redirect to Paystack checkout page
+    window.location.href = response.data.authorization_url;
+
     } catch (error) {
       console.error("ADD FUNDS ERROR:", error.response || error);
       toast.error(error.response?.data?.message || "Deposit failed");
