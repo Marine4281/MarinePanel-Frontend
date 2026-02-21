@@ -55,26 +55,29 @@ const Wallet = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchWallet();
-      fetchPaymentMethods();
-      setCountryOptions(countryList().getData());
+  if (!user) return;
 
-      // 🔔 Initialize Socket.IO
-      const socket = io(import.meta.env.VITE_API_URL); // change URL if deployed
-
-      // Listen for wallet updates
-      socket.on("wallet:update", ({ userId, balance: newBalance, transactions: newTxs }) => {
-        if (userId === user._id) {
-          setBalance(newBalance);
-          if (newTxs) {
-            const sortedTransactions = newTxs.sort(
-              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-            );
-            setTransactions(sortedTransactions);
-          }
+  const checkPending = async () => {
+    const res = await API.get("/wallet");
+    const pendingTx = res.data.transactions.find(t => t.status === "Pending");
+    if (pendingTx) {
+      const interval = setInterval(async () => {
+        const updated = await API.get("/wallet");
+        const tx = updated.data.transactions.find(t => t.reference === pendingTx.reference);
+        if (tx?.status === "Completed") {
+          toast.success(`Deposit of $${tx.amount} successful!`);
+          setBalance(updated.data.balance);
+          setTransactions(updated.data.transactions);
+          clearInterval(interval);
         }
-      });
+      }, 2000);
+    }
+  };
+
+  checkPending();
+}, [user]);
+
+  
 
       // Cleanup on unmount
       return () => socket.disconnect();
