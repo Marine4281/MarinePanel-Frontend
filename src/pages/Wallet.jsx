@@ -114,7 +114,7 @@ const Wallet = () => {
 
       const response = await API.post("/payment/initialize", {
         amount: Number(amount),
-        methodId: selectedMethod?._id,
+        method: selectedMethod?.name,
         paymentDetails: detailsWithCountry,
       });
 
