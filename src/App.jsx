@@ -1,10 +1,10 @@
-// src/App.js
-import { Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/LandingPage"; // ✅ ADD THIS
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -23,45 +23,20 @@ import AdminOrders from "./pages/AdminOrders";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Helper component to redirect logged-in users from public pages
-const PublicRoute = ({ children }) => {
-  const { user } = useAuth();
-  if (user) {
-    return <Navigate to="/home" replace />;
-  }
-  return children;
-};
-
 export default function App() {
   return (
     <AuthProvider>
       <Toaster position="top-right" reverseOrder={false} />
 
       <Routes>
-        {/* Landing Page */}
-        <Route path="/" element={<LandingPage />} />
-
-        {/* Public Auth Pages */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
+        {/* 🌍 Public Routes */}
+        <Route path="/" element={<LandingPage />} /> {/* ✅ CHANGED */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* User Protected Routes */}
+        {/* 👤 User Routes */}
         <Route
           path="/home"
           element={
@@ -95,7 +70,7 @@ export default function App() {
           }
         />
 
-        {/* Admin Protected Routes */}
+        {/* 👑 Admin Routes */}
         <Route
           path="/admin"
           element={
@@ -144,9 +119,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </AuthProvider>
   );
