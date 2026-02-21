@@ -1,6 +1,6 @@
 // src/components/FloatingSupport.jsx
 import React, { useState } from "react";
-import { FaWhatsapp, FaTelegramPlane } from "react-icons/fa";
+import { FaWhatsapp, FaTelegramPlane } from "react-icons/fa6";
 
 const FloatingSupport = () => {
   const [open, setOpen] = useState(false);
