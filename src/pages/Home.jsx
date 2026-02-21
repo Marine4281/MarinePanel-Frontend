@@ -1,4 +1,12 @@
-import React from 'react';
 import FloatingSupport from '../components/FloatingSupport';
 
-//.... rest of the file content
+const Home = () => {
+    return (
+        <div>
+            {/* Other components */}
+            <FloatingSupport />
+        </div>
+    );
+};
+
+export default Home;
