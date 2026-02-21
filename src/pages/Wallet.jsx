@@ -54,10 +54,30 @@ const Wallet = () => {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
   if (!user) return;
 
-  const checkPending = async () => {
+  // ================= Initialize Socket and fetch wallet =================
+  const initialize = async () => {
+    await fetchWallet();
+    await fetchPaymentMethods();
+    setCountryOptions(countryList().getData());
+
+    // 🔔 Socket.IO for real-time updates
+    const socket = io(import.meta.env.VITE_API_URL);
+    socket.on("wallet:update", ({ userId, balance: newBalance, transactions: newTxs }) => {
+      if (userId === user._id) {
+        setBalance(newBalance);
+        if (newTxs) {
+          const sortedTransactions = newTxs.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          setTransactions(sortedTransactions);
+        }
+      }
+    });
+
+    // ================= Poll pending deposits =================
     const res = await API.get("/wallet");
     const pendingTx = res.data.transactions.find(t => t.status === "Pending");
     if (pendingTx) {
@@ -72,17 +92,14 @@ const Wallet = () => {
         }
       }, 2000);
     }
+
+    // Cleanup Socket.IO on unmount
+    return () => socket.disconnect();
   };
 
-  checkPending();
+  initialize();
 }, [user]);
-
-  
-
-      // Cleanup on unmount
-      return () => socket.disconnect();
-    }
-  }, [user]);
+ 
 
   // ================= ADD FUNDS =================
   const handleAddFunds = async () => {
