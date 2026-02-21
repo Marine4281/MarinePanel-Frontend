@@ -177,7 +177,7 @@ const Home = () => {
 
       <main className="flex-1 overflow-y-auto p-4">
         {/* Info Banner */}
-        <div className="bg-white shadow-xl rounded-xl p-4 mb-4">
+        <div className="bg-white shadow-xl text-lg rounded-xl p-4 mb-4">
           <strong>Marine Panel</strong> is the best and cheapest SMM panel  
       currently, trusted by influencers, businesses, agencies, freelancers,  
       and resellers. We deliver real engagement, instant results, and  
