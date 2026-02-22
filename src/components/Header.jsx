@@ -52,7 +52,7 @@ const Header = () => {
         </div>
         <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-2 shadow-lg text-white text-center">
           <p className="text-sm">Balance</p>
-          <h2 className="text-xl font-bold">${Number(balance).toFixed(2)}</h2>
+          <h2 className="text-xl font-bold">${Number(balance).toFixed(4)}</h2>
         </div>
       </div>
     </nav>
