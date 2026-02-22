@@ -93,7 +93,7 @@ const Home = () => {
         service: serviceName,
         quantity: Number(qty),
       });
-      setCharge(res.data?.finalCharge ? Number(res.data.finalCharge).toFixed(2) : 0);
+      setCharge(res.data?.finalCharge ? Number(res.data.finalCharge).toFixed(4) : 0);
     } catch (err) {
       console.error("Failed to calculate charge", err);
       setCharge(0);
@@ -301,7 +301,7 @@ const Home = () => {
 
           {/* Charge */}
           <div className="mb-4">
-            <label className="font-semibold block mb-1">Charge ($)</label>
+            <label className="font-semibold block mb-1">Charge (USD)</label>
             <input
               type="text"
               className="p-3 w-[90%] rounded-xl shadow bg-gray-100"
