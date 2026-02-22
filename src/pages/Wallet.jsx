@@ -10,6 +10,7 @@ import {io} from "socket.io-client"
 // Flag selector import for mobile money (you can add country flags)
 import countryList from "react-select-country-list";
 import Select from "react-select";
+import { useNavigate } from "react-router-dom";
 
 const Wallet = () => {
   const { user } = useAuth();
@@ -133,6 +134,15 @@ const Wallet = () => {
       toast.error(error.response?.data?.message || "Deposit failed");
     }
   };
+
+  const PaymentSuccess = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate("/"); // redirect to home
+  }, []);
+
+  return null;
 
   // ================= WITHDRAW FUNDS =================
   const handleWithdraw = () => {
