@@ -150,7 +150,7 @@ const Wallet = () => {
         <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
             <h2 className="text-lg text-gray-500">Wallet Balance</h2>
-            <p className="text-3xl font-bold text-green-600">${Number(balance).toFixed(2)}</p>
+            <p className="text-3xl font-bold text-green-600">${Number(balance).toFixed(4)}</p>
           </div>
           <div className="flex gap-4">
             <button
@@ -387,7 +387,7 @@ const Wallet = () => {
                     <td className="p-3">{new Date(tx.createdAt).toLocaleDateString()}</td>
                     <td className="p-3">{tx.type}</td>
                     <td className={`p-3 ${tx.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                      {tx.amount > 0 ? "+" : "-"} ${Math.abs(tx.amount).toFixed(2)}
+                      {tx.amount > 0 ? "+" : "-"} ${Math.abs(tx.amount).toFixed(4)}
                     </td>
                     <td
                       className={`p-3 ${
