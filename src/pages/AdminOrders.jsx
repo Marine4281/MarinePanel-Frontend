@@ -42,7 +42,7 @@ export default function AdminOrders() {
         "/admin/orders/wallets/stats"
       );
 
-      setTotalMoney(data.balance || 0);
+      setTotalMoney(data.TotalBalance || 0);
       setTotalUsed(data.totalUsed || 0);
     } catch (err) {
       console.error("Wallet stats error:", err);
