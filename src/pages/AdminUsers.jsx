@@ -163,7 +163,7 @@ const AdminUsers = () => {
                   <td className="px-4 py-3">{user.name || "-"}</td>
                   <td className="px-4 py-3">{user.email}</td>
                   <td className="px-4 py-3">{user.phone || "-"}</td>
-                  <td className="px-4 py-3">${Number(user.balance || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3">${Number(user.balance || 0).toFixed(4)}</td>
                   <td className="px-4 py-3">
                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
                       Active
@@ -260,7 +260,7 @@ const AdminUsers = () => {
                               t.amount >= 0 ? "text-green-600" : "text-red-600"
                             }`}
                           >
-                            ${t.amount.toFixed(2)}
+                            ${t.amount.toFixed(4)}
                           </td>
                           <td className="px-3 py-2">{t.status}</td>
                           <td className="px-3 py-2">{t.note}</td>
