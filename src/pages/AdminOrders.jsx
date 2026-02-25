@@ -2,27 +2,36 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "../api/axios";
 import { io } from "socket.io-client";
 import Sidebar from "../components/Sidebar";
+import debounce from "lodash.debounce";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [totalMoney, setTotalMoney] = useState(0);
   const [totalUsed, setTotalUsed] = useState(0);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const limit = 10;
 
   /* ===============================
-     FETCH ORDERS (SIMPLE)
+     FETCH ORDERS
   ==================================*/
   const fetchOrders = useCallback(async () => {
     try {
-      const { data } = await axios.get("/admin/orders");
+      const { data } = await axios.get(
+        `/admin/orders?search=${search}&page=${page}&limit=${limit}`
+      );
 
-      console.log("RAW DATA:", data);
+      console.log("Fetched orders:", data.orders);
 
-      setOrders(data.orders || []);
+      setOrders(Array.isArray(data.orders) ? data.orders : []);
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error("Fetch orders error:", err);
       setOrders([]);
     }
-  }, []);
+  }, [search, page]);
 
   /* ===============================
      FETCH WALLET STATS
@@ -33,8 +42,6 @@ export default function AdminOrders() {
         "/admin/orders/wallets/stats"
       );
 
-      console.log("WALLET STATS:", data);
-
       setTotalMoney(data.balance || 0);
       setTotalUsed(data.totalUsed || 0);
     } catch (err) {
@@ -43,12 +50,20 @@ export default function AdminOrders() {
   }, []);
 
   /* ===============================
+     SEARCH (Debounced)
+  ==================================*/
+  const handleSearch = debounce((value) => {
+    setPage(1);
+    setSearch(value);
+  }, 500);
+
+  /* ===============================
      COMPLETE ORDER
   ==================================*/
   const completeOrder = async (id) => {
     try {
       await axios.post(`/admin/orders/${id}/complete`);
-      fetchOrders();
+      fetchOrders(); // refresh table
       fetchWalletStats();
     } catch (err) {
       console.error(err);
@@ -61,7 +76,7 @@ export default function AdminOrders() {
   const refundOrder = async (id) => {
     try {
       await axios.post(`/admin/orders/${id}/refund`);
-      fetchOrders();
+      fetchOrders(); // refresh table
       fetchWalletStats();
     } catch (err) {
       console.error(err);
@@ -77,7 +92,7 @@ export default function AdminOrders() {
   }, [fetchOrders, fetchWalletStats]);
 
   /* ===============================
-     SOCKET
+     SOCKET REALTIME
   ==================================*/
   useEffect(() => {
     const socket = io(import.meta.env.VITE_API_URL, {
@@ -104,10 +119,11 @@ export default function AdminOrders() {
       <Sidebar />
 
       <div className="flex-1 p-6">
-        <header className="bg-white shadow rounded mb-6 p-4">
-          <h1 className="text-xl font-bold">
-            Admin Dashboard
-          </h1>
+        <header className="bg-white shadow rounded mb-6 p-4 flex justify-between">
+          <h1 className="text-xl font-bold">Admin Dashboard</h1>
+          <span className="text-sm text-gray-500">
+            Orders Management
+          </span>
         </header>
 
         {/* ================= STATS ================= */}
@@ -131,6 +147,16 @@ export default function AdminOrders() {
           </div>
         </div>
 
+        {/* ================= SEARCH ================= */}
+        <div className="mb-6 w-full sm:w-1/2">
+          <input
+            type="text"
+            placeholder="Search by Order ID or User Email"
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg"
+          />
+        </div>
+
         {/* ================= TABLE ================= */}
         <div className="bg-white shadow rounded-lg overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -138,7 +164,7 @@ export default function AdminOrders() {
               <tr>
                 <th className="px-6 py-3 text-left">Order ID</th>
                 <th className="px-6 py-3 text-left">User Email</th>
-                <th className="px-6 py-3 text-left">Balance</th>
+                <th className="px-6 py-3 text-left">User Balance</th>
                 <th className="px-6 py-3 text-left">Service</th>
                 <th className="px-6 py-3 text-left">Qty</th>
                 <th className="px-6 py-3 text-left">Link</th>
@@ -169,7 +195,7 @@ export default function AdminOrders() {
 
                 return (
                   <tr key={order._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 font-medium">
                       {order.orderId}
                     </td>
 
@@ -192,7 +218,7 @@ export default function AdminOrders() {
                       {order.quantity}
                     </td>
 
-                    <td className="px-6 py-4 truncate">
+                    <td className="px-6 py-4 truncate max-w-xs">
                       <a
                         href={order.link}
                         target="_blank"
@@ -255,7 +281,34 @@ export default function AdminOrders() {
             </tbody>
           </table>
         </div>
+
+        {/* ================= PAGINATION ================= */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="px-3 py-1 bg-gray-200 rounded"
+          >
+            Previous
+          </button>
+
+          <span>
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            disabled={page === totalPages}
+            onClick={() =>
+              setPage((p) =>
+                Math.min(totalPages, p + 1)
+              )
+            }
+            className="px-3 py-1 bg-gray-200 rounded"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
-                        }
+          }                    
