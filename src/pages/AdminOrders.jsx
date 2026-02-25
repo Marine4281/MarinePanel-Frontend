@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "../api/axios";
 import { io } from "socket.io-client";
 import Sidebar from "../components/Sidebar";
@@ -23,8 +23,6 @@ export default function AdminOrders() {
         `/admin/orders?search=${search}&page=${page}&limit=${limit}`
       );
 
-      console.log("Fetched orders:", data.orders);
-
       setOrders(Array.isArray(data.orders) ? data.orders : []);
       setTotalPages(data.totalPages || 1);
     } catch (err) {
@@ -38,9 +36,7 @@ export default function AdminOrders() {
   ==================================*/
   const fetchWalletStats = useCallback(async () => {
     try {
-      const { data } = await axios.get(
-        "/admin/orders/wallets/stats"
-      );
+      const { data } = await axios.get("/admin/orders/wallets/stats");
 
       setTotalMoney(data.totalBalance || 0);
       setTotalUsed(data.totalUsed || 0);
@@ -50,12 +46,22 @@ export default function AdminOrders() {
   }, []);
 
   /* ===============================
-     SEARCH (Debounced)
+     SEARCH (Debounced - Fixed)
   ==================================*/
-  const handleSearch = debounce((value) => {
-    setPage(1);
-    setSearch(value);
-  }, 500);
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value) => {
+        setPage(1);
+        setSearch(value);
+      }, 500),
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   /* ===============================
      COMPLETE ORDER
@@ -63,7 +69,7 @@ export default function AdminOrders() {
   const completeOrder = async (id) => {
     try {
       await axios.post(`/admin/orders/${id}/complete`);
-      fetchOrders(); // refresh table
+      fetchOrders();
       fetchWalletStats();
     } catch (err) {
       console.error(err);
@@ -76,7 +82,7 @@ export default function AdminOrders() {
   const refundOrder = async (id) => {
     try {
       await axios.post(`/admin/orders/${id}/refund`);
-      fetchOrders(); // refresh table
+      fetchOrders();
       fetchWalletStats();
     } catch (err) {
       console.error(err);
@@ -152,7 +158,7 @@ export default function AdminOrders() {
           <input
             type="text"
             placeholder="Search by Order ID or User Email"
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => debouncedSearch(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
@@ -199,14 +205,16 @@ export default function AdminOrders() {
                       {order.orderId}
                     </td>
 
+                    {/* ✅ FIXED HERE */}
                     <td className="px-6 py-4">
-                      {order.userId?.email || "Unknown"}
+                      {order.user?.email || "Unknown"}
                     </td>
 
+                    {/* ✅ FIXED HERE */}
                     <td className="px-6 py-4 font-semibold">
                       $
                       {Number(
-                        order.userId?.balance || 0
+                        order.user?.balance || 0
                       ).toFixed(2)}
                     </td>
 
@@ -311,4 +319,4 @@ export default function AdminOrders() {
       </div>
     </div>
   );
-          }                    
+  }
