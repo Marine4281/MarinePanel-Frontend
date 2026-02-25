@@ -50,7 +50,7 @@ const Orders = () => {
     );
   };
 
-  const displayedOrders = showAll ? orders : orders.slice(0, 2);
+  const displayedOrders = showAll ? orders : orders.slice(0, 4);
 
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
