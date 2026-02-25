@@ -13,7 +13,7 @@ export default function AdminOrders() {
   ==================================*/
   const fetchOrders = useCallback(async () => {
     try {
-      const { data } = await axios.get("/api/admin/orders");
+      const { data } = await axios.get("/admin/orders");
 
       console.log("RAW DATA:", data);
 
@@ -30,7 +30,7 @@ export default function AdminOrders() {
   const fetchWalletStats = useCallback(async () => {
     try {
       const { data } = await axios.get(
-        "/api/admin/orders/wallets/stats"
+        "/admin/orders/wallets/stats"
       );
 
       console.log("WALLET STATS:", data);
@@ -47,7 +47,7 @@ export default function AdminOrders() {
   ==================================*/
   const completeOrder = async (id) => {
     try {
-      await axios.post(`/api/admin/orders/${id}/complete`);
+      await axios.post(`/admin/orders/${id}/complete`);
       fetchOrders();
       fetchWalletStats();
     } catch (err) {
@@ -60,7 +60,7 @@ export default function AdminOrders() {
   ==================================*/
   const refundOrder = async (id) => {
     try {
-      await axios.post(`/api/admin/orders/${id}/refund`);
+      await axios.post(`/admin/orders/${id}/refund`);
       fetchOrders();
       fetchWalletStats();
     } catch (err) {
