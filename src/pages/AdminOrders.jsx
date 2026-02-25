@@ -1,11 +1,8 @@
-// AdminOrders.jsx
 import { useEffect, useState, useCallback } from "react";
 import axios from "../api/axios";
 import { io } from "socket.io-client";
 import Sidebar from "../components/Sidebar";
 import debounce from "lodash.debounce";
-
-const socket = io(import.meta.env.VITE_API_URL);
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -14,25 +11,29 @@ export default function AdminOrders() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 10; // items per page
+  const limit = 10;
 
   // --------------------------
-  // Fetch paginated orders
+  // Fetch Orders
   // --------------------------
   const fetchOrders = useCallback(async () => {
     try {
       const { data } = await axios.get(
         `/admin/orders?search=${search}&page=${page}&limit=${limit}`
       );
-      setOrders(data.orders || []);
+
+      console.log("Fetched orders:", data.orders); // DEBUG
+
+      setOrders(Array.isArray(data.orders) ? data.orders : []);
       setTotalPages(data.totalPages || 1);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch orders error:", err);
+      setOrders([]);
     }
   }, [search, page]);
 
   // --------------------------
-  // Fetch wallet stats (all users)
+  // Fetch Wallet Stats
   // --------------------------
   const fetchWalletStats = useCallback(async () => {
     try {
@@ -45,7 +46,7 @@ export default function AdminOrders() {
   }, []);
 
   // --------------------------
-  // Debounced search
+  // Debounced Search
   // --------------------------
   const handleSearch = debounce((value) => {
     setPage(1);
@@ -53,113 +54,115 @@ export default function AdminOrders() {
   }, 500);
 
   // --------------------------
-  // Complete order
+  // Complete Order
   // --------------------------
   const completeOrder = async (id) => {
     try {
       await axios.post(`/admin/orders/${id}/complete`);
-      fetchOrders();
-      fetchWalletStats();
     } catch (err) {
       console.error(err);
     }
   };
 
   // --------------------------
-  // Refund order
+  // Refund Order
   // --------------------------
   const refundOrder = async (id) => {
     try {
       await axios.post(`/admin/orders/${id}/refund`);
-      fetchOrders();
-      fetchWalletStats();
     } catch (err) {
       console.error(err);
     }
   };
 
   // --------------------------
-  // Real-time updates
+  // INITIAL LOAD
   // --------------------------
   useEffect(() => {
-  fetchOrders();
-  fetchWalletStats();
+    fetchOrders();
+    fetchWalletStats();
+  }, [fetchOrders, fetchWalletStats]);
 
-  // 🔥 Update only changed order row
-  socket.on("order:update", (updatedOrder) => {
-    setOrders((prevOrders) => {
-      const exists = prevOrders.find(
-        (order) => order._id === updatedOrder._id
-      );
+  // --------------------------
+  // REAL-TIME SOCKET
+  // --------------------------
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_URL, {
+      transports: ["websocket"],
+    });
 
-      // If order is in current page → update it
-      if (exists) {
-        return prevOrders.map((order) =>
+    socket.on("connect", () => {
+      console.log("Admin socket connected");
+    });
+
+    socket.on("order:update", (updatedOrder) => {
+      console.log("Socket update:", updatedOrder);
+
+      setOrders((prev) =>
+        prev.map((order) =>
           order._id === updatedOrder._id
             ? { ...order, ...updatedOrder }
             : order
-        );
-      }
-
-      // If not in current page (pagination case)
-      return prevOrders;
+        )
+      );
     });
-  });
 
-  // Wallet stats update
-  socket.on("wallet:update", () => {
-    fetchWalletStats();
-  });
+    socket.on("order:new", (newOrder) => {
+      console.log("Socket new order:", newOrder);
+      setOrders((prev) => [newOrder, ...prev]);
+    });
 
-  return () => {
-    socket.off("order:update");
-    socket.off("wallet:update");
-  };
-}, [fetchOrders, fetchWalletStats]);
+    socket.on("wallet:update", () => {
+      fetchWalletStats();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [fetchWalletStats]);
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
 
       <div className="flex-1 p-6">
-        {/* Header */}
         <header className="bg-white shadow rounded mb-6 p-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
-          <span className="text-sm text-gray-500">Orders Management</span>
+          <h1 className="text-xl font-bold text-gray-800">
+            Admin Dashboard
+          </h1>
+          <span className="text-sm text-gray-500">
+            Orders Management
+          </span>
         </header>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
           <div className="bg-white shadow rounded-lg p-6">
-            <p className="text-sm text-gray-500">Total Money in Users Wallets</p>
-            <h2 className="text-2xl font-bold text-gray-800 mt-1">${totalMoney.toFixed(2)}</h2>
+            <p className="text-sm text-gray-500">
+              Total Money in Users Wallets
+            </p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">
+              ${Number(totalMoney).toFixed(2)}
+            </h2>
           </div>
           <div className="bg-white shadow rounded-lg p-6">
-            <p className="text-sm text-gray-500">Total Money Used by Users</p>
-            <h2 className="text-2xl font-bold text-gray-800 mt-1">${totalUsed.toFixed(2)}</h2>
+            <p className="text-sm text-gray-500">
+              Total Money Used by Users
+            </p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">
+              ${Number(totalUsed).toFixed(2)}
+            </h2>
           </div>
         </div>
 
         {/* Search */}
-        <div className="mb-6 w-full sm:w-1/2 relative">
+        <div className="mb-6 w-full sm:w-1/2">
           <input
             type="text"
             placeholder="Search by Order ID or User Email"
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full px-4 py-2 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full px-4 py-2 border rounded-lg"
           />
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-4.35-4.35M16.65 10.5a6.15 6.15 0 11-12.3 0 6.15 6.15 0 0112.3 0z"
-            />
-          </svg>
         </div>
 
         {/* Orders Table */}
@@ -179,53 +182,100 @@ export default function AdminOrders() {
                 <th className="px-6 py-3 text-left">Actions</th>
               </tr>
             </thead>
+
             <tbody className="divide-y">
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan="10" className="text-center py-6 text-gray-400">
+                    No orders found
+                  </td>
+                </tr>
+              )}
+
               {orders.map((order) => {
-                const progress = ((order.quantityDelivered || 0) / (order.quantity || 1)) * 100;
-                const userEmail = order.user?.email || "Unknown";
-                const userBalance = order.user?.balance || 0;
+                const progress =
+                  ((order.quantityDelivered || 0) /
+                    (order.quantity || 1)) *
+                  100;
 
                 return (
                   <tr key={order._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium">{order._id.slice(-6)}</td>
-                    <td className="px-6 py-4">{userEmail}</td>
-                    <td className="px-6 py-4 font-semibold">${userBalance.toFixed(2)}</td>
-                    <td className="px-6 py-4">{order.service}</td>
-                    <td className="px-6 py-4">{order.quantity}</td>
-                    <td className="px-6 py-4 max-w-xs truncate">
-                      <a href={order.link} className="text-blue-600 hover:underline">{order.link}</a>
+                    <td className="px-6 py-4 font-medium">
+                      {order.orderId || order._id.slice(-6)}
                     </td>
-                    <td className="px-6 py-4 font-semibold">${(order.charge || 0).toFixed(2)}</td>
+
                     <td className="px-6 py-4">
-                      <div className="text-xs font-semibold mb-1 text-gray-700">
-                        {order.quantityDelivered || 0} / {order.quantity || 0}
+                      {order.user?.email || "Unknown"}
+                    </td>
+
+                    <td className="px-6 py-4 font-semibold">
+                      ${Number(order.user?.balance || 0).toFixed(2)}
+                    </td>
+
+                    <td className="px-6 py-4">{order.service}</td>
+
+                    <td className="px-6 py-4">{order.quantity}</td>
+
+                    <td className="px-6 py-4 max-w-xs truncate">
+                      <a
+                        href={order.link}
+                        className="text-blue-600 hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {order.link}
+                      </a>
+                    </td>
+
+                    <td className="px-6 py-4 font-semibold">
+                      ${Number(order.charge || 0).toFixed(2)}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="text-xs mb-1">
+                        {order.quantityDelivered || 0} /{" "}
+                        {order.quantity || 0}
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full ${progress === 100 ? "bg-green-600" : "bg-blue-600"}`}
+                          className="h-2 rounded-full bg-blue-600"
                           style={{ width: `${progress}%` }}
                         />
                       </div>
                     </td>
+
                     <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          order.status === "completed" ? "bg-green-100 text-green-700" :
-                          order.status === "refunded" ? "bg-red-100 text-red-700" :
-                          "bg-blue-100 text-blue-700"
-                        }`}
-                      >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                        {order.status}
                       </span>
                     </td>
+
                     <td className="px-6 py-4 flex gap-2">
-                      {["processing", "pending"].includes(order.status) ? (
+                      {["processing", "pending"].includes(
+                        order.status
+                      ) ? (
                         <>
-                          <button onClick={() => completeOrder(order._id)} className="px-3 py-1 text-xs bg-green-600 text-white rounded">Complete</button>
-                          <button onClick={() => refundOrder(order._id)} className="px-3 py-1 text-xs bg-red-600 text-white rounded">Refund</button>
+                          <button
+                            onClick={() =>
+                              completeOrder(order._id)
+                            }
+                            className="px-3 py-1 text-xs bg-green-600 text-white rounded"
+                          >
+                            Complete
+                          </button>
+                          <button
+                            onClick={() =>
+                              refundOrder(order._id)
+                            }
+                            className="px-3 py-1 text-xs bg-red-600 text-white rounded"
+                          >
+                            Refund
+                          </button>
                         </>
                       ) : (
-                        <span className="text-gray-400 text-xs">—</span>
+                        <span className="text-gray-400 text-xs">
+                          —
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -238,17 +288,27 @@ export default function AdminOrders() {
         {/* Pagination */}
         <div className="flex justify-between items-center mt-4">
           <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() =>
+              setPage((p) => Math.max(1, p - 1))
+            }
             disabled={page === 1}
-            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            className="px-3 py-1 rounded bg-gray-200"
           >
             Previous
           </button>
-          <span>Page {page} of {totalPages}</span>
+
+          <span>
+            Page {page} of {totalPages}
+          </span>
+
           <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() =>
+              setPage((p) =>
+                Math.min(totalPages, p + 1)
+              )
+            }
             disabled={page === totalPages}
-            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+            className="px-3 py-1 rounded bg-gray-200"
           >
             Next
           </button>
@@ -256,4 +316,4 @@ export default function AdminOrders() {
       </div>
     </div>
   );
-}
+        }
