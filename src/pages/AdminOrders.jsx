@@ -82,24 +82,40 @@ export default function AdminOrders() {
   // Real-time updates
   // --------------------------
   useEffect(() => {
-    fetchOrders();
+  fetchOrders();
+  fetchWalletStats();
+
+  // 🔥 Update only changed order row
+  socket.on("order:update", (updatedOrder) => {
+    setOrders((prevOrders) => {
+      const exists = prevOrders.find(
+        (order) => order._id === updatedOrder._id
+      );
+
+      // If order is in current page → update it
+      if (exists) {
+        return prevOrders.map((order) =>
+          order._id === updatedOrder._id
+            ? { ...order, ...updatedOrder }
+            : order
+        );
+      }
+
+      // If not in current page (pagination case)
+      return prevOrders;
+    });
+  });
+
+  // Wallet stats update
+  socket.on("wallet:update", () => {
     fetchWalletStats();
+  });
 
-    socket.on("order:update", async () => {
-      await fetchOrders();
-      await fetchWalletStats();
-    });
-
-    socket.on("wallet:update", () => {
-      fetchWalletStats();
-    });
-
-    return () => {
-      socket.off("order:update");
-      socket.off("wallet:update");
-    };
-  }, [fetchOrders, fetchWalletStats]);
-
+  return () => {
+    socket.off("order:update");
+    socket.off("wallet:update");
+  };
+}, [fetchOrders, fetchWalletStats]);
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
