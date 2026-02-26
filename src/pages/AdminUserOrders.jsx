@@ -11,11 +11,9 @@ const AdminUserOrders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-
       const res = await API.get(
         `/admin/user-orders?search=${search}&page=1&limit=20`
       );
-
       setOrders(res.data.orders || []);
     } catch (err) {
       toast.error("Failed to fetch orders");
@@ -34,14 +32,24 @@ const AdminUserOrders = () => {
       toast.success("Status updated");
       fetchOrders();
     } catch (err) {
-      toast.error("Status update failed");
+      toast.error(err.response?.data?.message || "Update failed");
     }
   };
 
-  const refundOrder = async (id) => {
+  const refundOrder = async (order) => {
+    const email = order.userId?.email || "";
+    const firstName = email.split("@")[0];
+    const amount = order.charge;
+
+    const confirmRefund = window.confirm(
+      `Are you sure you want to refund $${amount} to ${firstName}?`
+    );
+
+    if (!confirmRefund) return;
+
     try {
-      await API.post(`/admin/user-orders/${id}/refund`);
-      toast.success("Refund successful");
+      await API.post(`/admin/user-orders/${order._id}/refund`);
+      toast.success(`$${amount} refunded to ${firstName}`);
       fetchOrders();
     } catch (err) {
       toast.error(err.response?.data?.message || "Refund failed");
@@ -66,13 +74,14 @@ const AdminUserOrders = () => {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f3f4f6" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f9fafb" }}>
       <Toaster position="top-right" />
       <Sidebar />
 
       <div style={{ flex: 1, padding: "30px" }}>
         <h2 style={{ marginBottom: "20px" }}>User Orders</h2>
 
+        {/* Search */}
         <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
           <input
             type="text"
@@ -102,70 +111,112 @@ const AdminUserOrders = () => {
         </div>
 
         {loading ? (
-          <p>Loading...</p>
+          <p>Loading orders...</p>
         ) : orders.length === 0 ? (
           <div style={{ padding: "20px", background: "#fff", borderRadius: "8px" }}>
             No orders found
           </div>
         ) : (
-          orders.map((order) => (
-            <div
-              key={order._id}
-              style={{
-                background: "#fff",
-                padding: "20px",
-                marginBottom: "15px",
-                borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <strong>{order.orderId || order._id}</strong>
-                <span style={{ color: statusColor(order.status), fontWeight: 600 }}>
-                  {order.status}
-                </span>
-              </div>
+          orders.map((order) => {
+            const email = order.userId?.email || "";
+            const firstName = email.split("@")[0];
 
-              <p>Email: {order.userId?.email}</p>
-              <p>Service: {order.service}</p>
-              <p>Quantity: {order.quantity}</p>
-              <p>Charge: ${order.charge}</p>
-
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {["pending", "processing", "completed", "failed"].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => updateStatus(order._id, s)}
+            return (
+              <div
+                key={order._id}
+                style={{
+                  background: "#fff",
+                  padding: "20px",
+                  marginBottom: "15px",
+                  borderRadius: "10px",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <strong>{order.orderId || order._id}</strong>
+                  <span
                     style={{
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      cursor: "pointer",
-                      background: "#e5e7eb",
+                      color: statusColor(order.status),
+                      fontWeight: 600,
+                      textTransform: "capitalize"
                     }}
                   >
-                    {s}
-                  </button>
-                ))}
+                    {order.status}
+                  </span>
+                </div>
 
-                {order.status !== "refunded" && (
-                  <button
-                    onClick={() => refundOrder(order._id)}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      border: "none",
-                      background: "#dc2626",
-                      color: "#fff",
-                      cursor: "pointer",
-                    }}
+                {/* User */}
+                <p><strong>User:</strong> {firstName}</p>
+                <p><strong>Email:</strong> {email}</p>
+
+                {/* Order Info */}
+                <p><strong>Service:</strong> {order.service}</p>
+                <p><strong>Quantity:</strong> {order.quantity}</p>
+                <p><strong>Charge:</strong> ${order.charge}</p>
+
+                {/* Service Link */}
+                <p>
+                  <strong>Link:</strong>{" "}
+                  <a
+                    href={order.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#2563eb", wordBreak: "break-all" }}
                   >
-                    Refund
-                  </button>
-                )}
+                    {order.link}
+                  </a>
+                </p>
+
+                {/* Date & Time */}
+                <p>
+                  <strong>Date:</strong>{" "}
+                  {order.createdAt
+                    ? new Date(order.createdAt).toLocaleDateString()}
+                </p>
+                <p>
+                  <strong>Time:</strong>{" "}
+                  {order.createdAt
+                    ? new Date(order.createdAt).toLocaleTimeString()}
+                </p>
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
+                  {["pending", "processing", "completed", "failed"].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => updateStatus(order._id, s)}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                        background: "#e5e7eb",
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+
+                  {order.status !== "refunded" && (
+                    <button
+                      onClick={() => refundOrder(order)}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: "#dc2626",
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Refund
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
