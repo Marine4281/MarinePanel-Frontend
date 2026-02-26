@@ -2,6 +2,7 @@ import { useState } from "react";
 
 const Table = ({ data = [], type }) => {
   const [showAll, setShowAll] = useState(false);
+  const [expandedRow, setExpandedRow] = useState(null);
 
   // Sort newest first
   const sortedData = [...data].sort((a, b) => {
@@ -11,6 +12,16 @@ const Table = ({ data = [], type }) => {
   });
 
   const displayedData = showAll ? sortedData : sortedData.slice(0, 3);
+
+  const getShortService = (service) => {
+    if (!service) return "-";
+    return service.split("~")[0].trim();
+  };
+
+  const getShortEmail = (email) => {
+    if (!email) return "-";
+    return email.split("@")[0];
+  };
 
   const renderRow = (item) => {
     if (type === "users") {
@@ -38,40 +49,63 @@ const Table = ({ data = [], type }) => {
     }
 
     if (type === "orders") {
+      const isExpanded = expandedRow === item._id;
+
       return (
-        <tr key={item._id} className="border-b hover:bg-gray-50">
-          <td className="px-4 py-3 font-medium">
-            #{item._id?.slice(-6)}
-          </td>
+        <>
+          <tr key={item._id} className="border-b hover:bg-gray-50">
+            <td className="px-4 py-3 font-medium">
+              #{item._id?.slice(-6)}
+            </td>
 
-          <td className="px-4 py-3">
-            {item.userId?.email || "-"}
-          </td>
+            <td className="px-4 py-3">
+              {getShortEmail(item.userId?.email)}
+            </td>
 
-          <td className="px-4 py-3">{item.service || "-"}</td>
+            <td className="px-4 py-3 flex items-center gap-2">
+              {getShortService(item.service)}
 
-          <td className="px-4 py-3">
-            {item.quantity || 0}
-          </td>
+              <button
+                onClick={() =>
+                  setExpandedRow(isExpanded ? null : item._id)
+                }
+                className="text-blue-600 hover:text-blue-800 text-sm font-bold"
+              >
+                &gt;
+              </button>
+            </td>
 
-          <td className="px-4 py-3">
-            <span
-              className={`px-3 py-1 rounded-full text-sm capitalize ${
-                item.status === "completed"
-                  ? "bg-green-100 text-green-600"
-                  : item.status === "processing"
-                  ? "bg-yellow-100 text-yellow-600"
-                  : item.status === "pending"
-                  ? "bg-blue-100 text-blue-600"
-                  : item.status === "refunded"
-                  ? "bg-gray-200 text-gray-600"
-                  : "bg-red-100 text-red-600"
-              }`}
-            >
-              {item.status}
-            </span>
-          </td>
-        </tr>
+            <td className="px-4 py-3">
+              {item.quantity || 0}
+            </td>
+
+            <td className="px-4 py-3">
+              <span
+                className={`px-3 py-1 rounded-full text-sm capitalize ${
+                  item.status === "completed"
+                    ? "bg-green-100 text-green-600"
+                    : item.status === "processing"
+                    ? "bg-yellow-100 text-yellow-600"
+                    : item.status === "pending"
+                    ? "bg-blue-100 text-blue-600"
+                    : item.status === "refunded"
+                    ? "bg-gray-200 text-gray-600"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {item.status}
+              </span>
+            </td>
+          </tr>
+
+          {isExpanded && (
+            <tr className="bg-gray-50">
+              <td colSpan="5" className="px-4 py-3 text-sm text-gray-600">
+                <strong>Full Service:</strong> {item.service}
+              </td>
+            </tr>
+          )}
+        </>
       );
     }
 
@@ -94,7 +128,7 @@ const Table = ({ data = [], type }) => {
             ) : (
               <>
                 <th className="px-4 py-3 text-left">Order ID</th>
-                <th className="px-4 py-3 text-left">User Email</th>
+                <th className="px-4 py-3 text-left">User</th>
                 <th className="px-4 py-3 text-left">Service</th>
                 <th className="px-4 py-3 text-left">Quantity</th>
                 <th className="px-4 py-3 text-left">Status</th>
@@ -108,10 +142,7 @@ const Table = ({ data = [], type }) => {
             displayedData.map(renderRow)
           ) : (
             <tr>
-              <td
-                colSpan={type === "users" ? 5 : 5}
-                className="text-center py-6 text-gray-400"
-              >
+              <td colSpan="5" className="text-center py-6 text-gray-400">
                 No data found
               </td>
             </tr>
