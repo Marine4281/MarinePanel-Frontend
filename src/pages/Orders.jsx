@@ -1,32 +1,46 @@
 // pages/Orders.js
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import io from "socket.io-client";
+import { io } from "socket.io-client";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import API from "../api/axios";
 
-// Connect Socket.IO
-const socket = io("https://your-backend-url"); // Replace with your backend URL
+// ✅ Use env backend URL correctly
+const baseURL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") ||
+  "https://marinepanel-backend.onrender.com";
+
+const socket = io(baseURL, {
+  transports: ["websocket"],
+});
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [showAll, setShowAll] = useState(false);
 
-  // Fetch orders once
+  /* ===============================
+     FETCH ORDERS
+  =============================== */
   useEffect(() => {
     API.get("/orders/my-orders")
-      .then((res) => setOrders(res.data))
+      .then((res) => setOrders(res.data || []))
       .catch(() => console.error("Failed to load orders"));
   }, []);
 
-  // Listen for live order updates from webhook
+  /* ===============================
+     SOCKET LIVE UPDATES
+  =============================== */
   useEffect(() => {
     socket.on("order:update", (updatedOrder) => {
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
-          order._id === updatedOrder.orderId
-            ? { ...order, status: updatedOrder.status, quantityDelivered: updatedOrder.quantityDelivered }
+          order._id === updatedOrder._id
+            ? {
+                ...order,
+                status: updatedOrder.status,
+                quantityDelivered: updatedOrder.quantityDelivered,
+              }
             : order
         )
       );
@@ -35,16 +49,25 @@ const Orders = () => {
     return () => socket.off("order:update");
   }, []);
 
+  /* ===============================
+     STATUS BADGE
+  =============================== */
   const statusBadge = (status) => {
     const map = {
       pending: "bg-yellow-100 text-yellow-700",
       processing: "bg-blue-100 text-blue-700",
       completed: "bg-green-100 text-green-700",
+      failed: "bg-red-100 text-red-700",
+      refunded: "bg-purple-100 text-purple-700",
       cancelled: "bg-gray-200 text-gray-600",
     };
 
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${map[status]}`}>
+      <span
+        className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
+          map[status] || "bg-gray-100 text-gray-600"
+        }`}
+      >
         {status}
       </span>
     );
@@ -54,12 +77,11 @@ const Orders = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
-      {/* Sticky Navbar */}
       <div className="sticky top-0 z-50">
         <Header />
       </div>
 
-      <main className="max-w-6xl mt-6 flex-1">
+      <main className="max-w-6xl mx-auto mt-6 flex-1 px-4">
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
           {/* Header */}
@@ -76,32 +98,78 @@ const Orders = () => {
           {/* Orders Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-gray-100 text-gray-600 uppercase sticky top-0 z-10">
+              <thead className="bg-gray-100 text-gray-600 uppercase">
                 <tr>
-                  <th className="px-4 py-3">Order ID</th>
+                  <th className="px-4 py-3">Order</th>
                   <th className="px-4 py-3">Service</th>
-                  <th className="px-4 py-3">Quantity</th>
+                  <th className="px-4 py-3">Link</th>
+                  <th className="px-4 py-3">Qty</th>
                   <th className="px-4 py-3">Charge</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Created</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y">
-                {displayedOrders.map((order) => (
-                  <tr key={order._id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">#{order._id.slice(-6)}</td>
-                    <td className="px-4 py-3">{order.service}</td>
-                    <td className="px-4 py-3">{order.quantity}</td>
-                    <td className="px-4 py-3">${Number(order.charge).toFixed(2)}</td>
-                    <td className="px-4 py-3">{statusBadge(order.status)}</td>
-                    <td className="px-4 py-3">{new Date(order.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
+                {displayedOrders.map((order) => {
+                  const created = order.createdAt
+                    ? new Date(order.createdAt)
+                    : null;
+
+                  const progress =
+                    ((order.quantityDelivered || 0) /
+                      (order.quantity || 1)) *
+                    100;
+
+                  return (
+                    <tr key={order._id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium">
+                        #{order._id.slice(-6)}
+                      </td>
+
+                      <td className="px-4 py-3">{order.service}</td>
+
+                      <td className="px-4 py-3 max-w-xs truncate">
+                        <a
+                          href={order.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          View Link
+                        </a>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {order.quantityDelivered || 0} / {order.quantity}
+                        <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
+                          <div
+                            className="h-2 bg-blue-600 rounded-full"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        ${Number(order.charge).toFixed(2)}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {statusBadge(order.status)}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {created
+                          ? created.toLocaleString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  );
+                })}
 
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="text-center p-4 text-gray-500">
+                    <td colSpan="7" className="text-center p-4 text-gray-500">
                       No orders found
                     </td>
                   </tr>
@@ -110,9 +178,9 @@ const Orders = () => {
             </table>
           </div>
 
-          {/* View more / View less */}
-          {orders.length > 2 && (
-            <div className="mt-4 pb-10 text-center">
+          {/* View More / Less */}
+          {orders.length > 4 && (
+            <div className="mt-4 pb-6 text-center">
               <button
                 onClick={() => setShowAll(!showAll)}
                 className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition"
@@ -121,7 +189,6 @@ const Orders = () => {
               </button>
             </div>
           )}
-
         </div>
       </main>
 
