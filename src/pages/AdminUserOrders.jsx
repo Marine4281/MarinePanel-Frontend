@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 
 const AdminUserOrders = () => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const token = localStorage.getItem("token");
 
   /* ===============================
      FETCH ORDERS
@@ -16,16 +14,10 @@ const AdminUserOrders = () => {
     try {
       setLoading(true);
 
-      const res = await axios.get(
-        `/api/admin/user-orders?search=${search}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const res = await API.get(
+        `/admin/user-orders?search=${search}`
       );
 
-      // Backend returns { orders, totalPages }
       if (res.data?.orders && Array.isArray(res.data.orders)) {
         setOrders(res.data.orders);
       } else {
@@ -49,12 +41,9 @@ const AdminUserOrders = () => {
   =============================== */
   const updateStatus = async (id, status) => {
     try {
-      await axios.post(
-        `/api/admin/user-orders/${id}/status`,
-        { status },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      await API.post(
+        `/admin/user-orders/${id}/status`,
+        { status }
       );
 
       fetchOrders();
@@ -72,12 +61,8 @@ const AdminUserOrders = () => {
       return;
 
     try {
-      await axios.post(
-        `/api/admin/user-orders/${id}/refund`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      await API.post(
+        `/admin/user-orders/${id}/refund`
       );
 
       fetchOrders();
@@ -149,15 +134,10 @@ const AdminUserOrders = () => {
                   orders.map((order) => (
                     <tr key={order._id}>
                       <td>{order.orderId || order._id}</td>
-
                       <td>{order.userId?.email || "N/A"}</td>
-
                       <td>${order.userId?.balance ?? 0}</td>
-
                       <td>{order.service || "N/A"}</td>
-
                       <td>{order.quantity}</td>
-
                       <td>
                         <a
                           href={order.link}
@@ -167,17 +147,13 @@ const AdminUserOrders = () => {
                           View
                         </a>
                       </td>
-
                       <td>${order.charge ?? 0}</td>
-
                       <td>
                         {order.quantityDelivered
                           ? `${order.quantityDelivered}/${order.quantity}`
                           : `0/${order.quantity}`}
                       </td>
-
                       <td>{order.status}</td>
-
                       <td>
                         <div
                           style={{
@@ -212,7 +188,6 @@ const AdminUserOrders = () => {
                           )}
                         </div>
                       </td>
-
                       <td>
                         {order.createdAt
                           ? new Date(order.createdAt).toLocaleString()
