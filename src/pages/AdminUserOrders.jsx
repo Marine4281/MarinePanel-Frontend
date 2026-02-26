@@ -1,32 +1,24 @@
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
+import toast, { Toaster } from "react-hot-toast";
 
 const AdminUserOrders = () => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  /* ===============================
-     FETCH ORDERS
-  =============================== */
   const fetchOrders = async () => {
     try {
       setLoading(true);
 
       const res = await API.get(
-        `/admin/user-orders?search=${search}`
+        `/admin/user-orders?search=${search}&page=1&limit=20`
       );
 
-      if (res.data?.orders && Array.isArray(res.data.orders)) {
-        setOrders(res.data.orders);
-      } else {
-        setOrders([]);
-      }
-
+      setOrders(res.data.orders || []);
     } catch (err) {
-      console.error("Fetch Orders Error:", err);
-      setOrders([]);
+      toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -36,169 +28,144 @@ const AdminUserOrders = () => {
     fetchOrders();
   }, []);
 
-  /* ===============================
-     UPDATE STATUS
-  =============================== */
   const updateStatus = async (id, status) => {
     try {
-      await API.post(
-        `/admin/user-orders/${id}/status`,
-        { status }
-      );
-
+      await API.post(`/admin/user-orders/${id}/status`, { status });
+      toast.success("Status updated");
       fetchOrders();
     } catch (err) {
-      console.error("Update Status Error:", err);
-      alert("Failed to update status");
+      toast.error("Status update failed");
     }
   };
 
-  /* ===============================
-     REFUND ORDER
-  =============================== */
   const refundOrder = async (id) => {
-    if (!window.confirm("Are you sure you want to refund this order?"))
-      return;
-
     try {
-      await API.post(
-        `/admin/user-orders/${id}/refund`
-      );
-
+      await API.post(`/admin/user-orders/${id}/refund`);
+      toast.success("Refund successful");
       fetchOrders();
     } catch (err) {
-      console.error("Refund Error:", err);
-      alert("Refund failed");
+      toast.error(err.response?.data?.message || "Refund failed");
+    }
+  };
+
+  const statusColor = (status) => {
+    switch (status) {
+      case "completed":
+        return "#16a34a";
+      case "processing":
+        return "#2563eb";
+      case "pending":
+        return "#f59e0b";
+      case "failed":
+        return "#dc2626";
+      case "refunded":
+        return "#6b7280";
+      default:
+        return "#000";
     }
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f3f4f6" }}>
+      <Toaster position="top-right" />
       <Sidebar />
 
       <div style={{ flex: 1, padding: "30px" }}>
-        <h2 style={{ marginBottom: "20px" }}>Admin - User Orders</h2>
+        <h2 style={{ marginBottom: "20px" }}>User Orders</h2>
 
-        {/* SEARCH */}
-        <div style={{ marginBottom: "20px" }}>
+        <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
           <input
             type="text"
             placeholder="Search by Order ID or Email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              padding: "8px",
+              padding: "10px",
               width: "300px",
-              marginRight: "10px",
+              borderRadius: "6px",
+              border: "1px solid #ddd",
             }}
           />
-          <button onClick={fetchOrders}>Search</button>
+          <button
+            onClick={fetchOrders}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "6px",
+              background: "#2563eb",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Search
+          </button>
         </div>
 
         {loading ? (
-          <p>Loading orders...</p>
+          <p>Loading...</p>
+        ) : orders.length === 0 ? (
+          <div style={{ padding: "20px", background: "#fff", borderRadius: "8px" }}>
+            No orders found
+          </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table
-              border="1"
-              cellPadding="10"
+          orders.map((order) => (
+            <div
+              key={order._id}
               style={{
-                width: "100%",
-                borderCollapse: "collapse",
+                background: "#fff",
+                padding: "20px",
+                marginBottom: "15px",
+                borderRadius: "10px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
               }}
             >
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>User Email</th>
-                  <th>User Balance</th>
-                  <th>Service</th>
-                  <th>Qty</th>
-                  <th>Link</th>
-                  <th>Amount</th>
-                  <th>Progress</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <strong>{order.orderId || order._id}</strong>
+                <span style={{ color: statusColor(order.status), fontWeight: 600 }}>
+                  {order.status}
+                </span>
+              </div>
 
-              <tbody>
-                {orders.length === 0 ? (
-                  <tr>
-                    <td colSpan="11" align="center">
-                      No orders found
-                    </td>
-                  </tr>
-                ) : (
-                  orders.map((order) => (
-                    <tr key={order._id}>
-                      <td>{order.orderId || order._id}</td>
-                      <td>{order.userId?.email || "N/A"}</td>
-                      <td>${order.userId?.balance ?? 0}</td>
-                      <td>{order.service || "N/A"}</td>
-                      <td>{order.quantity}</td>
-                      <td>
-                        <a
-                          href={order.link}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View
-                        </a>
-                      </td>
-                      <td>${order.charge ?? 0}</td>
-                      <td>
-                        {order.quantityDelivered
-                          ? `${order.quantityDelivered}/${order.quantity}`
-                          : `0/${order.quantity}`}
-                      </td>
-                      <td>{order.status}</td>
-                      <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "5px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <button onClick={() => updateStatus(order._id, "pending")}>
-                            Pending
-                          </button>
-                          <button onClick={() => updateStatus(order._id, "processing")}>
-                            Processing
-                          </button>
-                          <button onClick={() => updateStatus(order._id, "completed")}>
-                            Completed
-                          </button>
-                          <button onClick={() => updateStatus(order._id, "failed")}>
-                            Failed
-                          </button>
+              <p>Email: {order.userId?.email}</p>
+              <p>Service: {order.service}</p>
+              <p>Quantity: {order.quantity}</p>
+              <p>Charge: ${order.charge}</p>
 
-                          {order.status !== "refunded" && (
-                            <button
-                              onClick={() => refundOrder(order._id)}
-                              style={{
-                                backgroundColor: "red",
-                                color: "white",
-                              }}
-                            >
-                              Refund
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        {order.createdAt
-                          ? new Date(order.createdAt).toLocaleString()
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  ))
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                {["pending", "processing", "completed", "failed"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => updateStatus(order._id, s)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      border: "none",
+                      cursor: "pointer",
+                      background: "#e5e7eb",
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+
+                {order.status !== "refunded" && (
+                  <button
+                    onClick={() => refundOrder(order._id)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      border: "none",
+                      background: "#dc2626",
+                      color: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Refund
+                  </button>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
