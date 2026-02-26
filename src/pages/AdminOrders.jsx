@@ -19,12 +19,21 @@ export default function AdminOrders() {
   ==================================*/
   const fetchOrders = useCallback(async () => {
     try {
-      const { data } = await axios.get(
+      const response = await axios.get(
         `/admin/orders?search=${search}&page=${page}&limit=${limit}`
       );
 
-      setOrders(Array.isArray(data.orders) ? data.orders : []);
-      setTotalPages(data.totalPages || 1);
+      const data = response?.data || {};
+
+      // 🔥 Safe handling of response shape
+      const ordersArray = Array.isArray(data.orders)
+        ? data.orders
+        : Array.isArray(data?.orders?.orders)
+        ? data.orders.orders
+        : [];
+
+      setOrders(ordersArray);
+      setTotalPages(data.totalPages || data?.orders?.totalPages || 1);
     } catch (err) {
       console.error("Fetch orders error:", err);
       setOrders([]);
@@ -36,23 +45,28 @@ export default function AdminOrders() {
   ==================================*/
   const fetchWalletStats = useCallback(async () => {
     try {
-      const { data } = await axios.get("/admin/orders/wallets/stats");
+      // ✅ Correct endpoint
+      const response = await axios.get("/admin/wallets/stats");
+      const data = response?.data || {};
 
-      setTotalMoney(data.totalBalance || 0);
+      // ✅ Correct backend field names
+      setTotalMoney(data.balance || 0);
       setTotalUsed(data.totalUsed || 0);
     } catch (err) {
       console.error("Wallet stats error:", err);
+      setTotalMoney(0);
+      setTotalUsed(0);
     }
   }, []);
 
   /* ===============================
-     SEARCH (Debounced - Fixed)
+     SEARCH (Debounced)
   ==================================*/
   const debouncedSearch = useMemo(
     () =>
       debounce((value) => {
         setPage(1);
-        setSearch(value);
+        setSearch(value.trim());
       }, 500),
     []
   );
@@ -72,7 +86,7 @@ export default function AdminOrders() {
       fetchOrders();
       fetchWalletStats();
     } catch (err) {
-      console.error(err);
+      console.error("Complete error:", err);
     }
   };
 
@@ -85,7 +99,7 @@ export default function AdminOrders() {
       fetchOrders();
       fetchWalletStats();
     } catch (err) {
-      console.error(err);
+      console.error("Refund error:", err);
     }
   };
 
@@ -101,21 +115,18 @@ export default function AdminOrders() {
      SOCKET REALTIME
   ==================================*/
   useEffect(() => {
-    const socket = io(import.meta.env.VITE_API_URL, {
+    // Remove trailing /api for socket connection
+    const baseURL =
+      import.meta.env.VITE_API_URL?.replace("/api", "") ||
+      "https://marinepanel-backend.onrender.com";
+
+    const socket = io(baseURL, {
       transports: ["websocket"],
     });
 
-    socket.on("order:update", () => {
-      fetchOrders();
-    });
-
-    socket.on("order:new", () => {
-      fetchOrders();
-    });
-
-    socket.on("wallet:update", () => {
-      fetchWalletStats();
-    });
+    socket.on("order:update", fetchOrders);
+    socket.on("order:new", fetchOrders);
+    socket.on("wallet:update", fetchWalletStats);
 
     return () => socket.disconnect();
   }, [fetchOrders, fetchWalletStats]);
@@ -184,10 +195,7 @@ export default function AdminOrders() {
             <tbody className="divide-y">
               {orders.length === 0 && (
                 <tr>
-                  <td
-                    colSpan="10"
-                    className="text-center py-6 text-gray-400"
-                  >
+                  <td colSpan="10" className="text-center py-6 text-gray-400">
                     No orders found
                   </td>
                 </tr>
@@ -205,26 +213,16 @@ export default function AdminOrders() {
                       {order.orderId}
                     </td>
 
-                    {/* ✅ FIXED HERE */}
                     <td className="px-6 py-4">
                       {order.user?.email || "Unknown"}
                     </td>
 
-                    {/* ✅ FIXED HERE */}
                     <td className="px-6 py-4 font-semibold">
-                      $
-                      {Number(
-                        order.user?.balance || 0
-                      ).toFixed(2)}
+                      ${Number(order.user?.balance || 0).toFixed(2)}
                     </td>
 
-                    <td className="px-6 py-4">
-                      {order.service}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      {order.quantity}
-                    </td>
+                    <td className="px-6 py-4">{order.service}</td>
+                    <td className="px-6 py-4">{order.quantity}</td>
 
                     <td className="px-6 py-4 truncate max-w-xs">
                       <a
@@ -259,23 +257,17 @@ export default function AdminOrders() {
                     </td>
 
                     <td className="px-6 py-4 flex gap-2">
-                      {["processing", "pending"].includes(
-                        order.status
-                      ) && (
+                      {["processing", "pending"].includes(order.status) && (
                         <>
                           <button
-                            onClick={() =>
-                              completeOrder(order._id)
-                            }
+                            onClick={() => completeOrder(order._id)}
                             className="px-3 py-1 text-xs bg-green-600 text-white rounded"
                           >
                             Complete
                           </button>
 
                           <button
-                            onClick={() =>
-                              refundOrder(order._id)
-                            }
+                            onClick={() => refundOrder(order._id)}
                             className="px-3 py-1 text-xs bg-red-600 text-white rounded"
                           >
                             Refund
@@ -307,9 +299,7 @@ export default function AdminOrders() {
           <button
             disabled={page === totalPages}
             onClick={() =>
-              setPage((p) =>
-                Math.min(totalPages, p + 1)
-              )
+              setPage((p) => Math.min(totalPages, p + 1))
             }
             className="px-3 py-1 bg-gray-200 rounded"
           >
@@ -319,4 +309,4 @@ export default function AdminOrders() {
       </div>
     </div>
   );
-  }
+                      }
