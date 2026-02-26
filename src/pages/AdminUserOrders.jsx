@@ -10,7 +10,6 @@ const AdminUserOrders = () => {
   const [processingId, setProcessingId] = useState(null);
   const [progressInput, setProgressInput] = useState({});
 
-  /* ================= FETCH ORDERS ================= */
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -29,7 +28,6 @@ const AdminUserOrders = () => {
     fetchOrders();
   }, []);
 
-  /* ================= UPDATE STATUS ================= */
   const updateStatus = async (id, status) => {
     try {
       setProcessingId(id);
@@ -43,7 +41,6 @@ const AdminUserOrders = () => {
     }
   };
 
-  /* ================= UPDATE PROGRESS ================= */
   const updateProgress = async (order) => {
     try {
       const value = Number(progressInput[order._id]);
@@ -67,7 +64,6 @@ const AdminUserOrders = () => {
     }
   };
 
-  /* ================= REFUND ================= */
   const refundOrder = async (order) => {
     const email = order.userId?.email || "";
     const firstName = email.split("@")[0] || "User";
@@ -90,66 +86,35 @@ const AdminUserOrders = () => {
     }
   };
 
-  /* ================= STATUS BADGE ================= */
-  const statusBadge = (status) => {
-    const map = {
-      pending: "#f59e0b",
-      processing: "#2563eb",
-      completed: "#16a34a",
-      failed: "#dc2626",
-      refunded: "#6b7280",
-      cancelled: "#6b7280",
-    };
-
-    return (
-      <span
-        style={{
-          background: map[status] + "20",
-          color: map[status] || "#000",
-          padding: "4px 10px",
-          borderRadius: "20px",
-          fontSize: "12px",
-          fontWeight: 600,
-          textTransform: "capitalize",
-        }}
-      >
-        {status}
-      </span>
-    );
+  const statusStyles = {
+    pending: "bg-yellow-100 text-yellow-600",
+    processing: "bg-blue-100 text-blue-600",
+    completed: "bg-green-100 text-green-600",
+    failed: "bg-red-100 text-red-600",
+    refunded: "bg-gray-200 text-gray-600",
+    cancelled: "bg-gray-200 text-gray-600",
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f3f4f6" }}>
+    <div className="flex min-h-screen bg-gray-100">
       <Toaster position="top-right" />
       <Sidebar />
 
-      <div style={{ flex: 1, padding: "30px" }}>
-        <h2 style={{ marginBottom: "20px" }}>User Orders</h2>
+      <div className="flex-1 p-8">
+        <h2 className="text-2xl font-bold mb-6">User Orders</h2>
 
-        {/* SEARCH */}
-        <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
+        {/* Search */}
+        <div className="flex gap-3 mb-6">
           <input
             type="text"
             placeholder="Search by Order ID or Email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              padding: "10px",
-              width: "300px",
-              borderRadius: "8px",
-              border: "1px solid #ddd",
-            }}
+            className="px-4 py-2 w-72 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             onClick={fetchOrders}
-            style={{
-              padding: "10px 20px",
-              borderRadius: "8px",
-              background: "#2563eb",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-            }}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             Search
           </button>
@@ -158,7 +123,7 @@ const AdminUserOrders = () => {
         {loading ? (
           <p>Loading orders...</p>
         ) : orders.length === 0 ? (
-          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
+          <div className="bg-white p-6 rounded-xl shadow">
             No orders found
           </div>
         ) : (
@@ -179,57 +144,64 @@ const AdminUserOrders = () => {
             return (
               <div
                 key={order._id}
-                style={{
-                  background: "#fff",
-                  padding: "20px",
-                  marginBottom: "15px",
-                  borderRadius: "12px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                }}
+                className="bg-white p-6 mb-5 rounded-2xl shadow-sm border border-gray-100"
               >
-                {/* HEADER */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 10,
-                  }}
-                >
-                  <strong>{order.orderId || order._id}</strong>
-                  {statusBadge(order.status)}
+                {/* Header */}
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-semibold text-sm text-gray-700">
+                    {order.orderId || order._id}
+                  </span>
+                  <span
+                    className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status]}`}
+                  >
+                    {order.status}
+                  </span>
                 </div>
 
-                <p><strong>Email:</strong> {order.userId?.email}</p>
-                <p><strong>Service:</strong> {order.service}</p>
-                <p><strong>Charge:</strong> ${order.charge}</p>
+                {/* Order Info */}
+                <div className="space-y-1 text-sm text-gray-700">
+                  <p><strong>Email:</strong> {order.userId?.email}</p>
 
-                {/* PROGRESS */}
-                <p>
-                  <strong>Progress:</strong>{" "}
-                  {order.quantityDelivered || 0} / {order.quantity}
-                </p>
+                  <p>
+                    <strong>User Balance:</strong>{" "}
+                    ${order.userId?.balance?.toFixed(2) || "0.00"}
+                  </p>
 
-                <div
-                  style={{
-                    width: "100%",
-                    height: "8px",
-                    background: "#e5e7eb",
-                    borderRadius: "6px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${progress}%`,
-                      height: "8px",
-                      background: "#2563eb",
-                      borderRadius: "6px",
-                    }}
-                  />
+                  <p><strong>Service:</strong> {order.service}</p>
+
+                  <p>
+                    <strong>Link:</strong>{" "}
+                    <a
+                      href={order.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline break-all"
+                    >
+                      {order.link}
+                    </a>
+                  </p>
+
+                  <p><strong>Charge:</strong> ${order.charge}</p>
                 </div>
 
+                {/* Progress */}
+                <div className="mt-4">
+                  <p className="text-sm mb-1">
+                    <strong>Progress:</strong>{" "}
+                    {order.quantityDelivered || 0} / {order.quantity}
+                  </p>
+
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Progress Update */}
                 {!locked && (
-                  <div style={{ display: "flex", gap: "10px" }}>
+                  <div className="flex gap-3 mt-4">
                     <input
                       type="number"
                       min={0}
@@ -242,48 +214,27 @@ const AdminUserOrders = () => {
                           [order._id]: e.target.value,
                         })
                       }
-                      style={{
-                        padding: "6px",
-                        borderRadius: "6px",
-                        border: "1px solid #ddd",
-                        width: "120px",
-                      }}
+                      className="px-3 py-1 border rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
                     <button
                       disabled={processingId === order._id}
                       onClick={() => updateProgress(order)}
-                      style={{
-                        padding: "6px 14px",
-                        borderRadius: "6px",
-                        border: "none",
-                        background: "#2563eb",
-                        color: "#fff",
-                        cursor: "pointer",
-                        opacity:
-                          processingId === order._id ? 0.6 : 1,
-                      }}
+                      className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                     >
                       Update
                     </button>
                   </div>
                 )}
 
-                {/* ACTIONS */}
-                <div style={{ marginTop: "12px", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2 mt-4">
                   {["pending", "processing", "completed", "failed"].map((s) => (
                     <button
                       key={s}
                       disabled={locked || processingId === order._id}
                       onClick={() => updateStatus(order._id, s)}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "6px",
-                        border: "none",
-                        background: "#e5e7eb",
-                        cursor: "pointer",
-                        opacity: locked ? 0.4 : 1,
-                      }}
+                      className="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-gray-300 disabled:opacity-40"
                     >
                       {s}
                     </button>
@@ -293,23 +244,14 @@ const AdminUserOrders = () => {
                     <button
                       disabled={processingId === order._id}
                       onClick={() => refundOrder(order)}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "6px",
-                        border: "none",
-                        background: "#dc2626",
-                        color: "#fff",
-                        cursor: "pointer",
-                        opacity:
-                          processingId === order._id ? 0.6 : 1,
-                      }}
+                      className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                     >
                       Refund
                     </button>
                   )}
                 </div>
 
-                <p style={{ marginTop: 10, fontSize: 12, color: "#6b7280" }}>
+                <p className="mt-4 text-xs text-gray-400">
                   {created?.toLocaleDateString()}{" "}
                   {created?.toLocaleTimeString()}
                 </p>
