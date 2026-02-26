@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import axios from "../api/axios";
+import API from "../api/axios"; // ✅ FIXED IMPORT
 import { io } from "socket.io-client";
 import Sidebar from "../components/Sidebar";
 import debounce from "lodash.debounce";
@@ -19,13 +19,12 @@ export default function AdminOrders() {
   ==================================*/
   const fetchOrders = useCallback(async () => {
     try {
-      const response = await axios.get(
+      const response = await API.get(
         `/admin/orders?search=${search}&page=${page}&limit=${limit}`
       );
 
       const data = response?.data || {};
 
-      // 🔥 Safe handling of response shape
       const ordersArray = Array.isArray(data.orders)
         ? data.orders
         : Array.isArray(data?.orders?.orders)
@@ -45,11 +44,10 @@ export default function AdminOrders() {
   ==================================*/
   const fetchWalletStats = useCallback(async () => {
     try {
-      // ✅ Correct endpoint
-      const response = await axios.get("/admin/wallets/stats");
+      const response = await API.get("/admin/wallets/stats");
+
       const data = response?.data || {};
 
-      // ✅ Correct backend field names
       setTotalMoney(data.balance || 0);
       setTotalUsed(data.totalUsed || 0);
     } catch (err) {
@@ -82,7 +80,7 @@ export default function AdminOrders() {
   ==================================*/
   const completeOrder = async (id) => {
     try {
-      await axios.post(`/admin/orders/${id}/complete`);
+      await API.post(`/admin/orders/${id}/complete`);
       fetchOrders();
       fetchWalletStats();
     } catch (err) {
@@ -95,7 +93,7 @@ export default function AdminOrders() {
   ==================================*/
   const refundOrder = async (id) => {
     try {
-      await axios.post(`/admin/orders/${id}/refund`);
+      await API.post(`/admin/orders/${id}/refund`);
       fetchOrders();
       fetchWalletStats();
     } catch (err) {
@@ -115,7 +113,6 @@ export default function AdminOrders() {
      SOCKET REALTIME
   ==================================*/
   useEffect(() => {
-    // Remove trailing /api for socket connection
     const baseURL =
       import.meta.env.VITE_API_URL?.replace("/api", "") ||
       "https://marinepanel-backend.onrender.com";
@@ -214,11 +211,11 @@ export default function AdminOrders() {
                     </td>
 
                     <td className="px-6 py-4">
-                      {order.user?.email || "Unknown"}
+                      {order.userId?.email || "Unknown"}
                     </td>
 
                     <td className="px-6 py-4 font-semibold">
-                      ${Number(order.user?.balance || 0).toFixed(2)}
+                      ${Number(order.userId?.balance || 0).toFixed(2)}
                     </td>
 
                     <td className="px-6 py-4">{order.service}</td>
@@ -309,4 +306,4 @@ export default function AdminOrders() {
       </div>
     </div>
   );
-                      }
+          }
