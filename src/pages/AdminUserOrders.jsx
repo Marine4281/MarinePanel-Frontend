@@ -154,7 +154,7 @@ const AdminUserOrders = () => {
 
                       <td>${order.userId?.balance ?? 0}</td>
 
-                      <td>{order.serviceId?.name || "N/A"}</td>
+                      <td>{order.service || "N/A"}</td>
 
                       <td>{order.quantity}</td>
 
