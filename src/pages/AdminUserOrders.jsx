@@ -7,6 +7,7 @@ const AdminUserOrders = () => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [processingId, setProcessingId] = useState(null);
 
   const fetchOrders = async () => {
     try {
@@ -28,17 +29,20 @@ const AdminUserOrders = () => {
 
   const updateStatus = async (id, status) => {
     try {
+      setProcessingId(id);
       await API.post(`/admin/user-orders/${id}/status`, { status });
       toast.success("Status updated");
       fetchOrders();
     } catch (err) {
       toast.error(err.response?.data?.message || "Update failed");
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const refundOrder = async (order) => {
     const email = order.userId?.email || "";
-    const firstName = email.split("@")[0];
+    const firstName = email.split("@")[0] || "User";
     const amount = order.charge;
 
     const confirmRefund = window.confirm(
@@ -48,11 +52,14 @@ const AdminUserOrders = () => {
     if (!confirmRefund) return;
 
     try {
+      setProcessingId(order._id);
       await API.post(`/admin/user-orders/${order._id}/refund`);
       toast.success(`$${amount} refunded to ${firstName}`);
       fetchOrders();
     } catch (err) {
       toast.error(err.response?.data?.message || "Refund failed");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -113,13 +120,22 @@ const AdminUserOrders = () => {
         {loading ? (
           <p>Loading orders...</p>
         ) : orders.length === 0 ? (
-          <div style={{ padding: "20px", background: "#fff", borderRadius: "8px" }}>
+          <div
+            style={{
+              padding: "20px",
+              background: "#fff",
+              borderRadius: "8px",
+            }}
+          >
             No orders found
           </div>
         ) : (
           orders.map((order) => {
             const email = order.userId?.email || "";
-            const firstName = email.split("@")[0];
+            const firstName = email.split("@")[0] || "User";
+            const created = order.createdAt
+              ? new Date(order.createdAt)
+              : null;
 
             return (
               <div
@@ -133,13 +149,19 @@ const AdminUserOrders = () => {
                 }}
               >
                 {/* Header */}
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "10px",
+                  }}
+                >
                   <strong>{order.orderId || order._id}</strong>
                   <span
                     style={{
                       color: statusColor(order.status),
                       fontWeight: 600,
-                      textTransform: "capitalize"
+                      textTransform: "capitalize",
                     }}
                   >
                     {order.status}
@@ -155,7 +177,7 @@ const AdminUserOrders = () => {
                 <p><strong>Quantity:</strong> {order.quantity}</p>
                 <p><strong>Charge:</strong> ${order.charge}</p>
 
-                {/* Service Link */}
+                {/* Link */}
                 <p>
                   <strong>Link:</strong>{" "}
                   <a
@@ -171,35 +193,47 @@ const AdminUserOrders = () => {
                 {/* Date & Time */}
                 <p>
                   <strong>Date:</strong>{" "}
-                  {order.createdAt
-                    ? new Date(order.createdAt).toLocaleDateString()}
+                  {created ? created.toLocaleDateString() : "N/A"}
                 </p>
+
                 <p>
                   <strong>Time:</strong>{" "}
-                  {order.createdAt
-                    ? new Date(order.createdAt).toLocaleTimeString()}
+                  {created ? created.toLocaleTimeString() : "N/A"}
                 </p>
 
                 {/* Actions */}
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
-                  {["pending", "processing", "completed", "failed"].map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => updateStatus(order._id, s)}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "6px",
-                        border: "none",
-                        cursor: "pointer",
-                        background: "#e5e7eb",
-                      }}
-                    >
-                      {s}
-                    </button>
-                  ))}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    flexWrap: "wrap",
+                    marginTop: "12px",
+                  }}
+                >
+                  {["pending", "processing", "completed", "failed"].map(
+                    (s) => (
+                      <button
+                        key={s}
+                        disabled={processingId === order._id}
+                        onClick={() => updateStatus(order._id, s)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          border: "none",
+                          cursor: "pointer",
+                          background: "#e5e7eb",
+                          opacity:
+                            processingId === order._id ? 0.6 : 1,
+                        }}
+                      >
+                        {s}
+                      </button>
+                    )
+                  )}
 
                   {order.status !== "refunded" && (
                     <button
+                      disabled={processingId === order._id}
                       onClick={() => refundOrder(order)}
                       style={{
                         padding: "6px 12px",
@@ -208,9 +242,13 @@ const AdminUserOrders = () => {
                         background: "#dc2626",
                         color: "#fff",
                         cursor: "pointer",
+                        opacity:
+                          processingId === order._id ? 0.6 : 1,
                       }}
                     >
-                      Refund
+                      {processingId === order._id
+                        ? "Processing..."
+                        : "Refund"}
                     </button>
                   )}
                 </div>
