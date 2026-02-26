@@ -8,7 +8,9 @@ const AdminUserOrders = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState(null);
+  const [progressInput, setProgressInput] = useState({});
 
+  /* ================= FETCH ORDERS ================= */
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -27,6 +29,7 @@ const AdminUserOrders = () => {
     fetchOrders();
   }, []);
 
+  /* ================= UPDATE STATUS ================= */
   const updateStatus = async (id, status) => {
     try {
       setProcessingId(id);
@@ -40,13 +43,37 @@ const AdminUserOrders = () => {
     }
   };
 
+  /* ================= UPDATE PROGRESS ================= */
+  const updateProgress = async (order) => {
+    try {
+      const value = Number(progressInput[order._id]);
+
+      if (isNaN(value)) {
+        return toast.error("Enter valid number");
+      }
+
+      setProcessingId(order._id);
+
+      await API.patch(`/admin/user-orders/${order._id}/progress`, {
+        quantityDelivered: value,
+      });
+
+      toast.success("Progress updated");
+      fetchOrders();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update progress");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  /* ================= REFUND ================= */
   const refundOrder = async (order) => {
     const email = order.userId?.email || "";
     const firstName = email.split("@")[0] || "User";
-    const amount = order.charge;
 
     const confirmRefund = window.confirm(
-      `Are you sure you want to refund $${amount} to ${firstName}?`
+      `Refund $${order.charge} to ${firstName}?`
     );
 
     if (!confirmRefund) return;
@@ -54,7 +81,7 @@ const AdminUserOrders = () => {
     try {
       setProcessingId(order._id);
       await API.post(`/admin/user-orders/${order._id}/refund`);
-      toast.success(`$${amount} refunded to ${firstName}`);
+      toast.success("Refund successful");
       fetchOrders();
     } catch (err) {
       toast.error(err.response?.data?.message || "Refund failed");
@@ -63,32 +90,43 @@ const AdminUserOrders = () => {
     }
   };
 
-  const statusColor = (status) => {
-    switch (status) {
-      case "completed":
-        return "#16a34a";
-      case "processing":
-        return "#2563eb";
-      case "pending":
-        return "#f59e0b";
-      case "failed":
-        return "#dc2626";
-      case "refunded":
-        return "#6b7280";
-      default:
-        return "#000";
-    }
+  /* ================= STATUS BADGE ================= */
+  const statusBadge = (status) => {
+    const map = {
+      pending: "#f59e0b",
+      processing: "#2563eb",
+      completed: "#16a34a",
+      failed: "#dc2626",
+      refunded: "#6b7280",
+      cancelled: "#6b7280",
+    };
+
+    return (
+      <span
+        style={{
+          background: map[status] + "20",
+          color: map[status] || "#000",
+          padding: "4px 10px",
+          borderRadius: "20px",
+          fontSize: "12px",
+          fontWeight: 600,
+          textTransform: "capitalize",
+        }}
+      >
+        {status}
+      </span>
+    );
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f9fafb" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f3f4f6" }}>
       <Toaster position="top-right" />
       <Sidebar />
 
       <div style={{ flex: 1, padding: "30px" }}>
         <h2 style={{ marginBottom: "20px" }}>User Orders</h2>
 
-        {/* Search */}
+        {/* SEARCH */}
         <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
           <input
             type="text"
@@ -98,7 +136,7 @@ const AdminUserOrders = () => {
             style={{
               padding: "10px",
               width: "300px",
-              borderRadius: "6px",
+              borderRadius: "8px",
               border: "1px solid #ddd",
             }}
           />
@@ -106,7 +144,7 @@ const AdminUserOrders = () => {
             onClick={fetchOrders}
             style={{
               padding: "10px 20px",
-              borderRadius: "6px",
+              borderRadius: "8px",
               background: "#2563eb",
               color: "#fff",
               border: "none",
@@ -120,22 +158,23 @@ const AdminUserOrders = () => {
         {loading ? (
           <p>Loading orders...</p>
         ) : orders.length === 0 ? (
-          <div
-            style={{
-              padding: "20px",
-              background: "#fff",
-              borderRadius: "8px",
-            }}
-          >
+          <div style={{ background: "#fff", padding: 20, borderRadius: 10 }}>
             No orders found
           </div>
         ) : (
           orders.map((order) => {
-            const email = order.userId?.email || "";
-            const firstName = email.split("@")[0] || "User";
             const created = order.createdAt
               ? new Date(order.createdAt)
               : null;
+
+            const progress =
+              ((order.quantityDelivered || 0) /
+                (order.quantity || 1)) *
+              100;
+
+            const locked =
+              order.status === "refunded" ||
+              order.status === "completed";
 
             return (
               <div
@@ -144,94 +183,113 @@ const AdminUserOrders = () => {
                   background: "#fff",
                   padding: "20px",
                   marginBottom: "15px",
-                  borderRadius: "10px",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                  borderRadius: "12px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                 }}
               >
-                {/* Header */}
+                {/* HEADER */}
                 <div
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    marginBottom: "10px",
+                    marginBottom: 10,
                   }}
                 >
                   <strong>{order.orderId || order._id}</strong>
-                  <span
-                    style={{
-                      color: statusColor(order.status),
-                      fontWeight: 600,
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {order.status}
-                  </span>
+                  {statusBadge(order.status)}
                 </div>
 
-                {/* User */}
-                <p><strong>User:</strong> {firstName}</p>
-                <p><strong>Email:</strong> {email}</p>
-
-                {/* Order Info */}
+                <p><strong>Email:</strong> {order.userId?.email}</p>
                 <p><strong>Service:</strong> {order.service}</p>
-                <p><strong>Quantity:</strong> {order.quantity}</p>
                 <p><strong>Charge:</strong> ${order.charge}</p>
 
-                {/* Link */}
+                {/* PROGRESS */}
                 <p>
-                  <strong>Link:</strong>{" "}
-                  <a
-                    href={order.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "#2563eb", wordBreak: "break-all" }}
-                  >
-                    {order.link}
-                  </a>
+                  <strong>Progress:</strong>{" "}
+                  {order.quantityDelivered || 0} / {order.quantity}
                 </p>
 
-                {/* Date & Time */}
-                <p>
-                  <strong>Date:</strong>{" "}
-                  {created ? created.toLocaleDateString() : "N/A"}
-                </p>
-
-                <p>
-                  <strong>Time:</strong>{" "}
-                  {created ? created.toLocaleTimeString() : "N/A"}
-                </p>
-
-                {/* Actions */}
                 <div
                   style={{
-                    display: "flex",
-                    gap: "10px",
-                    flexWrap: "wrap",
-                    marginTop: "12px",
+                    width: "100%",
+                    height: "8px",
+                    background: "#e5e7eb",
+                    borderRadius: "6px",
+                    marginBottom: "10px",
                   }}
                 >
-                  {["pending", "processing", "completed", "failed"].map(
-                    (s) => (
-                      <button
-                        key={s}
-                        disabled={processingId === order._id}
-                        onClick={() => updateStatus(order._id, s)}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "6px",
-                          border: "none",
-                          cursor: "pointer",
-                          background: "#e5e7eb",
-                          opacity:
-                            processingId === order._id ? 0.6 : 1,
-                        }}
-                      >
-                        {s}
-                      </button>
-                    )
-                  )}
+                  <div
+                    style={{
+                      width: `${progress}%`,
+                      height: "8px",
+                      background: "#2563eb",
+                      borderRadius: "6px",
+                    }}
+                  />
+                </div>
 
-                  {order.status !== "refunded" && (
+                {!locked && (
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <input
+                      type="number"
+                      min={0}
+                      max={order.quantity}
+                      placeholder="Delivered"
+                      value={progressInput[order._id] ?? ""}
+                      onChange={(e) =>
+                        setProgressInput({
+                          ...progressInput,
+                          [order._id]: e.target.value,
+                        })
+                      }
+                      style={{
+                        padding: "6px",
+                        borderRadius: "6px",
+                        border: "1px solid #ddd",
+                        width: "120px",
+                      }}
+                    />
+
+                    <button
+                      disabled={processingId === order._id}
+                      onClick={() => updateProgress(order)}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: "#2563eb",
+                        color: "#fff",
+                        cursor: "pointer",
+                        opacity:
+                          processingId === order._id ? 0.6 : 1,
+                      }}
+                    >
+                      Update
+                    </button>
+                  </div>
+                )}
+
+                {/* ACTIONS */}
+                <div style={{ marginTop: "12px", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {["pending", "processing", "completed", "failed"].map((s) => (
+                    <button
+                      key={s}
+                      disabled={locked || processingId === order._id}
+                      onClick={() => updateStatus(order._id, s)}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        border: "none",
+                        background: "#e5e7eb",
+                        cursor: "pointer",
+                        opacity: locked ? 0.4 : 1,
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+
+                  {!locked && order.quantityDelivered === 0 && (
                     <button
                       disabled={processingId === order._id}
                       onClick={() => refundOrder(order)}
@@ -246,12 +304,15 @@ const AdminUserOrders = () => {
                           processingId === order._id ? 0.6 : 1,
                       }}
                     >
-                      {processingId === order._id
-                        ? "Processing..."
-                        : "Refund"}
+                      Refund
                     </button>
                   )}
                 </div>
+
+                <p style={{ marginTop: 10, fontSize: 12, color: "#6b7280" }}>
+                  {created?.toLocaleDateString()}{" "}
+                  {created?.toLocaleTimeString()}
+                </p>
               </div>
             );
           })
