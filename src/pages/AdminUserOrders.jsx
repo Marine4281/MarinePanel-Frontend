@@ -164,7 +164,7 @@ const AdminUserOrders = () => {
 
                   <p>
                     <strong>User Balance:</strong>{" "}
-                    ${order.userId?.balance?.toFixed(2) || "0.00"}
+                    ${order.userId?.balance?.toFixed(4) || "0.0000"}
                   </p>
 
                   <p><strong>Service:</strong> {order.service}</p>
