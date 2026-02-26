@@ -6,7 +6,6 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import API from "../api/axios";
 
-// ✅ Use env backend URL correctly
 const baseURL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
   "https://marinepanel-backend.onrender.com";
@@ -18,6 +17,7 @@ const socket = io(baseURL, {
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [showAll, setShowAll] = useState(false);
+  const [expandedService, setExpandedService] = useState(null);
 
   /* ===============================
      FETCH ORDERS
@@ -50,6 +50,17 @@ const Orders = () => {
   }, []);
 
   /* ===============================
+     SHORT SERVICE NAME
+  =============================== */
+  const shortenService = (service) => {
+    if (!service) return "Service";
+
+    // Extract first two words only
+    const words = service.split(" ");
+    return words.slice(0, 2).join(" ");
+  };
+
+  /* ===============================
      STATUS BADGE
   =============================== */
   const statusBadge = (status) => {
@@ -65,7 +76,7 @@ const Orders = () => {
     return (
       <span
         className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-          map[status] || "bg-gray-100 text-gray-600"
+          map[status?.toLowerCase()] || "bg-gray-100 text-gray-600"
         }`}
       >
         {status}
@@ -76,13 +87,13 @@ const Orders = () => {
   const displayedOrders = showAll ? orders : orders.slice(0, 4);
 
   return (
-    <div className="bg-gray-100 min-h-screen flex flex-col">
+    <div className="bg-gray-100 min-h-screen flex flex-col overflow-x-hidden">
       <div className="sticky top-0 z-50">
         <Header />
       </div>
 
-      <main className="max-w-6xl mx-auto mt-6 flex-1 px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+      <main className="max-w-6xl mx-auto mt-6 flex-1 px-4 w-full">
+        <div className="bg-white rounded-2xl shadow-lg p-6 overflow-hidden">
 
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
@@ -97,16 +108,16 @@ const Orders = () => {
 
           {/* Orders Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-100 text-gray-600 uppercase">
+            <table className="w-full text-sm text-left min-w-[900px]">
+              <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                 <tr>
                   <th className="px-4 py-3">Order</th>
                   <th className="px-4 py-3">Service</th>
                   <th className="px-4 py-3">Link</th>
-                  <th className="px-4 py-3">Qty</th>
+                  <th className="px-4 py-3">Progress</th>
                   <th className="px-4 py-3">Charge</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Created</th>
+                  <th className="px-4 py-3">Date</th>
                 </tr>
               </thead>
 
@@ -121,14 +132,40 @@ const Orders = () => {
                       (order.quantity || 1)) *
                     100;
 
+                  const isExpanded = expandedService === order._id;
+
                   return (
-                    <tr key={order._id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">
+                    <tr key={order._id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 font-semibold text-gray-700">
                         #{order._id.slice(-6)}
                       </td>
 
-                      <td className="px-4 py-3">{order.service}</td>
+                      {/* SERVICE */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-800">
+                            {isExpanded
+                              ? order.service
+                              : shortenService(order.service)}
+                          </span>
 
+                          {order.service &&
+                            order.service.length > 25 && (
+                              <button
+                                onClick={() =>
+                                  setExpandedService(
+                                    isExpanded ? null : order._id
+                                  )
+                                }
+                                className="text-blue-500 text-sm font-bold hover:underline"
+                              >
+                                &gt;
+                              </button>
+                            )}
+                        </div>
+                      </td>
+
+                      {/* LINK */}
                       <td className="px-4 py-3 max-w-xs truncate">
                         <a
                           href={order.link}
@@ -136,31 +173,37 @@ const Orders = () => {
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline"
                         >
-                          View Link
+                          View
                         </a>
                       </td>
 
+                      {/* PROGRESS */}
                       <td className="px-4 py-3">
                         {order.quantityDelivered || 0} / {order.quantity}
                         <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
                           <div
-                            className="h-2 bg-blue-600 rounded-full"
+                            className="h-2 bg-blue-600 rounded-full transition-all"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
                       </td>
 
-                      <td className="px-4 py-3">
+                      {/* CHARGE */}
+                      <td className="px-4 py-3 font-medium">
                         ${Number(order.charge).toFixed(2)}
                       </td>
 
+                      {/* STATUS */}
                       <td className="px-4 py-3">
                         {statusBadge(order.status)}
                       </td>
 
-                      <td className="px-4 py-3">
+                      {/* DATE */}
+                      <td className="px-4 py-3 text-gray-600 text-xs">
                         {created
-                          ? created.toLocaleString()
+                          ? created.toLocaleDateString() +
+                            " " +
+                            created.toLocaleTimeString()
                           : "N/A"}
                       </td>
                     </tr>
@@ -169,7 +212,7 @@ const Orders = () => {
 
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="text-center p-4 text-gray-500">
+                    <td colSpan="7" className="text-center p-6 text-gray-500">
                       No orders found
                     </td>
                   </tr>
@@ -180,12 +223,12 @@ const Orders = () => {
 
           {/* View More / Less */}
           {orders.length > 4 && (
-            <div className="mt-4 pb-6 text-center">
+            <div className="mt-6 text-center">
               <button
                 onClick={() => setShowAll(!showAll)}
                 className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition"
               >
-                {showAll ? "View less" : "View more"}
+                {showAll ? "View Less" : "View More"}
               </button>
             </div>
           )}
