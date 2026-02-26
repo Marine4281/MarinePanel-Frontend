@@ -5,6 +5,8 @@ const links = [
   { name: "Users", icon: "fa-solid fa-users", path: "/admin/users" },
   { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
   { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
+  { name: "User Orders", icon: "fa-solid fa-clipboard-list", path: "/admin/admin/user-orders" },
+  
   { name: "Categories", icon: "fa-solid fa-box", path: "/admin/categories" },
   { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" }, 
