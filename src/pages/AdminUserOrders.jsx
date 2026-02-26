@@ -133,75 +133,76 @@ const AdminUserOrders = () => {
               </thead>
 
               <tbody>
-                {orders.length === 0 ? (
-                  <tr>
-                    <td colSpan="11" align="center">
-                      No orders found
-                    </td>
-                  </tr>
-                ) : (
-                  orders.map((order) => (
-                    <tr key={order._id}>
-                      <td>{order._id}</td>
-                      <td>{order.user?.email || "N/A"}</td>
-                      <td>${order.user?.balance ?? 0}</td>
-                      <td>{order.service?.name || "N/A"}</td>
-                      <td>{order.quantity}</td>
-                      <td>
-                        <a
-                          href={order.link}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View
-                        </a>
-                      </td>
-                      <td>${order.amount}</td>
-                      <td>{order.progress ?? 0}%</td>
-                      <td>{order.status}</td>
-                      <td>
-                        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-                          <button onClick={() => updateStatus(order._id, "pending")}>
-                            Pending
-                          </button>
-                          <button onClick={() => updateStatus(order._id, "processing")}>
-                            Processing
-                          </button>
-                          <button onClick={() => updateStatus(order._id, "completed")}>
-                            Completed
-                          </button>
-                          <button onClick={() => updateStatus(order._id, "failed")}>
-                            Failed
-                          </button>
+  {orders.length === 0 ? (
+    <tr>
+      <td colSpan="11" align="center">
+        No orders found
+      </td>
+    </tr>
+  ) : (
+    orders.map((order) => (
+      <tr key={order._id}>
+        <td>{order.orderId || order._id}</td>
 
-                          {order.status !== "refunded" && (
-                            <button
-                              onClick={() => refundOrder(order._id)}
-                              style={{
-                                backgroundColor: "red",
-                                color: "white",
-                              }}
-                            >
-                              Refund
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        {order.createdAt
-                          ? new Date(order.createdAt).toLocaleString()
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        <td>{order.userId?.email || "N/A"}</td>
+
+        <td>${order.userId?.balance ?? 0}</td>
+
+        <td>{order.serviceId?.name || "N/A"}</td>
+
+        <td>{order.quantity}</td>
+
+        <td>
+          <a href={order.link} target="_blank" rel="noreferrer">
+            View
+          </a>
+        </td>
+
+        <td>${order.charge ?? 0}</td>
+
+        <td>
+          {order.quantityDelivered
+            ? `${order.quantityDelivered}/${order.quantity}`
+            : `0/${order.quantity}`}
+        </td>
+
+        <td>{order.status}</td>
+
+        <td>
+          <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+            <button onClick={() => updateStatus(order._id, "pending")}>
+              Pending
+            </button>
+            <button onClick={() => updateStatus(order._id, "processing")}>
+              Processing
+            </button>
+            <button onClick={() => updateStatus(order._id, "completed")}>
+              Completed
+            </button>
+            <button onClick={() => updateStatus(order._id, "failed")}>
+              Failed
+            </button>
+
+            {order.status !== "refunded" && (
+              <button
+                onClick={() => refundOrder(order._id)}
+                style={{
+                  backgroundColor: "red",
+                  color: "white",
+                }}
+              >
+                Refund
+              </button>
+            )}
           </div>
-        )}
-      </div>
-    </div>
-  );
-};
+        </td>
 
-export default AdminUserOrders;
+        <td>
+          {order.createdAt
+            ? new Date(order.createdAt).toLocaleString()
+            : "N/A"}
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
