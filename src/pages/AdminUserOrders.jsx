@@ -9,6 +9,9 @@ const AdminUserOrders = () => {
 
   const token = localStorage.getItem("token");
 
+  /* ===============================
+     FETCH ORDERS
+  =============================== */
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -22,16 +25,13 @@ const AdminUserOrders = () => {
         }
       );
 
-      console.log("API Response:", res.data);
-
-      // ✅ Safe handling (prevents white screen crash)
-      if (Array.isArray(res.data)) {
-        setOrders(res.data);
-      } else if (Array.isArray(res.data.orders)) {
+      // Backend returns { orders, totalPages }
+      if (res.data?.orders && Array.isArray(res.data.orders)) {
         setOrders(res.data.orders);
       } else {
         setOrders([]);
       }
+
     } catch (err) {
       console.error("Fetch Orders Error:", err);
       setOrders([]);
@@ -44,9 +44,12 @@ const AdminUserOrders = () => {
     fetchOrders();
   }, []);
 
+  /* ===============================
+     UPDATE STATUS
+  =============================== */
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(
+      await axios.post(
         `/api/admin/user-orders/${id}/status`,
         { status },
         {
@@ -61,6 +64,9 @@ const AdminUserOrders = () => {
     }
   };
 
+  /* ===============================
+     REFUND ORDER
+  =============================== */
   const refundOrder = async (id) => {
     if (!window.confirm("Are you sure you want to refund this order?"))
       return;
@@ -88,7 +94,7 @@ const AdminUserOrders = () => {
       <div style={{ flex: 1, padding: "30px" }}>
         <h2 style={{ marginBottom: "20px" }}>Admin - User Orders</h2>
 
-        {/* 🔍 Search */}
+        {/* SEARCH */}
         <div style={{ marginBottom: "20px" }}>
           <input
             type="text"
@@ -133,76 +139,95 @@ const AdminUserOrders = () => {
               </thead>
 
               <tbody>
-  {orders.length === 0 ? (
-    <tr>
-      <td colSpan="11" align="center">
-        No orders found
-      </td>
-    </tr>
-  ) : (
-    orders.map((order) => (
-      <tr key={order._id}>
-        <td>{order.orderId || order._id}</td>
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan="11" align="center">
+                      No orders found
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((order) => (
+                    <tr key={order._id}>
+                      <td>{order.orderId || order._id}</td>
 
-        <td>{order.userId?.email || "N/A"}</td>
+                      <td>{order.userId?.email || "N/A"}</td>
 
-        <td>${order.userId?.balance ?? 0}</td>
+                      <td>${order.userId?.balance ?? 0}</td>
 
-        <td>{order.serviceId?.name || "N/A"}</td>
+                      <td>{order.serviceId?.name || "N/A"}</td>
 
-        <td>{order.quantity}</td>
+                      <td>{order.quantity}</td>
 
-        <td>
-          <a href={order.link} target="_blank" rel="noreferrer">
-            View
-          </a>
-        </td>
+                      <td>
+                        <a
+                          href={order.link}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View
+                        </a>
+                      </td>
 
-        <td>${order.charge ?? 0}</td>
+                      <td>${order.charge ?? 0}</td>
 
-        <td>
-          {order.quantityDelivered
-            ? `${order.quantityDelivered}/${order.quantity}`
-            : `0/${order.quantity}`}
-        </td>
+                      <td>
+                        {order.quantityDelivered
+                          ? `${order.quantityDelivered}/${order.quantity}`
+                          : `0/${order.quantity}`}
+                      </td>
 
-        <td>{order.status}</td>
+                      <td>{order.status}</td>
 
-        <td>
-          <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-            <button onClick={() => updateStatus(order._id, "pending")}>
-              Pending
-            </button>
-            <button onClick={() => updateStatus(order._id, "processing")}>
-              Processing
-            </button>
-            <button onClick={() => updateStatus(order._id, "completed")}>
-              Completed
-            </button>
-            <button onClick={() => updateStatus(order._id, "failed")}>
-              Failed
-            </button>
+                      <td>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "5px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <button onClick={() => updateStatus(order._id, "pending")}>
+                            Pending
+                          </button>
+                          <button onClick={() => updateStatus(order._id, "processing")}>
+                            Processing
+                          </button>
+                          <button onClick={() => updateStatus(order._id, "completed")}>
+                            Completed
+                          </button>
+                          <button onClick={() => updateStatus(order._id, "failed")}>
+                            Failed
+                          </button>
 
-            {order.status !== "refunded" && (
-              <button
-                onClick={() => refundOrder(order._id)}
-                style={{
-                  backgroundColor: "red",
-                  color: "white",
-                }}
-              >
-                Refund
-              </button>
-            )}
+                          {order.status !== "refunded" && (
+                            <button
+                              onClick={() => refundOrder(order._id)}
+                              style={{
+                                backgroundColor: "red",
+                                color: "white",
+                              }}
+                            >
+                              Refund
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      <td>
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </td>
+        )}
+      </div>
+    </div>
+  );
+};
 
-        <td>
-          {order.createdAt
-            ? new Date(order.createdAt).toLocaleString()
-            : "N/A"}
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
+export default AdminUserOrders;
