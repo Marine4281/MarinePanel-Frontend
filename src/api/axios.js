@@ -1,16 +1,16 @@
+// Updated Axios
 import axios from "axios";
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ||
-  "https://marinepanel-backend.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL || "/api",  // 🔥 change here
   headers: {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache",
     Pragma: "no-cache",
     Expires: "0",
   },
-  withCredentials: true, // If you plan to use cookies
+  withCredentials: true, // cookies will now work correctly
 });
 
 // Request interceptor to add auth token
