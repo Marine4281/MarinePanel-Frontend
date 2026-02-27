@@ -190,7 +190,7 @@ const Orders = () => {
 
                       {/* CHARGE */}
                       <td className="px-4 py-3 font-medium">
-                        ${Number(order.charge).toFixed(2)}
+                        ${Number(order.charge).toFixed(4)}
                       </td>
 
                       {/* STATUS */}
