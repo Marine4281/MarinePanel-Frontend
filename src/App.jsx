@@ -20,7 +20,6 @@ import AdminService from "./pages/AdminService";
 import AdminSettings from "./pages/AdminSettings";
 import AdminPaymentMethods from "./pages/AdminPaymentMethods";
 import AdminOrders from "./pages/AdminOrders";
-import AdminUserOrders from "./pages/AdminUserOrders";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -120,15 +119,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-       <Route
-         path="/admin/user-orders"
-         element={
-          <ProtectedRoute adminOnly>
-            <AdminUserOrders />
-          </ProtectedRoute>
-        }
-       />
       </Routes>
     </AuthProvider>
   );
-        }
+                }
