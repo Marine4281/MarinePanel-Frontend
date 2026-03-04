@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { io } from "socket.io-client";
 import API from "../api/axios";
 
 const ServicesContext = createContext();
@@ -23,7 +24,34 @@ export const ServicesProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Initial fetch
     fetchServices();
+
+    // =========================
+    // 🔥 SOCKET CONNECTION
+    // =========================
+    const socket = io("https://marinepanel-backend.onrender.com", {
+      transports: ["websocket"],
+    });
+
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+    });
+
+    // Listen for service updates from backend
+    socket.on("servicesUpdated", () => {
+      console.log("🔄 Services updated — refreshing...");
+      fetchServices();
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
+    });
+
+    // Cleanup
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   // =========================
