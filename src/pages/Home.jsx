@@ -6,19 +6,6 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
-      setService("");
-      return;
-    }
-
-    const defaultService =
-      servicesList.findimport { useState, useEffect, useMemo, useCallback } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useServices } from "../context/ServicesContext";
-
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import API from "../api/axios";
-import toast from "react-hot-toast";
 import FloatingSupport from "../components/FloatingSupport";
 
 import InfoBanner from "../components/home/InfoBanner";
