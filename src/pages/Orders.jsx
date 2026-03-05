@@ -32,22 +32,22 @@ const Orders = () => {
      SOCKET LIVE UPDATES
   =============================== */
   useEffect(() => {
-    socket.on("orderUpdate", (updatedOrder) => {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order._id === updatedOrder._id
-            ? {
-                ...order,
-                status: updatedOrder.status,
-                quantityDelivered: updatedOrder.quantityDelivered,
-              }
-            : order
-        )
-      );
-    });
+  socket.on("orderUpdated", (data) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order._id === data.orderId
+          ? {
+              ...order,
+              status: data.status,
+              quantityDelivered: data.delivered,
+            }
+          : order
+      )
+    );
+  });
 
-    return () => socket.off("order:update");
-  }, []);
+  return () => socket.off("orderUpdated");
+}, []);
 
   /* ===============================
      SHORT SERVICE NAME
