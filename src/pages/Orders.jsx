@@ -32,7 +32,7 @@ const Orders = () => {
      SOCKET LIVE UPDATES
   =============================== */
   useEffect(() => {
-    socket.on("order:update", (updatedOrder) => {
+    socket.on("orderUpdate", (updatedOrder) => {
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
           order._id === updatedOrder._id
