@@ -1,358 +1,243 @@
+// pages/Orders.js
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { io } from "socket.io-client";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import API from "../api/axios";
-import toast from "react-hot-toast";
-import Sidebar from "../components/Sidebar";
-import FreeServiceFields from "../components/FreeServiceFields";
-import AdminServiceTable from "../components/AdminServiceTable";
 
-const initialForm = {
-  platform: "",
-  category: "",
-  name: "",
-  provider: "",
-  providerApiUrl: "",
-  providerServiceId: "",
-  providerApiKey: "",
-  rate: "",
-  min: "",
-  max: "",
-  description: "",
-  refillAllowed: true,
-  cancelAllowed: true,
-  isDefault: false,
-  isDefaultCategoryGlobal: false,
-  isDefaultCategoryPlatform: false,
-  isFree: false,
-  freeQuantity: "",
-  cooldownHours: "",
-};
+const baseURL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") ||
+  "https://marinepanel-backend.onrender.com";
 
-const AdminService = () => {
-  const [services, setServices] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
-  const [form, setForm] = useState(initialForm);
+const socket = io(baseURL, {
+  transports: ["websocket"],
+});
 
-  // ✅ SHORTEN FUNCTION APPLIED
-  const shortenService = (text) => {
-    if (!text) return "";
-    const words = text.split(" ");
+const Orders = () => {
+  const [orders, setOrders] = useState([]);
+  const [showAll, setShowAll] = useState(false);
+  const [expandedService, setExpandedService] = useState(null);
+
+  /* ===============================
+     FETCH ORDERS
+  =============================== */
+  useEffect(() => {
+    API.get("/orders/my-orders")
+      .then((res) => setOrders(res.data || []))
+      .catch(() => console.error("Failed to load orders"));
+  }, []);
+
+  /* ===============================
+     SOCKET LIVE UPDATES
+  =============================== */
+  useEffect(() => {
+    socket.on("order:update", (updatedOrder) => {
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === updatedOrder._id
+            ? {
+                ...order,
+                status: updatedOrder.status,
+                quantityDelivered: updatedOrder.quantityDelivered,
+              }
+            : order
+        )
+      );
+    });
+
+    return () => socket.off("order:update");
+  }, []);
+
+  /* ===============================
+     SHORT SERVICE NAME
+  =============================== */
+  const shortenService = (service) => {
+    if (!service) return "Service";
+
+    // Extract first two words only
+    const words = service.split(" ");
     return words.slice(0, 2).join(" ");
   };
 
-  // ================= FETCH SERVICES =================
-  const fetchServices = async () => {
-    try {
-      const res = await API.get("/admin/services");
+  /* ===============================
+     STATUS BADGE
+  =============================== */
+  const statusBadge = (status) => {
+    const map = {
+      pending: "bg-yellow-100 text-yellow-700",
+      processing: "bg-blue-100 text-blue-700",
+      completed: "bg-green-100 text-green-700",
+      failed: "bg-red-100 text-red-700",
+      refunded: "bg-purple-100 text-purple-700",
+      cancelled: "bg-gray-200 text-gray-600",
+    };
 
-      // ✅ APPLY SHORTENING HERE
-      const formatted = res.data.map((service) => ({
-        ...service,
-        platform: shortenService(service.platform),
-        category: shortenService(service.category),
-        name: shortenService(service.name),
-      }));
-
-      setServices(formatted);
-    } catch (err) {
-      toast.error("Failed to fetch services");
-    }
+    return (
+      <span
+        className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
+          map[status?.toLowerCase()] || "bg-gray-100 text-gray-600"
+        }`}
+      >
+        {status}
+      </span>
+    );
   };
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  // ================= HANDLE INPUT =================
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  // ================= SUBMIT =================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (
-      !form.platform ||
-      !form.category ||
-      !form.name ||
-      !form.provider ||
-      (!form.isFree && !form.rate)
-    ) {
-      return toast.error("Please fill all required fields");
-    }
-
-    try {
-      if (selectedService) {
-        await API.put(`/admin/services/${selectedService._id}`, form);
-        toast.success("Service updated successfully");
-      } else {
-        await API.post("/admin/services", form);
-        toast.success("Service added successfully");
-      }
-
-      setForm(initialForm);
-      setSelectedService(null);
-      fetchServices();
-    } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to save service");
-    }
-  };
-
-  // ================= EDIT =================
-  const handleEdit = (service) => {
-    setSelectedService(service);
-    setForm({
-      ...initialForm,
-      ...service,
-    });
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // ================= DELETE =================
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this service?"))
-      return;
-
-    try {
-      await API.delete(`/admin/services/${id}`);
-      toast.success("Service deleted");
-      fetchServices();
-    } catch {
-      toast.error("Failed to delete service");
-    }
-  };
-
-  // ================= TOGGLE STATUS =================
-  const handleToggleStatus = async (id) => {
-    try {
-      await API.patch(`/admin/services/${id}/toggle`);
-      toast.success("Service status updated");
-      fetchServices();
-    } catch {
-      toast.error("Failed to update status");
-    }
-  };
+  const displayedOrders = showAll ? orders : orders.slice(0, 4);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-
-      {/* ✅ SMALLER SIDEBAR */}
-      <div className="hidden md:block md:w-52 fixed h-full">
-        <Sidebar />
+    <div className="bg-gray-100 min-h-screen flex flex-col overflow-x-hidden">
+      <div className="sticky top-0 z-50">
+        <Header />
       </div>
 
-      {/* ✅ MOBILE SIDEBAR */}
-      <div className="md:hidden w-full">
-        <Sidebar />
-      </div>
+      <main className="max-w-6xl mx-auto mt-6 flex-1 px-4 w-full">
+        <div className="bg-white rounded-2xl shadow-lg p-6 overflow-hidden">
 
-      {/* ✅ MAIN CONTENT (LESS GAP) */}
-      <div className="flex-1 md:ml-52 p-4 md:p-6 w-full">
-
-        <h2 className="text-2xl md:text-3xl font-bold mb-6">
-          {selectedService ? "Edit Service" : "Add New Service"}
-        </h2>
-
-        {/* ================= FORM ================= */}
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-2xl shadow-lg p-6 mb-10 space-y-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <div>
-              <label className="block font-medium mb-1">Platform *</label>
-              <input
-                name="platform"
-                value={form.platform}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Category *</label>
-              <input
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Service Name *</label>
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Provider *</label>
-              <input
-                name="provider"
-                value={form.provider}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Rate per 1000 ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                name="rate"
-                value={form.rate}
-                onChange={handleChange}
-                disabled={form.isFree}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Min Order</label>
-              <input
-                type="number"
-                name="min"
-                value={form.min}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Max Order</label>
-              <input
-                type="number"
-                name="max"
-                value={form.max}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Provider Service ID</label>
-              <input
-                name="providerServiceId"
-                value={form.providerServiceId}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">My Orders</h2>
+            <Link
+              to="/home"
+              className="bg-orange-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-orange-600 transition"
+            >
+              + New Order
+            </Link>
           </div>
 
-          <div>
-            <label className="block font-medium mb-1">Description</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows={3}
-              className="w-full p-3 border rounded-lg"
-            />
+          {/* Orders Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left min-w-[900px]">
+              <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
+                <tr>
+                  <th className="px-4 py-3">Order</th>
+                  <th className="px-4 py-3">Service</th>
+                  <th className="px-4 py-3">Link</th>
+                  <th className="px-4 py-3">Progress</th>
+                  <th className="px-4 py-3">Charge</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Date</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y">
+                {displayedOrders.map((order) => {
+                  const created = order.createdAt
+                    ? new Date(order.createdAt)
+                    : null;
+
+                  const progress =
+                    ((order.quantityDelivered || 0) /
+                      (order.quantity || 1)) *
+                    100;
+
+                  const isExpanded = expandedService === order._id;
+
+                  return (
+                    <tr key={order._id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 font-semibold text-gray-700">
+                        #{order._id.slice(-6)}
+                      </td>
+
+                      {/* SERVICE */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-800">
+                            {isExpanded
+                              ? order.service
+                              : shortenService(order.service)}
+                          </span>
+
+                          {order.service &&
+                            order.service.length > 25 && (
+                              <button
+                                onClick={() =>
+                                  setExpandedService(
+                                    isExpanded ? null : order._id
+                                  )
+                                }
+                                className="text-blue-500 text-sm font-bold hover:underline"
+                              >
+                                &gt;
+                              </button>
+                            )}
+                        </div>
+                      </td>
+
+                      {/* LINK */}
+                      <td className="px-4 py-3 max-w-xs truncate">
+                        <a
+                          href={order.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          View
+                        </a>
+                      </td>
+
+                      {/* PROGRESS */}
+                      <td className="px-4 py-3">
+                        {order.quantityDelivered || 0} / {order.quantity}
+                        <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
+                          <div
+                            className="h-2 bg-blue-600 rounded-full transition-all"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </td>
+
+                      {/* CHARGE */}
+                      <td className="px-4 py-3 font-medium">
+                        ${Number(order.charge).toFixed(4)}
+                      </td>
+
+                      {/* STATUS */}
+                      <td className="px-4 py-3">
+                        {statusBadge(order.status)}
+                      </td>
+
+                      {/* DATE */}
+                      <td className="px-4 py-3 text-gray-600 text-xs">
+                        {created
+                          ? created.toLocaleDateString() +
+                            " " +
+                            created.toLocaleTimeString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {orders.length === 0 && (
+                  <tr>
+                    <td colSpan="7" className="text-center p-6 text-gray-500">
+                      No orders found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="isFree"
-              checked={form.isFree}
-              onChange={handleChange}
-            />
-            🎁 Enable Free Service
-          </label>
-
-          <FreeServiceFields form={form} handleChange={handleChange} />
-
-          <div className="flex flex-wrap gap-6 pt-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="refillAllowed"
-                checked={form.refillAllowed}
-                onChange={handleChange}
-              />
-              Refill Allowed
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="cancelAllowed"
-                checked={form.cancelAllowed}
-                onChange={handleChange}
-              />
-              Cancel Allowed
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isDefault"
-                checked={form.isDefault}
-                onChange={handleChange}
-              />
-              Default Service (per category)
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isDefaultCategoryGlobal"
-                checked={form.isDefaultCategoryGlobal}
-                onChange={handleChange}
-              />
-              Default Category (Global)
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isDefaultCategoryPlatform"
-                checked={form.isDefaultCategoryPlatform}
-                onChange={handleChange}
-              />
-              Default Category (Per Platform)
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
-          >
-            {selectedService ? "Update Service" : "Add Service"}
-          </button>
-        </form>
-
-        {/* ================= TABLE ================= */}
-        <div className="overflow-x-auto bg-white rounded-2xl shadow-lg p-4">
-          <AdminServiceTable
-            services={services}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onToggleStatus={handleToggleStatus}
-          />
+          {/* View More / Less */}
+          {orders.length > 4 && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setShowAll(!showAll)}
+                className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition"
+              >
+                {showAll ? "View Less" : "View More"}
+              </button>
+            </div>
+          )}
         </div>
+      </main>
 
-      </div>
+      <Footer />
     </div>
   );
 };
 
-export default AdminService;
+export default Orders;
