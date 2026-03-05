@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import toast, { Toaster } from "react-hot-toast";
+import { io } from "socket.io-client";
+
+/* SOCKET CONNECTION */
+const baseURL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") ||
+  "https://marinepanel-backend.onrender.com";
+
+const socket = io(baseURL, {
+  transports: ["websocket"],
+});
 
 const AdminUserOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -26,6 +36,27 @@ const AdminUserOrders = () => {
 
   useEffect(() => {
     fetchOrders();
+  }, []);
+
+  /* ===============================
+     SOCKET LIVE UPDATES
+  =============================== */
+  useEffect(() => {
+    socket.on("orderUpdated", (data) => {
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === data.orderId
+            ? {
+                ...order,
+                status: data.status,
+                quantityDelivered: data.delivered,
+              }
+            : order
+        )
+      );
+    });
+
+    return () => socket.off("orderUpdated");
   }, []);
 
   const updateStatus = async (id, status) => {
@@ -169,6 +200,12 @@ const AdminUserOrders = () => {
 
                   <p><strong>Service:</strong> {order.service}</p>
 
+                  {/* PROVIDER */}
+                  <p>
+                    <strong>Provider:</strong>{" "}
+                    {order.provider || "N/A"}
+                  </p>
+
                   <p>
                     <strong>Link:</strong>{" "}
                     <a
@@ -182,6 +219,16 @@ const AdminUserOrders = () => {
                   </p>
 
                   <p><strong>Charge:</strong> ${order.charge}</p>
+
+                  {/* DATE + TIME */}
+                  <p>
+                    <strong>Created:</strong>{" "}
+                    {created
+                      ? created.toLocaleDateString() +
+                        " " +
+                        created.toLocaleTimeString()
+                      : "N/A"}
+                  </p>
                 </div>
 
                 {/* Progress */}
