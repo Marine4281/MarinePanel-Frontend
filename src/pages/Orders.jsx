@@ -28,6 +28,15 @@ const Orders = () => {
       .catch(() => console.error("Failed to load orders"));
   }, []);
 
+  /* JOIN USER ROOM */
+useEffect(() => {
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (user?._id) {
+    socket.emit("join_user_room", user._id);
+  }
+}, []);
+
   /* ===============================
      SOCKET LIVE UPDATES
   =============================== */
