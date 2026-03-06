@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { useEffect } from "react";
 
 import LandingPage from "./pages/LandingPage"; // ✅ ADD THIS
 
@@ -25,19 +24,18 @@ import AdminUserOrders from "./pages/AdminUserOrders";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
+// ✅ NEW: Import network manager
 import { setupNetworkManager } from "./utils/networkManager";
+import { useEffect } from "react";
 
 export default function App() {
-  
-    // ✅ Initialize network manager
+  // ✅ Initialize network manager in useEffect
   useEffect(() => {
     const cleanup = setupNetworkManager(); // handles offline → online refresh
     return cleanup; // cleanup listeners on unmount
   }, []);
 
   return (
-    <AuthProvider>
-      <Toaster position="top-right" reverseOrder={false} />
     <AuthProvider>
       <Toaster position="top-right" reverseOrder={false} />
 
@@ -132,15 +130,15 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-       <Route
-         path="/admin/user-orders"
-         element={
-          <ProtectedRoute adminOnly>
-            <AdminUserOrders />
-          </ProtectedRoute>
-        }
-       />
+        <Route
+          path="/admin/user-orders"
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminUserOrders />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </AuthProvider>
   );
-          }
+            }
