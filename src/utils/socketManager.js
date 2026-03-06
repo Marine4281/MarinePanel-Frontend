@@ -7,6 +7,7 @@ export const connectSocket = (authContext, servicesContext) => {
 
   socket = io("https://marinepanel-backend.onrender.com", {
     transports: ["websocket"],
+    reconnection: true,
   });
 
   socket.on("connect", () => {
@@ -54,6 +55,21 @@ export const connectSocket = (authContext, servicesContext) => {
 
   return socket;
 };
+
+/* =========================
+   RECONNECT SOCKET
+========================= */
+
+export const reconnectSocket = () => {
+  if (socket) {
+    console.log("🔌 Reconnecting socket...");
+    socket.connect();
+  }
+};
+
+/* =========================
+   DISCONNECT SOCKET
+========================= */
 
 export const disconnectSocket = () => {
   if (socket) {
