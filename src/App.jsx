@@ -27,13 +27,14 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { setupNetworkManager } from "./utils/networkManager";
 
 function AppContent() {
-  const { dispatch: authDispatch } = useAuthContext();
-  const { dispatch: servicesDispatch } = useServicesContext();
+  const authContext = useAuthContext();
+  const servicesContext = useServices();
 
   useEffect(() => {
-    const cleanup = setupNetworkManager(authDispatch, servicesDispatch);
+    const cleanup = setupNetworkManager(authContext, servicesContext);
     return cleanup;
-  }, [authDispatch, servicesDispatch]);
+  }, [authContext, servicesContext]);
+
 
   return (
     <>
