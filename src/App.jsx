@@ -1,10 +1,11 @@
 import { Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuthContext } from "./context/AuthContext";
+import { ServicesProvider, useServicesContext } from "./context/ServicesContext";
 import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import { useEffect } from "react";
 
-import LandingPage from "./pages/LandingPage"; // ✅ ADD THIS
-
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -23,29 +24,24 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminUserOrders from "./pages/AdminUserOrders";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-
-// ✅ NEW: Import network manager
 import { setupNetworkManager } from "./utils/networkManager";
-import { useEffect } from "react";
 
-export default function App() {
-  // ✅ Initialize network manager in useEffect
-
-  const { dispatch: authDispatch } = useContext(AuthContext);
-  const { dispatch: servicesDispatch } = useContext(ServicesContext);
+function AppContent() {
+  const { dispatch: authDispatch } = useAuthContext();
+  const { dispatch: servicesDispatch } = useServicesContext();
 
   useEffect(() => {
     const cleanup = setupNetworkManager(authDispatch, servicesDispatch);
     return cleanup;
-  }, []);
+  }, [authDispatch, servicesDispatch]);
 
   return (
-    <AuthProvider>
+    <>
       <Toaster position="top-right" reverseOrder={false} />
 
       <Routes>
         {/* 🌍 Public Routes */}
-        <Route path="/" element={<LandingPage />} /> {/* ✅ CHANGED */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -143,6 +139,16 @@ export default function App() {
           }
         />
       </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <ServicesProvider>
+        <AppContent />
+      </ServicesProvider>
     </AuthProvider>
   );
-            }
+  }
