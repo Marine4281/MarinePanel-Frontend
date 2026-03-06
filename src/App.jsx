@@ -28,7 +28,7 @@ import { setupNetworkManager } from "./utils/networkManager";
 
 function AppContent() {
   const authContext = useAuthContext();
-  const servicesContext = useServicesContext(); // ✅ fixed
+  const servicesContext = useContext(); // ✅ fixed
 
   useEffect(() => {
     const cleanup = setupNetworkManager(authContext, servicesContext);
