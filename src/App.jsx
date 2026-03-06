@@ -24,8 +24,20 @@ import AdminUserOrders from "./pages/AdminUserOrders";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import { setupNetworkManager } from "./utils/networkManager";
+
 export default function App() {
   return (
+
+    // ✅ Initialize network manager
+  useEffect(() => {
+    const cleanup = setupNetworkManager(); // handles offline → online refresh
+    return cleanup; // cleanup listeners on unmount
+  }, []);
+
+  return (
+    <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
     <AuthProvider>
       <Toaster position="top-right" reverseOrder={false} />
 
