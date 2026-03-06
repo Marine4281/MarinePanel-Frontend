@@ -96,7 +96,7 @@ const AdminUserOrders = () => {
   };
 
   const refundOrder = async (order) => {
-    const email = order.userId?.email || "";
+    const email = order.user?.email || "";
     const firstName = email.split("@")[0] || "User";
 
     const confirmRefund = window.confirm(
