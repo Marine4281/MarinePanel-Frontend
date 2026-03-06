@@ -28,8 +28,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { setupNetworkManager } from "./utils/networkManager";
 
 export default function App() {
-  return (
-
+  
     // ✅ Initialize network manager
   useEffect(() => {
     const cleanup = setupNetworkManager(); // handles offline → online refresh
