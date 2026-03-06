@@ -5,7 +5,7 @@ import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { useEffect, useContext } from "react";
 
-import setupNetworkManager from "./utils/setupNetworkManager"; // ✅ required
+import setupNetworkManager from "./utils/NetworkManager"; 
 
 import LandingPage from "./pages/LandingPage";
 
