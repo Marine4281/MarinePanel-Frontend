@@ -1,13 +1,10 @@
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { useAuthContext } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { useEffect, useContext } from "react";
+import { useEffect } from "react";
 
-import setupNetworkManager from "./utils/NetworkManager"; 
-
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/LandingPage"; // ✅ ADD THIS
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -28,9 +25,11 @@ import AdminUserOrders from "./pages/AdminUserOrders";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import { setupNetworkManager } from "./utils/networkManager";
+
 export default function App() {
   const authContext = useAuthContext();
-  const servicesContext = useContext(null); // ✅ safe placeholder
+  const servicesContext = useContext(); // ✅ fixed
 
   useEffect(() => {
     const cleanup = setupNetworkManager(authContext, servicesContext);
@@ -42,9 +41,8 @@ export default function App() {
       <Toaster position="top-right" reverseOrder={false} />
 
       <Routes>
-
         {/* 🌍 Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage />} /> {/* ✅ CHANGED */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -59,7 +57,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/wallet"
           element={
@@ -68,7 +65,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/orders"
           element={
@@ -77,7 +73,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/profile"
           element={
@@ -88,7 +83,6 @@ export default function App() {
         />
 
         {/* 👑 Admin Routes */}
-
         <Route
           path="/admin"
           element={
@@ -97,7 +91,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/admin/users"
           element={
@@ -106,7 +99,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/admin/payment-methods"
           element={
@@ -115,7 +107,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/admin/services"
           element={
@@ -124,7 +115,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/admin/settings"
           element={
@@ -133,7 +123,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/admin/orders"
           element={
@@ -142,17 +131,15 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/admin/user-orders"
-          element={
-            <ProtectedRoute adminOnly>
-              <AdminUserOrders />
-            </ProtectedRoute>
-          }
-        />
-
+       <Route
+         path="/admin/user-orders"
+         element={
+          <ProtectedRoute adminOnly>
+            <AdminUserOrders />
+          </ProtectedRoute>
+        }
+       />
       </Routes>
     </AuthProvider>
   );
-              }
+}
