@@ -1,27 +1,34 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import API from "../api/axios";
+import Sidebar from "../components/Sidebar";
+import toast, { Toaster } from "react-hot-toast";
+import { io } from "socket.io-client";
+
+/* SOCKET CONNECTION */
+const baseURL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") ||
+  "https://marinepanel-backend.onrender.com";
+
+const socket = io(baseURL, {
+  transports: ["websocket"],
+});
 
 const AdminUserOrders = () => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-
-  const limit = 10;
+  const [processingId, setProcessingId] = useState(null);
+  const [progressInput, setProgressInput] = useState({});
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-
-      const res = await axios.get(
-        `/api/admin/user-orders?search=${search}&page=${page}&limit=${limit}`
+      const res = await API.get(
+        `/admin/user-orders?search=${search}&page=1&limit=20`
       );
-
-      setOrders(res.data.orders);
-      setTotalPages(res.data.totalPages);
+      setOrders(res.data.orders || []);
     } catch (err) {
-      console.error("Failed to fetch orders", err);
+      toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -29,234 +36,320 @@ const AdminUserOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [search, page]);
+  }, []);
 
-  // ===============================
-  // Update Status
-  // ===============================
-  const updateStatus = async (orderId, status) => {
+  /* ===============================
+     SOCKET LIVE UPDATES
+  =============================== */
+  useEffect(() => {
+    socket.on("orderUpdated", (data) => {
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === data.orderId
+            ? {
+                ...order,
+                status: data.status,
+                quantityDelivered: data.delivered,
+              }
+            : order
+        )
+      );
+    });
+
+    return () => socket.off("orderUpdated");
+  }, []);
+
+  const updateStatus = async (id, status) => {
     try {
-      await axios.post(`/api/admin/user-orders/${orderId}/status`, {
-        status,
-      });
-
+      setProcessingId(id);
+      await API.post(`/admin/user-orders/${id}/status`, { status });
+      toast.success("Status updated");
       fetchOrders();
     } catch (err) {
-      alert(err.response?.data?.message || "Status update failed");
+      toast.error(err.response?.data?.message || "Update failed");
+    } finally {
+      setProcessingId(null);
     }
   };
 
-  // ===============================
-  // Update Progress
-  // ===============================
-  const updateProgress = async (orderId, quantityDelivered) => {
+  const updateProgress = async (order) => {
     try {
-      await axios.post(`/api/admin/user-orders/${orderId}/progress`, {
-        quantityDelivered,
-      });
+      const value = Number(progressInput[order._id]);
 
-      fetchOrders();
-    } catch (err) {
-      alert(err.response?.data?.message || "Progress update failed");
-    }
-  };
-
-  // ===============================
-  // Refund Order
-  // ===============================
-  const refundOrder = async (orderId, type) => {
-    try {
-      let customAmount = null;
-
-      if (type === "custom") {
-        customAmount = prompt("Enter refund amount");
-        if (!customAmount) return;
+      if (isNaN(value)) {
+        return toast.error("Enter valid number");
       }
 
-      await axios.post(`/api/admin/user-orders/${orderId}/refund`, {
+      setProcessingId(order._id);
+
+      await API.patch(`/admin/user-orders/${order._id}/progress`, {
+        quantityDelivered: value,
+      });
+
+      toast.success("Progress updated");
+      fetchOrders();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update progress");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  /* ===============================
+     REFUND HANDLER
+  =============================== */
+  const refundOrder = async (order, type) => {
+    const email = order.userId?.email || "";
+    const firstName = email.split("@")[0] || "User";
+
+    let customAmount = null;
+
+    if (type === "custom") {
+      const input = window.prompt(
+        `Enter custom refund amount (Max $${order.charge})`
+      );
+
+      if (!input) return;
+
+      customAmount = Number(input);
+
+      if (isNaN(customAmount) || customAmount <= 0) {
+        return toast.error("Invalid refund amount");
+      }
+    }
+
+    const confirmRefund = window.confirm(
+      `Refund (${type}) for order ${order.orderId} to ${firstName}?`
+    );
+
+    if (!confirmRefund) return;
+
+    try {
+      setProcessingId(order._id);
+
+      await API.post(`/admin/user-orders/${order._id}/refund`, {
         type,
         customAmount,
       });
 
+      toast.success("Refund successful");
       fetchOrders();
     } catch (err) {
-      alert(err.response?.data?.message || "Refund failed");
+      toast.error(err.response?.data?.message || "Refund failed");
+    } finally {
+      setProcessingId(null);
     }
   };
 
+  const statusStyles = {
+    pending: "bg-yellow-100 text-yellow-600",
+    processing: "bg-blue-100 text-blue-600",
+    completed: "bg-green-100 text-green-600",
+    failed: "bg-red-100 text-red-600",
+    refunded: "bg-gray-200 text-gray-600",
+    cancelled: "bg-gray-200 text-gray-600",
+  };
+
   return (
-    <div className="p-4">
+    <div className="flex min-h-screen bg-gray-100">
+      <Toaster position="top-right" />
+      <Sidebar />
 
-      <h2 className="text-xl font-bold mb-4">User Orders</h2>
+      <div className="flex-1 p-8">
+        <h2 className="text-2xl font-bold mb-6">User Orders</h2>
 
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Search order ID or email..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="border p-2 mb-4 w-full"
-      />
+        {/* Search */}
+        <div className="flex gap-3 mb-6">
+          <input
+            type="text"
+            placeholder="Search by Order ID or Email"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-4 py-2 w-72 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={fetchOrders}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Search
+          </button>
+        </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border">
+        {loading ? (
+          <p>Loading orders...</p>
+        ) : orders.length === 0 ? (
+          <div className="bg-white p-6 rounded-xl shadow">
+            No orders found
+          </div>
+        ) : (
+          orders.map((order) => {
+            const created = order.createdAt
+              ? new Date(order.createdAt)
+              : null;
 
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-2 border">Order ID</th>
-              <th className="p-2 border">User</th>
-              <th className="p-2 border">Service</th>
-              <th className="p-2 border">Link</th>
-              <th className="p-2 border">Quantity</th>
-              <th className="p-2 border">Delivered</th>
-              <th className="p-2 border">Charge</th>
-              <th className="p-2 border">Status</th>
-              <th className="p-2 border">Actions</th>
-            </tr>
-          </thead>
+            const progress =
+              ((order.quantityDelivered || 0) /
+                (order.quantity || 1)) *
+              100;
 
-          <tbody>
+            const locked =
+              order.status === "refunded" ||
+              order.status === "completed";
 
-            {loading && (
-              <tr>
-                <td colSpan="9" className="text-center p-4">
-                  Loading...
-                </td>
-              </tr>
-            )}
+            return (
+              <div
+                key={order._id}
+                className="bg-white p-6 mb-5 rounded-2xl shadow-sm border border-gray-100"
+              >
+                {/* Header */}
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-semibold text-sm text-gray-700">
+                    {order.orderId || order._id}
+                  </span>
+                  <span
+                    className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status]}`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
 
-            {!loading && orders.length === 0 && (
-              <tr>
-                <td colSpan="9" className="text-center p-4">
-                  No orders found
-                </td>
-              </tr>
-            )}
+                {/* Order Info */}
+                <div className="space-y-1 text-sm text-gray-700">
+                  <p><strong>Email:</strong> {order.userId?.email}</p>
 
-            {!loading &&
-              orders.map((order) => (
-                <tr key={order._id}>
+                  <p>
+                    <strong>User Balance:</strong>{" "}
+                    ${order.userId?.balance?.toFixed(4) || "0.0000"}
+                  </p>
 
-                  <td className="border p-2">{order.orderId}</td>
+                  <p><strong>Service:</strong> {order.service}</p>
 
-                  <td className="border p-2">
-                    {order.userId?.email || "N/A"}
-                  </td>
+                  <p>
+                    <strong>Provider:</strong>{" "}
+                    {order.provider || "N/A"}
+                  </p>
 
-                  <td className="border p-2">{order.service}</td>
-
-                  <td className="border p-2">
+                  <p>
+                    <strong>Link:</strong>{" "}
                     <a
                       href={order.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 underline"
+                      className="text-blue-600 hover:underline break-all"
                     >
-                      Open
+                      {order.link}
                     </a>
-                  </td>
+                  </p>
 
-                  <td className="border p-2">{order.quantity}</td>
+                  <p><strong>Charge:</strong> ${order.charge}</p>
 
-                  <td className="border p-2">
-                    {order.quantityDelivered || 0}
+                  <p>
+                    <strong>Created:</strong>{" "}
+                    {created
+                      ? created.toLocaleDateString() +
+                        " " +
+                        created.toLocaleTimeString()
+                      : "N/A"}
+                  </p>
+                </div>
 
-                    {/* Manual progress */}
-                    <button
-                      className="ml-2 text-xs bg-blue-500 text-white px-2 py-1"
-                      onClick={() => {
-                        const val = prompt(
-                          "Enter delivered quantity",
-                          order.quantityDelivered || 0
-                        );
-                        if (val !== null) {
-                          updateProgress(order._id, val);
-                        }
-                      }}
-                    >
-                      Edit
-                    </button>
-                  </td>
+                {/* Progress */}
+                <div className="mt-4">
+                  <p className="text-sm mb-1">
+                    <strong>Progress:</strong>{" "}
+                    {order.quantityDelivered || 0} / {order.quantity}
+                  </p>
 
-                  <td className="border p-2">
-                    ${order.charge?.toFixed(2)}
-                  </td>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
 
-                  <td className="border p-2">{order.status}</td>
-
-                  <td className="border p-2 space-x-2">
-
-                    <button
-                      className="bg-yellow-500 text-white px-2 py-1"
-                      onClick={() =>
-                        updateStatus(order._id, "processing")
+                {/* Progress Update */}
+                {!locked && (
+                  <div className="flex gap-3 mt-4">
+                    <input
+                      type="number"
+                      min={0}
+                      max={order.quantity}
+                      placeholder="Delivered"
+                      value={progressInput[order._id] ?? ""}
+                      onChange={(e) =>
+                        setProgressInput({
+                          ...progressInput,
+                          [order._id]: e.target.value,
+                        })
                       }
-                    >
-                      Processing
-                    </button>
+                      className="px-3 py-1 border rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
 
                     <button
-                      className="bg-green-600 text-white px-2 py-1"
-                      onClick={() =>
-                        updateStatus(order._id, "completed")
-                      }
+                      disabled={processingId === order._id}
+                      onClick={() => updateProgress(order)}
+                      className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                     >
-                      Complete
+                      Update
                     </button>
+                  </div>
+                )}
 
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {["pending", "processing", "completed", "failed"].map((s) => (
                     <button
-                      className="bg-red-600 text-white px-2 py-1"
-                      onClick={() =>
-                        updateStatus(order._id, "cancelled")
-                      }
+                      key={s}
+                      disabled={locked || processingId === order._id}
+                      onClick={() => updateStatus(order._id, s)}
+                      className="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-gray-300 disabled:opacity-40"
                     >
-                      Cancel
+                      {s}
                     </button>
+                  ))}
 
-                    <button
-                      className="bg-purple-600 text-white px-2 py-1"
-                      onClick={() =>
-                        refundOrder(order._id, "partial")
-                      }
-                    >
-                      Refund
-                    </button>
+                  {!locked && (
+                    <>
+                      <button
+                        disabled={processingId === order._id}
+                        onClick={() => refundOrder(order, "full")}
+                        className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Full Refund
+                      </button>
 
-                  </td>
+                      {order.quantityDelivered > 0 &&
+                        order.quantityDelivered < order.quantity && (
+                          <button
+                            disabled={processingId === order._id}
+                            onClick={() => refundOrder(order, "partial")}
+                            className="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                          >
+                            Partial Refund
+                          </button>
+                        )}
 
-                </tr>
-              ))}
+                      <button
+                        disabled={processingId === order._id}
+                        onClick={() => refundOrder(order, "custom")}
+                        className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                      >
+                        Custom Refund
+                      </button>
+                    </>
+                  )}
+                </div>
 
-          </tbody>
-        </table>
+                <p className="mt-4 text-xs text-gray-400">
+                  {created?.toLocaleDateString()}{" "}
+                  {created?.toLocaleTimeString()}
+                </p>
+              </div>
+            );
+          })
+        )}
       </div>
-
-      {/* Pagination */}
-      <div className="flex gap-2 mt-4">
-
-        <button
-          disabled={page === 1}
-          onClick={() => setPage(page - 1)}
-          className="border px-3 py-1"
-        >
-          Prev
-        </button>
-
-        <span className="px-3 py-1">
-          {page} / {totalPages}
-        </span>
-
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage(page + 1)}
-          className="border px-3 py-1"
-        >
-          Next
-        </button>
-
-      </div>
-
     </div>
   );
 };
