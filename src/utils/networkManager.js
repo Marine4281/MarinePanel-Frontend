@@ -5,10 +5,10 @@ import api from "../api/axios";
 /**
  * refreshAllData
  * Fetches wallet, profile, orders, services and updates contexts
- * @param {function} authDispatch - dispatch function from AuthContext
- * @param {function} servicesDispatch - dispatch function from ServicesContext
+ * @param {object} authContext - the AuthContext (provides login method)
+ * @param {object} servicesContext - the ServicesContext (provides refreshAll method)
  */
-export const refreshAllData = async (authDispatch, servicesDispatch) => {
+export const refreshAllData = async (authContext, servicesContext) => {
   if (!navigator.onLine) {
     console.log("Offline: skipping data refresh");
     return;
@@ -24,34 +24,39 @@ export const refreshAllData = async (authDispatch, servicesDispatch) => {
     ]);
 
     // 🔹 Update ServicesContext
-    servicesDispatch({ type: "SET_WALLET", payload: walletRes.data });
-    servicesDispatch({ type: "SET_ORDERS", payload: ordersRes.data });
-    servicesDispatch({ type: "SET_SERVICES", payload: servicesRes.data });
+    if (servicesContext?.refreshAll) {
+      await servicesContext.refreshAll(); // refresh services and any related data
+    }
 
     // 🔹 Update AuthContext
-    authDispatch({ type: "SET_PROFILE", payload: profileRes.data });
+    if (authContext?.login) {
+      authContext.login(profileRes.data); // update user profile
+    }
 
-    console.log("All data synced and UI updated");
+    console.log("✅ All data synced after reconnect");
   } catch (err) {
-    console.error("Failed to refresh all data:", err.response?.data || err.message);
+    console.error(
+      "❌ Failed to refresh all data:",
+      err.response?.data || err.message
+    );
   }
 };
 
 /**
  * setupNetworkManager
  * Listens for offline → online events and triggers refreshAllData
- * @param {function} authDispatch - dispatch from AuthContext
- * @param {function} servicesDispatch - dispatch from ServicesContext
+ * @param {object} authContext - useAuthContext()
+ * @param {object} servicesContext - useServices()
  */
-export const setupNetworkManager = (authDispatch, servicesDispatch) => {
+export const setupNetworkManager = (authContext, servicesContext) => {
   const handleOnline = () => {
-    console.log("Internet reconnected, syncing all data...");
-    refreshAllData(authDispatch, servicesDispatch);
+    console.log("🔄 Internet reconnected — syncing all data...");
+    refreshAllData(authContext, servicesContext);
   };
 
   window.addEventListener("online", handleOnline);
   window.addEventListener("offline", () => {
-    console.log("Internet connection lost");
+    console.log("⚠️ Internet connection lost");
   });
 
   // Cleanup function for useEffect
