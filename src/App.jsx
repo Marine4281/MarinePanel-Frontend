@@ -1,8 +1,8 @@
 import { Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { useEffect } from "react";
+import { useEffect, useContext } from "react";
 
 import LandingPage from "./pages/LandingPage"; // ✅ ADD THIS
 
@@ -27,7 +27,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import { setupNetworkManager } from "./utils/networkManager";
 
-export default function App() {
+/* ======================================================
+   INTERNAL ROUTES COMPONENT
+====================================================== */
+
+function AppRoutes() {
   const authContext = useAuthContext();
   const servicesContext = useContext(); // ✅ fixed
 
@@ -37,7 +41,7 @@ export default function App() {
   }, [authContext, servicesContext]);
 
   return (
-    <AuthProvider>
+    <>
       <Toaster position="top-right" reverseOrder={false} />
 
       <Routes>
@@ -131,15 +135,27 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-       <Route
-         path="/admin/user-orders"
-         element={
-          <ProtectedRoute adminOnly>
-            <AdminUserOrders />
-          </ProtectedRoute>
-        }
-       />
+        <Route
+          path="/admin/user-orders"
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminUserOrders />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+    </>
+  );
+}
+
+/* ======================================================
+   ROOT APP
+====================================================== */
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
     </AuthProvider>
   );
 }
