@@ -95,19 +95,43 @@ const AdminUserOrders = () => {
     }
   };
 
-  const refundOrder = async (order) => {
+  /* ===============================
+     REFUND HANDLER
+  =============================== */
+  const refundOrder = async (order, type) => {
     const email = order.userId?.email || "";
     const firstName = email.split("@")[0] || "User";
 
+    let customAmount = null;
+
+    if (type === "custom") {
+      const input = window.prompt(
+        `Enter custom refund amount (Max $${order.charge})`
+      );
+
+      if (!input) return;
+
+      customAmount = Number(input);
+
+      if (isNaN(customAmount) || customAmount <= 0) {
+        return toast.error("Invalid refund amount");
+      }
+    }
+
     const confirmRefund = window.confirm(
-      `Refund $${order.charge} to ${firstName}?`
+      `Refund (${type}) for order ${order.orderId} to ${firstName}?`
     );
 
     if (!confirmRefund) return;
 
     try {
       setProcessingId(order._id);
-      await API.post(`/admin/user-orders/${order._id}/refund`);
+
+      await API.post(`/admin/user-orders/${order._id}/refund`, {
+        type,
+        customAmount,
+      });
+
       toast.success("Refund successful");
       fetchOrders();
     } catch (err) {
@@ -200,7 +224,6 @@ const AdminUserOrders = () => {
 
                   <p><strong>Service:</strong> {order.service}</p>
 
-                  {/* PROVIDER */}
                   <p>
                     <strong>Provider:</strong>{" "}
                     {order.provider || "N/A"}
@@ -220,7 +243,6 @@ const AdminUserOrders = () => {
 
                   <p><strong>Charge:</strong> ${order.charge}</p>
 
-                  {/* DATE + TIME */}
                   <p>
                     <strong>Created:</strong>{" "}
                     {created
@@ -287,14 +309,35 @@ const AdminUserOrders = () => {
                     </button>
                   ))}
 
-                  {!locked && order.quantityDelivered === 0 && (
-                    <button
-                      disabled={processingId === order._id}
-                      onClick={() => refundOrder(order)}
-                      className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                    >
-                      Refund
-                    </button>
+                  {!locked && (
+                    <>
+                      <button
+                        disabled={processingId === order._id}
+                        onClick={() => refundOrder(order, "full")}
+                        className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Full Refund
+                      </button>
+
+                      {order.quantityDelivered > 0 &&
+                        order.quantityDelivered < order.quantity && (
+                          <button
+                            disabled={processingId === order._id}
+                            onClick={() => refundOrder(order, "partial")}
+                            className="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                          >
+                            Partial Refund
+                          </button>
+                        )}
+
+                      <button
+                        disabled={processingId === order._id}
+                        onClick={() => refundOrder(order, "custom")}
+                        className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                      >
+                        Custom Refund
+                      </button>
+                    </>
                   )}
                 </div>
 
