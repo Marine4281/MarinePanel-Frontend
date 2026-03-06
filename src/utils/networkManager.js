@@ -1,10 +1,5 @@
 // src/utils/networkManager.js
-
-// Import all your existing API functions
-import { getWallet } from "../api/walletApi";
-import { getProfile } from "../api/profileApi";
-import { getOrders } from "../api/orderApi";
-import { getServices } from "../api/serviceApi";
+import api from "../api/axios";
 
 /**
  * Central function to refresh all important data.
@@ -17,15 +12,17 @@ export const refreshAllData = async () => {
   }
 
   try {
+    // Fetch all data in parallel
     await Promise.all([
-      getWallet(),
-      getProfile(),
-      getOrders(),
-      getServices(),
+      api.get("/wallet"),
+      api.get("/profile"),
+      api.get("/orders"),
+      api.get("/services"),
     ]);
+
     console.log("All data synced after reconnect");
   } catch (err) {
-    console.error("Failed to refresh all data:", err);
+    console.error("Failed to refresh all data:", err.response?.data || err.message);
   }
 };
 
