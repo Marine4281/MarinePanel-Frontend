@@ -44,3 +44,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+// 🔹 Custom hook for components
+export const useAuthContext = () => useContext(AuthContext);
