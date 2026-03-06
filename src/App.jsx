@@ -30,9 +30,13 @@ import { useEffect } from "react";
 
 export default function App() {
   // ✅ Initialize network manager in useEffect
+
+  const { dispatch: authDispatch } = useContext(AuthContext);
+  const { dispatch: servicesDispatch } = useContext(ServicesContext);
+
   useEffect(() => {
-    const cleanup = setupNetworkManager(); // handles offline → online refresh
-    return cleanup; // cleanup listeners on unmount
+    const cleanup = setupNetworkManager(authDispatch, servicesDispatch);
+    return cleanup;
   }, []);
 
   return (
