@@ -1,8 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
+import { ServicesProvider, useServices } from "./context/ServicesContext";
 import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { useEffect, useContext } from "react";
+import { useEffect } from "react";
 
 import LandingPage from "./pages/LandingPage"; // ✅ ADD THIS
 
@@ -33,7 +34,7 @@ import { setupNetworkManager } from "./utils/networkManager";
 
 function AppRoutes() {
   const authContext = useAuthContext();
-  const servicesContext = useContext(); // ✅ fixed
+  const servicesContext = useServices(); // ✅ FIXED
 
   useEffect(() => {
     const cleanup = setupNetworkManager(authContext, servicesContext);
@@ -155,7 +156,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <ServicesProvider>
+        <AppRoutes />
+      </ServicesProvider>
     </AuthProvider>
   );
 }
