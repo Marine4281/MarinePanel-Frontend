@@ -1,93 +1,88 @@
 import { useState } from "react";
+import { FaTiktok, FaInstagram, FaYoutube, FaStar } from "react-icons/fa";
 
 const platformIcons = {
-  TikTok: "🎵",
-  Instagram: "📸",
-  YouTube: "▶️",
+  TikTok: <FaTiktok className="text-black" />,
+  Instagram: <FaInstagram className="text-pink-500" />,
+  YouTube: <FaYoutube className="text-red-600" />,
 };
 
-const CategorySelect = ({
-  category,
-  setCategory,
-  services,
-  selectedPlatform,
-}) => {
-  const [open, setOpen] = useState(false);
+const CategorySelect = ({ services, category, setCategory }) => {
   const [search, setSearch] = useState("");
+
+  const popularCategories = [
+    "TikTok Fast Followers",
+    "Instagram Cheapest Likes",
+    "Youtube Views",
+  ];
 
   const grouped = {};
 
-  if (services) {
-    services.forEach((service) => {
-      const platform = service.platform || "Other";
-      const cat = service.category;
+  services.forEach((service) => {
+    const platform = service.platform || "Other";
 
-      if (selectedPlatform !== "All" && platform !== selectedPlatform) return;
+    if (!grouped[platform]) grouped[platform] = [];
 
-      if (!grouped[platform]) grouped[platform] = new Set();
-      grouped[platform].add(cat);
-    });
-  }
-
-  const filtered = Object.entries(grouped).map(([platform, cats]) => ({
-    platform,
-    cats: [...cats].filter((c) =>
-      c.toLowerCase().includes(search.toLowerCase())
-    ),
-  }));
+    grouped[platform].push(service.category);
+  });
 
   return (
-    <div className="mb-4 relative w-[90%]">
-      <label className="font-semibold block mb-1">Category</label>
+    <div className="relative w-full">
 
-      {/* SELECT BOX */}
-      <div
-        className="p-3 rounded-xl shadow border cursor-pointer bg-white"
-        onClick={() => setOpen(!open)}
-      >
-        {category || "Select category"}
-      </div>
+      {/* search */}
+      <input
+        type="text"
+        placeholder="Search category..."
+        className="w-full p-3 border rounded-xl mb-2"
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
-      {open && (
-        <div className="absolute z-50 w-full bg-white border shadow-xl rounded-xl mt-2 max-h-80 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow max-h-80 overflow-y-auto">
 
-          {/* SEARCH */}
-          <input
-            type="text"
-            placeholder="Search category..."
-            className="w-full p-2 border-b outline-none"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        {/* POPULAR */}
+        <div className="p-3 border-b">
+          <div className="flex items-center gap-2 font-semibold text-yellow-500 mb-2">
+            <FaStar /> Popular
+          </div>
 
-          {/* PLATFORMS */}
-          {filtered.map(({ platform, cats }) =>
-            cats.length > 0 ? (
-              <div key={platform}>
-
-                {/* PLATFORM HEADER */}
-                <div className="bg-gray-100 px-3 py-2 font-semibold text-sm sticky top-0">
-                  {platformIcons[platform] || "📦"} {platform}
-                </div>
-
-                {/* CATEGORIES */}
-                {cats.map((cat) => (
-                  <div
-                    key={cat}
-                    onClick={() => {
-                      setCategory(cat);
-                      setOpen(false);
-                    }}
-                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer"
-                  >
-                    {cat}
-                  </div>
-                ))}
-              </div>
-            ) : null
-          )}
+          {popularCategories.map((cat) => (
+            <div
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className="p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+              {cat}
+            </div>
+          ))}
         </div>
-      )}
+
+        {/* PLATFORM GROUPS */}
+        {Object.entries(grouped).map(([platform, cats]) => (
+          <div key={platform} className="p-3 border-b">
+
+            <div className="flex items-center gap-2 font-semibold mb-2">
+              {platformIcons[platform]}
+              {platform}
+            </div>
+
+            {cats
+              .filter((cat) =>
+                cat.toLowerCase().includes(search.toLowerCase())
+              )
+              .map((cat) => (
+                <div
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`p-2 rounded-lg cursor-pointer hover:bg-gray-100 ${
+                    category === cat ? "bg-blue-100" : ""
+                  }`}
+                >
+                  {cat}
+                </div>
+              ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
