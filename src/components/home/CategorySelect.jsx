@@ -1,109 +1,107 @@
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
+import {
+  FaTiktok,
+  FaInstagram,
+  FaYoutube,
+  FaFacebook,
+  FaTelegram,
+} from "react-icons/fa";
 
-const platformIcons = {
-  TikTok: "🎵",
-  Instagram: "📸",
-  YouTube: "▶️",
-  Facebook: "📘",
-  WhatsApp: "💬",
-  Telegram: "✈️",
-  Spotify: "🎧",
-  Snapchat: "👻",
-  LinkedIn: "💼",
-  "X/Twitter": "🐦",
+const icons = {
+  TikTok: <FaTiktok className="text-black" />,
+  Instagram: <FaInstagram className="text-pink-500" />,
+  YouTube: <FaYoutube className="text-red-600" />,
+  Facebook: <FaFacebook className="text-blue-600" />,
+  Telegram: <FaTelegram className="text-blue-500" />,
 };
 
-const CategorySelect = ({
-  category,
-  setCategory,
-  filteredCategories,
-  services,
-  selectedPlatform,
-}) => {
+const platformBg = {
+  TikTok: "bg-gray-100",
+  Instagram: "bg-pink-50",
+  YouTube: "bg-red-50",
+  Facebook: "bg-blue-50",
+  Telegram: "bg-blue-50",
+};
 
+const CategorySelect = ({ services, category, setCategory }) => {
+
+  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Group categories by platform
-  const groupedCategories = useMemo(() => {
-    const grouped = {};
+  const grouped = useMemo(() => {
+    const groups = {};
 
-    if (selectedPlatform === "All" && services) {
-      services.forEach((service) => {
-        const platform = service.platform || "Other";
+    services.forEach((s) => {
+      if (!groups[s.platform]) groups[s.platform] = new Set();
+      groups[s.platform].add(s.category);
+    });
 
-        if (!grouped[platform]) {
-          grouped[platform] = new Set();
-        }
-
-        grouped[platform].add(service.category);
-      });
-    }
-
-    return grouped;
-  }, [services, selectedPlatform]);
+    return groups;
+  }, [services]);
 
   return (
-    <div className="mb-4">
+    <div className="relative w-[90%] mb-4">
 
-      <label className="font-semibold block mb-1">
-        Category
-      </label>
+      <label className="font-semibold block mb-1">Category</label>
 
-      {/* 🔎 SEARCH */}
-      {selectedPlatform === "All" && (
-        <input
-          type="text"
-          placeholder="Search category..."
-          className="p-2 mb-2 w-[90%] rounded-lg border shadow-sm"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      )}
-
-      {/* SELECT */}
-      <select
-        className="p-3 w-[90%] rounded-xl shadow border bg-white"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
+      {/* SELECT BOX */}
+      <div
+        onClick={() => setOpen(!open)}
+        className="p-3 bg-white border rounded-xl shadow cursor-pointer"
       >
-        <option value="">Select category</option>
+        {category || "Select category"}
+      </div>
 
-        {/* NORMAL dropdown */}
-        {selectedPlatform !== "All" &&
-          filteredCategories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
+      {open && (
+        <div className="absolute w-full bg-white shadow-xl rounded-xl mt-2 max-h-80 overflow-y-auto z-50">
+
+          {/* SEARCH */}
+          <input
+            type="text"
+            placeholder="Search category..."
+            className="w-full p-3 border-b outline-none"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          {/* PLATFORM GROUPS */}
+          {Object.entries(grouped).map(([platform, cats]) => (
+
+            <div key={platform} className={`${platformBg[platform]} p-2`}>
+
+              {/* PLATFORM HEADER */}
+              <div className="flex items-center gap-2 font-semibold mb-2">
+                {icons[platform]}
+                {platform}
+              </div>
+
+              {[...cats]
+                .filter((c) =>
+                  c.toLowerCase().includes(search.toLowerCase())
+                )
+                .map((cat) => (
+
+                  <div
+                    key={cat}
+                    onClick={() => {
+                      setCategory(cat);
+                      setOpen(false);
+                    }}
+                    className={`p-2 rounded-lg cursor-pointer hover:bg-gray-200 ${
+                      category === cat ? "bg-blue-100" : ""
+                    }`}
+                  >
+                    {cat}
+                  </div>
+
+                ))}
+
+            </div>
+
           ))}
 
-        {/* GROUPED dropdown */}
-        {selectedPlatform === "All" &&
-          Object.entries(groupedCategories).map(([platform, cats]) => {
-
-            const icon = platformIcons[platform] || "📦";
-
-            const filteredCats = [...cats].filter((cat) =>
-              cat.toLowerCase().includes(search.toLowerCase())
-            );
-
-            if (!filteredCats.length) return null;
-
-            return (
-              <optgroup
-                key={platform}
-                label={`${icon} ${platform}`}
-                className="font-bold text-gray-700"
-              >
-                {filteredCats.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </optgroup>
-            );
-          })}
-      </select>
-
+        </div>
+      )}
     </div>
   );
 };
