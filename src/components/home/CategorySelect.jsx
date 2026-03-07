@@ -11,10 +11,14 @@ const CategorySelect = ({
 
   if (selectedPlatform === "All" && services) {
     services.forEach((service) => {
-      if (!groupedCategories[service.platform]) {
-        groupedCategories[service.platform] = new Set();
+      const platform = service.platform || "Other";
+      const cat = service.category;
+
+      if (!groupedCategories[platform]) {
+        groupedCategories[platform] = new Set();
       }
-      groupedCategories[service.platform].add(service.category);
+
+      groupedCategories[platform].add(cat);
     });
   }
 
@@ -23,13 +27,13 @@ const CategorySelect = ({
       <label className="font-semibold block mb-1">Category</label>
 
       <select
-        className="p-3 w-[90%] rounded-xl shadow"
+        className="p-3 w-[90%] rounded-xl shadow border border-gray-200 focus:outline-none"
         value={category}
         onChange={(e) => setCategory(e.target.value)}
       >
         <option value="">Select category</option>
 
-        {/* NORMAL dropdown when not All */}
+        {/* NORMAL dropdown when platform is selected */}
         {selectedPlatform !== "All" &&
           filteredCategories.map((cat) => (
             <option key={cat} value={cat}>
@@ -39,15 +43,23 @@ const CategorySelect = ({
 
         {/* GROUPED dropdown when All */}
         {selectedPlatform === "All" &&
-          Object.entries(groupedCategories).map(([platform, cats]) => (
-            <optgroup key={platform} label={platform}>
-              {[...cats].map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </optgroup>
-          ))}
+          Object.entries(groupedCategories)
+            .sort(([a], [b]) => a.localeCompare(b)) // sort platforms
+            .map(([platform, cats]) => (
+              <optgroup
+                key={platform}
+                label={`▼ ${platform}`}
+                className="font-bold text-blue-600"
+              >
+                {[...cats]
+                  .sort((a, b) => a.localeCompare(b)) // sort categories
+                  .map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
       </select>
     </div>
   );
