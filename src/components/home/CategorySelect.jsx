@@ -24,20 +24,30 @@ const platformBg = {
   Telegram: "bg-blue-50",
 };
 
-const CategorySelect = ({ services, category, setCategory }) => {
+const CategorySelect = ({ services, category, setCategory, selectedPlatform }) => {
+
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const grouped = useMemo(() => {
+
     const groups = {};
 
     services.forEach((s) => {
+
+      // 🔴 THIS FIXES YOUR PROBLEM
+      if (selectedPlatform !== "All" && s.platform !== selectedPlatform) {
+        return;
+      }
+
       if (!groups[s.platform]) groups[s.platform] = new Set();
       groups[s.platform].add(s.category);
+
     });
 
     return groups;
-  }, [services]);
+
+  }, [services, selectedPlatform]);
 
   return (
     <div className="relative w-[95%] mb-5">
@@ -55,7 +65,6 @@ const CategorySelect = ({ services, category, setCategory }) => {
           {category || "Select category"}
         </span>
 
-        {/* Arrow indicator */}
         <ChevronDown
           className={`transition-transform ${open ? "rotate-180" : ""}`}
         />
@@ -75,9 +84,9 @@ const CategorySelect = ({ services, category, setCategory }) => {
 
           {/* PLATFORM GROUPS */}
           {Object.entries(grouped).map(([platform, cats]) => (
+
             <div key={platform} className={`${platformBg[platform]} p-3`}>
 
-              {/* PLATFORM HEADER */}
               <div className="flex items-center gap-2 font-semibold mb-2 text-sm">
                 {icons[platform]}
                 {platform}
@@ -88,6 +97,7 @@ const CategorySelect = ({ services, category, setCategory }) => {
                   c.toLowerCase().includes(search.toLowerCase())
                 )
                 .map((cat) => (
+
                   <div
                     key={cat}
                     onClick={() => {
@@ -100,9 +110,13 @@ const CategorySelect = ({ services, category, setCategory }) => {
                   >
                     {cat}
                   </div>
+
                 ))}
+
             </div>
+
           ))}
+
         </div>
       )}
     </div>
