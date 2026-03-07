@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import API from "../api/axios"; // ✅ your axios instance
+import API from "../api/axios";
 import toast from "react-hot-toast";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import {io} from "socket.io-client"
-// Flag selector import for mobile money (you can add country flags)
+import { io } from "socket.io-client";
 import countryList from "react-select-country-list";
 import Select from "react-select";
+import { MdPhoneIphone, MdAccountBalance } from "react-icons/md";
+import { FaCreditCard } from "react-icons/fa";
 
 const Wallet = () => {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ const Wallet = () => {
   const [method, setMethod] = useState("");
   const [transactions, setTransactions] = useState([]);
   const [showAllTransactions, setShowAllTransactions] = useState(false);
-  const [actionType, setActionType] = useState("add"); // 'add' or 'withdraw'
+  const [actionType, setActionType] = useState("add");
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [methodDescription, setMethodDescription] = useState("");
   const [paymentDetails, setPaymentDetails] = useState({});
@@ -31,7 +32,6 @@ const Wallet = () => {
     try {
       const response = await API.get("/wallet");
       setBalance(response.data.balance);
-      // Sort newest first
       const sortedTransactions = (response.data.transactions || []).sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
@@ -41,7 +41,6 @@ const Wallet = () => {
       toast.error(error.response?.data?.message || "Failed to load wallet");
     }
   };
-
 
   // ================= FETCH PAYMENT METHODS =================
   const fetchPaymentMethods = async () => {
@@ -54,48 +53,43 @@ const Wallet = () => {
     }
   };
 
-
   useEffect(() => {
-  if (!user) return;
+    if (!user) return;
 
-  // ================= Initialize =================
-  const initialize = async () => {
-    await fetchWallet();
-    await fetchPaymentMethods();
-    setCountryOptions(countryList().getData());
+    const initialize = async () => {
+      await fetchWallet();
+      await fetchPaymentMethods();
+      setCountryOptions(countryList().getData());
 
-    // 🔔 Socket.IO for real-time wallet updates
-    const socket = io(import.meta.env.VITE_API_URL);
+      const socket = io(import.meta.env.VITE_API_URL);
 
-    // Listen for wallet updates from the server
-    socket.on("wallet:update", ({ userId, balance: newBalance, transactions: newTxs }) => {
-      if (userId === user._id) {
-        setBalance(newBalance);
-        if (newTxs) {
-          const sortedTransactions = newTxs.sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-          );
-          setTransactions(sortedTransactions);
+      socket.on("wallet:update", ({ userId, balance: newBalance, transactions: newTxs }) => {
+        if (userId === user._id) {
+          setBalance(newBalance);
 
-          // Notify user if a pending deposit completed
-          const completedTxs = newTxs.filter(
-            (tx) => tx.status === "Completed" && tx.notified !== true
-          );
-          completedTxs.forEach((tx) => {
-            toast.success(`Deposit of $${tx.amount} successful!`);
-            // Mark as notified to prevent duplicate toasts
-            tx.notified = true;
-          });
+          if (newTxs) {
+            const sortedTransactions = newTxs.sort(
+              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            setTransactions(sortedTransactions);
+
+            const completedTxs = newTxs.filter(
+              (tx) => tx.status === "Completed" && tx.notified !== true
+            );
+
+            completedTxs.forEach((tx) => {
+              toast.success(`Deposit of $${tx.amount} successful!`);
+              tx.notified = true;
+            });
+          }
         }
-      }
-    });
+      });
 
-    // Cleanup Socket.IO on unmount
-    return () => socket.disconnect();
-  };
+      return () => socket.disconnect();
+    };
 
-  initialize();
-}, [user]);
+    initialize();
+  }, [user]);
 
   // ================= ADD FUNDS =================
   const handleAddFunds = async () => {
@@ -106,9 +100,13 @@ const Wallet = () => {
     try {
       const selectedMethod = paymentMethods.find((m) => m.name === method);
 
-      // Add selected country for mobile money if available
       const detailsWithCountry = { ...paymentDetails };
-      if ((selectedMethod.type === "mobile-money" || selectedMethod.type === "mpesa") && selectedCountry) {
+
+      if (
+        (selectedMethod.type === "mobile-money" ||
+          selectedMethod.type === "mpesa") &&
+        selectedCountry
+      ) {
         detailsWithCountry.country = selectedCountry.value;
       }
 
@@ -125,42 +123,72 @@ const Wallet = () => {
       setPaymentDetails({});
       setSelectedCountry(null);
       fetchWallet();
-      // 🔹 Redirect to Paystack checkout page
-    window.location.href = response.data.authorization_url;
 
+      window.location.href = response.data.authorization_url;
     } catch (error) {
       console.error("ADD FUNDS ERROR:", error.response || error);
       toast.error(error.response?.data?.message || "Deposit failed");
     }
   };
 
-  // ================= WITHDRAW FUNDS =================
   const handleWithdraw = () => {
     toast("Withdrawal coming soon", { icon: "⏳" });
   };
 
-  // Get transactions to display (latest 3 or all)
-  const displayedTransactions = showAllTransactions ? transactions : transactions.slice(0, 3);
+  const displayedTransactions = showAllTransactions
+    ? transactions
+    : transactions.slice(0, 3);
+
+  // ================= REACT SELECT OPTIONS =================
+  const paymentOptions = paymentMethods.map((m) => {
+    let icon = null;
+
+    if (m.type === "mobile-money" || m.type === "mpesa")
+      icon = <MdPhoneIphone />;
+    else if (m.type === "card") icon = <FaCreditCard />;
+    else if (m.type === "bank") icon = <MdAccountBalance />;
+
+    return {
+      value: m.name,
+      label: (
+        <div className="flex items-center gap-2">
+          {icon}
+          {m.name}
+        </div>
+      ),
+      method: m,
+    };
+  });
 
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col pb-24">
       <Header />
-      <main className="flex-1 max-w-4xl mt-8  space-y-6">
+
+      <main className="flex-1 max-w-4xl mt-8 space-y-6">
+
         {/* Balance Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
             <h2 className="text-lg text-gray-500">Wallet Balance</h2>
-            <p className="text-3xl font-bold text-green-600">${Number(balance).toFixed(4)}</p>
+            <p className="text-3xl font-bold text-green-600">
+              ${Number(balance).toFixed(4)}
+            </p>
           </div>
+
           <div className="flex gap-4">
             <button
-              className={`px-6 py-3 rounded-xl text-white ${actionType === "add" ? "bg-green-600" : "bg-green-500"}`}
+              className={`px-6 py-3 rounded-xl text-white ${
+                actionType === "add" ? "bg-green-600" : "bg-green-500"
+              }`}
               onClick={() => setActionType("add")}
             >
               Add Funds
             </button>
+
             <button
-              className={`px-6 py-3 rounded-xl text-white ${actionType === "withdraw" ? "bg-red-600" : "bg-red-500"}`}
+              className={`px-6 py-3 rounded-xl text-white ${
+                actionType === "withdraw" ? "bg-red-600" : "bg-red-500"
+              }`}
               onClick={() => setActionType("withdraw")}
             >
               Withdraw
@@ -168,11 +196,14 @@ const Wallet = () => {
           </div>
         </div>
 
-        {/* Add Funds Section */}
+        {/* Add Funds */}
         {actionType === "add" && (
           <div className="bg-white rounded-2xl shadow-lg p-6">
+
             <h3 className="text-xl font-semibold mb-4">Add Funds</h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
               <input
                 type="number"
                 placeholder="Enter Amount (USD)"
@@ -180,42 +211,47 @@ const Wallet = () => {
                 onChange={(e) => setAmount(e.target.value)}
                 className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-orange-400"
               />
-              <select
-                value={method}
-                onChange={(e) => {
-                  setMethod(e.target.value);
-                  const selected = paymentMethods.find((m) => m.name === e.target.value);
+
+              {/* UPDATED SELECT DROPDOWN */}
+              <Select
+                options={paymentOptions}
+                placeholder="Select Payment Method"
+                isSearchable
+                onChange={(option) => {
+                  setMethod(option.value);
+                  const selected = option.method;
                   setMethodDescription(selected?.description || "");
                   setPaymentDetails({});
                   setSelectedCountry(null);
                 }}
-                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-orange-400 shadow-xl"
-              >
-                <option value="">Select Payment Method</option>
-                {paymentMethods.map((m) => (
-                  <option key={m._id} value={m.name}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
+                className="w-full"
+              />
+
             </div>
 
-            {methodDescription && <p className="mt-2 text-gray-500 italic">{methodDescription}</p>}
+            {methodDescription && (
+              <p className="mt-2 text-gray-500 italic">{methodDescription}</p>
+            )}
 
-            {/* Dynamic Form Fields Based on Method Type */}
+            {/* Dynamic Forms (UNCHANGED) */}
             {method && (() => {
               const selected = paymentMethods.find((m) => m.name === method);
               if (!selected) return null;
 
               switch (selected.type) {
+
                 case "card":
                   return (
                     <div className="space-y-3 mt-4">
+
                       <select
                         className="w-full p-3 border rounded-xl"
                         value={paymentDetails.cardType || ""}
                         onChange={(e) =>
-                          setPaymentDetails({ ...paymentDetails, cardType: e.target.value })
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardType: e.target.value,
+                          })
                         }
                       >
                         <option value="">Select Card Type</option>
@@ -223,44 +259,63 @@ const Wallet = () => {
                         <option value="Verve">Verve</option>
                         <option value="MasterCard">MasterCard</option>
                       </select>
+
                       <input
                         type="text"
                         placeholder="Card Number"
                         className="w-full p-3 border rounded-xl"
                         value={paymentDetails.cardNumber || ""}
                         onChange={(e) =>
-                          setPaymentDetails({ ...paymentDetails, cardNumber: e.target.value })
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardNumber: e.target.value,
+                          })
                         }
                       />
+
                       <div className="grid grid-cols-2 gap-4">
+
                         <input
                           type="text"
                           placeholder="Expiry MM/YY"
                           className="w-full p-3 border rounded-xl"
                           value={paymentDetails.expiry || ""}
                           onChange={(e) =>
-                            setPaymentDetails({ ...paymentDetails, expiry: e.target.value })
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              expiry: e.target.value,
+                            })
                           }
                         />
+
                         <input
                           type="text"
                           placeholder="CVV"
                           className="w-full p-3 border rounded-xl"
                           value={paymentDetails.cvv || ""}
                           onChange={(e) =>
-                            setPaymentDetails({ ...paymentDetails, cvv: e.target.value })
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              cvv: e.target.value,
+                            })
                           }
                         />
+
                       </div>
+
                       <input
                         type="text"
                         placeholder="Cardholder Name"
                         className="w-full p-3 border rounded-xl"
                         value={paymentDetails.cardName || ""}
                         onChange={(e) =>
-                          setPaymentDetails({ ...paymentDetails, cardName: e.target.value })
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            cardName: e.target.value,
+                          })
                         }
                       />
+
                     </div>
                   );
 
@@ -268,11 +323,15 @@ const Wallet = () => {
                 case "mpesa":
                   return (
                     <div className="space-y-3 mt-4">
+
                       <select
                         className="w-full p-3 border rounded-xl"
                         value={paymentDetails.network || ""}
                         onChange={(e) =>
-                          setPaymentDetails({ ...paymentDetails, network: e.target.value })
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            network: e.target.value,
+                          })
                         }
                       >
                         <option value="">Select Mobile Money Network</option>
@@ -280,7 +339,11 @@ const Wallet = () => {
                         <option value="MoMo">MoMo</option>
                         <option value="Airtel Money">Airtel Money</option>
                       </select>
-                      <label className="block font-semibold mb-1">Phone</label>
+
+                      <label className="block font-semibold mb-1">
+                        Phone
+                      </label>
+
                       <PhoneInput
                         country={paymentDetails.country || "ke"}
                         value={paymentDetails.phone || ""}
@@ -293,30 +356,40 @@ const Wallet = () => {
                         }}
                         inputClass="w-full p-3 rounded-xl border"
                       />
+
                     </div>
                   );
 
                 case "bank":
                   return (
                     <div className="space-y-3 mt-4">
+
                       <input
                         type="text"
                         placeholder="Bank Name"
                         className="w-full p-3 border rounded-xl"
                         value={paymentDetails.bankName || ""}
                         onChange={(e) =>
-                          setPaymentDetails({ ...paymentDetails, bankName: e.target.value })
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            bankName: e.target.value,
+                          })
                         }
                       />
+
                       <input
                         type="text"
                         placeholder="Account Number"
                         className="w-full p-3 border rounded-xl"
                         value={paymentDetails.accountNumber || ""}
                         onChange={(e) =>
-                          setPaymentDetails({ ...paymentDetails, accountNumber: e.target.value })
+                          setPaymentDetails({
+                            ...paymentDetails,
+                            accountNumber: e.target.value,
+                          })
                         }
                       />
+
                     </div>
                   );
 
@@ -338,13 +411,18 @@ const Wallet = () => {
             >
               Proceed to Payment
             </button>
+
           </div>
         )}
 
         {/* Withdraw Section */}
         {actionType === "withdraw" && (
           <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-4">Withdraw Funds</h3>
+
+            <h3 className="text-xl font-semibold mb-4">
+              Withdraw Funds
+            </h3>
+
             <input
               type="number"
               placeholder="Enter Amount (USD)"
@@ -352,20 +430,28 @@ const Wallet = () => {
               onChange={(e) => setAmount(e.target.value)}
               className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-orange-400 mb-4"
             />
+
             <button
               onClick={handleWithdraw}
               className="w-full bg-red-500 text-white py-3 rounded-xl hover:bg-red-600"
             >
               Proceed to Withdraw
             </button>
+
           </div>
         )}
 
-        {/* Transactions */}
+        {/* Transactions (UNCHANGED) */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-xl font-semibold mb-4">Transaction History</h3>
+
+          <h3 className="text-xl font-semibold mb-4">
+            Transaction History
+          </h3>
+
           <div className="overflow-x-auto">
+
             <table className="w-full border-collapse">
+
               <thead>
                 <tr className="bg-gray-100 text-left">
                   <th className="p-3">Date</th>
@@ -374,7 +460,9 @@ const Wallet = () => {
                   <th className="p-3">Status</th>
                 </tr>
               </thead>
+
               <tbody>
+
                 {displayedTransactions.length === 0 && (
                   <tr>
                     <td colSpan="4" className="p-4 text-center text-gray-500">
@@ -382,13 +470,25 @@ const Wallet = () => {
                     </td>
                   </tr>
                 )}
+
                 {displayedTransactions.map((tx) => (
                   <tr key={tx._id} className="border-t">
-                    <td className="p-3">{new Date(tx.createdAt).toLocaleDateString()}</td>
-                    <td className="p-3">{tx.type}</td>
-                    <td className={`p-3 ${tx.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                      {tx.amount > 0 ? "+" : "-"} ${Math.abs(tx.amount).toFixed(4)}
+
+                    <td className="p-3">
+                      {new Date(tx.createdAt).toLocaleDateString()}
                     </td>
+
+                    <td className="p-3">{tx.type}</td>
+
+                    <td
+                      className={`p-3 ${
+                        tx.amount > 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {tx.amount > 0 ? "+" : "-"} $
+                      {Math.abs(tx.amount).toFixed(4)}
+                    </td>
+
                     <td
                       className={`p-3 ${
                         tx.status === "Completed"
@@ -400,24 +500,35 @@ const Wallet = () => {
                     >
                       {tx.status}
                     </td>
+
                   </tr>
                 ))}
+
               </tbody>
+
             </table>
+
             {transactions.length > 3 && (
               <div className="mt-4 text-center">
+
                 <button
                   className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600"
                   onClick={() => setShowAllTransactions(!showAllTransactions)}
                 >
                   {showAllTransactions ? "Show Less" : "View All"}
                 </button>
+
               </div>
             )}
+
           </div>
+
         </div>
+
       </main>
+
       <Footer />
+
     </div>
   );
 };
