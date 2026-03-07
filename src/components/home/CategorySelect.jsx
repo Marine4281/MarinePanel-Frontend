@@ -6,13 +6,14 @@ import {
   FaFacebook,
   FaTelegram,
 } from "react-icons/fa";
+import { ChevronDown } from "lucide-react";
 
 const icons = {
-  TikTok: <FaTiktok className="text-black" />,
-  Instagram: <FaInstagram className="text-pink-500" />,
-  YouTube: <FaYoutube className="text-red-600" />,
-  Facebook: <FaFacebook className="text-blue-600" />,
-  Telegram: <FaTelegram className="text-blue-500" />,
+  TikTok: <FaTiktok className="text-black text-lg" />,
+  Instagram: <FaInstagram className="text-pink-500 text-lg" />,
+  YouTube: <FaYoutube className="text-red-600 text-lg" />,
+  Facebook: <FaFacebook className="text-blue-600 text-lg" />,
+  Telegram: <FaTelegram className="text-blue-500 text-lg" />,
 };
 
 const platformBg = {
@@ -24,7 +25,6 @@ const platformBg = {
 };
 
 const CategorySelect = ({ services, category, setCategory }) => {
-
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -40,37 +40,45 @@ const CategorySelect = ({ services, category, setCategory }) => {
   }, [services]);
 
   return (
-    <div className="relative w-[90%] mb-4">
+    <div className="relative w-[95%] mb-5">
 
-      <label className="font-semibold block mb-1">Category</label>
+      <label className="font-semibold block mb-2 text-gray-700">
+        Category
+      </label>
 
       {/* SELECT BOX */}
       <div
         onClick={() => setOpen(!open)}
-        className="p-3 bg-white border rounded-xl shadow cursor-pointer"
+        className="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-2xl shadow-md cursor-pointer hover:border-green-500 transition"
       >
-        {category || "Select category"}
+        <span className="text-gray-700 font-medium">
+          {category || "Select category"}
+        </span>
+
+        {/* Arrow indicator */}
+        <ChevronDown
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </div>
 
       {open && (
-        <div className="absolute w-full bg-white shadow-xl rounded-xl mt-2 max-h-80 overflow-y-auto z-50">
+        <div className="absolute w-full bg-white shadow-2xl rounded-2xl mt-2 max-h-96 overflow-y-auto z-50 border">
 
           {/* SEARCH */}
           <input
             type="text"
             placeholder="Search category..."
-            className="w-full p-3 border-b outline-none"
+            className="w-full p-3 border-b outline-none text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
 
           {/* PLATFORM GROUPS */}
           {Object.entries(grouped).map(([platform, cats]) => (
-
-            <div key={platform} className={`${platformBg[platform]} p-2`}>
+            <div key={platform} className={`${platformBg[platform]} p-3`}>
 
               {/* PLATFORM HEADER */}
-              <div className="flex items-center gap-2 font-semibold mb-2">
+              <div className="flex items-center gap-2 font-semibold mb-2 text-sm">
                 {icons[platform]}
                 {platform}
               </div>
@@ -80,26 +88,21 @@ const CategorySelect = ({ services, category, setCategory }) => {
                   c.toLowerCase().includes(search.toLowerCase())
                 )
                 .map((cat) => (
-
                   <div
                     key={cat}
                     onClick={() => {
                       setCategory(cat);
                       setOpen(false);
                     }}
-                    className={`p-2 rounded-lg cursor-pointer hover:bg-gray-200 ${
-                      category === cat ? "bg-blue-100" : ""
+                    className={`p-2 rounded-lg cursor-pointer text-sm hover:bg-gray-200 ${
+                      category === cat ? "bg-green-100 font-medium" : ""
                     }`}
                   >
                     {cat}
                   </div>
-
                 ))}
-
             </div>
-
           ))}
-
         </div>
       )}
     </div>
