@@ -222,6 +222,8 @@ const Home = () => {
             category={category}
             setCategory={setCategory}
             filteredCategories={categories}
+            services={services}
+            selectedPlatform={selectedPlatform}
           />
 
           <ServiceSelect
