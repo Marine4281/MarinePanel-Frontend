@@ -3,7 +3,8 @@ import API from "../../api/axios";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import toast from "react-hot-toast";
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle, FaBitcoin, FaUniversity } from "react-icons/fa";
+import { SiTether, SiBinance } from "react-icons/si";
 
 const PaymentMethods = () => {
   const [methods, setMethods] = useState([]);
@@ -19,7 +20,6 @@ const PaymentMethods = () => {
         toast.error("Failed to load payment methods");
       }
     };
-
     fetchMethods();
   }, []);
 
@@ -46,6 +46,21 @@ const PaymentMethods = () => {
     toast("Withdrawal coming soon", { icon: "⏳" });
   };
 
+  const getIcon = (name) => {
+    switch (name.toLowerCase()) {
+      case "bitcoin":
+        return <FaBitcoin className="text-orange-500 text-2xl" />;
+      case "usdt":
+        return <SiTether className="text-green-500 text-2xl" />;
+      case "binance":
+        return <SiBinance className="text-yellow-500 text-2xl" />;
+      case "bank":
+        return <FaUniversity className="text-blue-500 text-2xl" />;
+      default:
+        return <FaUniversity className="text-gray-500 text-2xl" />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col pb-24">
       <Header />
@@ -56,7 +71,7 @@ const PaymentMethods = () => {
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
           <h2 className="text-xl font-semibold mb-4">
-            Deposit
+            Deposit Funds
           </h2>
 
           <input
@@ -64,11 +79,15 @@ const PaymentMethods = () => {
             placeholder="Enter Amount (USD)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full p-3 border rounded-xl mb-5"
+            className="w-full p-3 border rounded-xl mb-6 focus:ring-2 focus:ring-orange-400 outline-none"
           />
 
-          {/* Modern Payment Selector */}
-          <div className="grid gap-3">
+          <p className="font-medium mb-3 text-gray-600">
+            Select Payment Method
+          </p>
+
+          {/* Payment Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             {methods.map((method) => {
 
@@ -78,26 +97,34 @@ const PaymentMethods = () => {
                 <div
                   key={method._id}
                   onClick={() => setSelectedMethod(method)}
-                  className={`cursor-pointer border rounded-xl p-4 flex justify-between items-center transition
+                  className={`cursor-pointer rounded-xl border p-4 flex items-center justify-between transition-all
                   
                   ${active
-                    ? "border-orange-500 bg-orange-50"
-                    : "hover:border-gray-400"
+                    ? "border-orange-500 bg-orange-50 shadow-md"
+                    : "border-gray-200 hover:border-orange-400 hover:shadow-sm"
                   }
                   
                   `}
                 >
 
-                  <div>
-                    <p className="font-semibold">
-                      {method.name}
-                    </p>
+                  <div className="flex items-center gap-3">
 
-                    {method.description && (
-                      <p className="text-sm text-gray-500">
-                        {method.description}
+                    <div className="bg-gray-100 p-3 rounded-lg">
+                      {getIcon(method.name)}
+                    </div>
+
+                    <div>
+                      <p className="font-semibold">
+                        {method.name}
                       </p>
-                    )}
+
+                      {method.description && (
+                        <p className="text-xs text-gray-500">
+                          {method.description}
+                        </p>
+                      )}
+                    </div>
+
                   </div>
 
                   {active && (
@@ -112,7 +139,7 @@ const PaymentMethods = () => {
 
           <button
             onClick={handleDeposit}
-            className="mt-6 w-full bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600"
+            className="mt-6 w-full bg-orange-500 text-white py-3 rounded-xl hover:bg-orange-600 transition"
           >
             Proceed to Payment
           </button>
@@ -123,12 +150,12 @@ const PaymentMethods = () => {
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
           <h2 className="text-xl font-semibold mb-4">
-            Withdraw
+            Withdraw Funds
           </h2>
 
           <button
             onClick={handleWithdraw}
-            className="w-full bg-red-500 text-white py-3 rounded-xl hover:bg-red-600"
+            className="w-full bg-red-500 text-white py-3 rounded-xl hover:bg-red-600 transition"
           >
             Withdraw Funds
           </button>
