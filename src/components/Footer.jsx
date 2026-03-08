@@ -10,13 +10,7 @@ const Footer = () => {
     { name: "Home", icon: "fas fa-home", path: "/home" },
     { name: "Wallet", icon: "fas fa-wallet", path: "/wallet" },
     { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/orders" },
-    {
-      name: "Support",
-      icon: "fab fa-whatsapp",
-      external: true,
-      path: "https://wa.me/254736790305?text=Hello%20MarinePanel%20Support",
-      badge: "24/7 Support", // ✅ Add a badge
-    },
+    {name: "Resellers", icon: "fas fa-network-wired", path: "/resellers"},
     { name: "Profile", icon: "fas fa-user", path: "/profile" },
   ];
 
