@@ -1,26 +1,47 @@
 // src/pages/Services.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom"; // <--- import useNavigate
-import API from "../api/axios";
+import { useNavigate } from "react-router-dom";
 import ServiceTable from "../components/ServiceTable";
 import CategoryIcons from "../components/CategoryIcons";
+import { useCachedServices } from "../context/CachedServicesContext";
 
 const Services = () => {
-  const navigate = useNavigate(); // <--- initialize navigate
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { services, loading, commission } = useCachedServices();
 
-  // Selected platform for filtering
   const [selectedPlatform, setSelectedPlatform] = useState("All");
-
-  // Search input
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Global commission
-  const [commission, setCommission] = useState(0);
+  // =============================
+  // Debounce search input
+  // =============================
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  // Platform icons / grid
+  // Filter services based on selected platform
+  const platformFiltered = useMemo(() => {
+    if (selectedPlatform === "All") return services;
+    return services.filter(
+      (s) => (s.platform || "").toString().toLowerCase() === selectedPlatform.toLowerCase()
+    );
+  }, [services, selectedPlatform]);
+
+  // Further filter based on debounced search term
+  const filteredServices = useMemo(() => {
+    if (!debouncedSearch.trim()) return platformFiltered;
+
+    const lowerSearch = debouncedSearch.toLowerCase();
+    return platformFiltered.filter((s) => {
+      const serviceId = (s.serviceId || "").toString().toLowerCase();
+      const name = (s.name || "").toLowerCase();
+      const category = (s.category || "").toLowerCase();
+      return serviceId.includes(lowerSearch) || name.includes(lowerSearch) || category.includes(lowerSearch);
+    });
+  }, [platformFiltered, debouncedSearch]);
+
   const categoriesGrid = [
     { name: "All", icon: "grid" },
     { name: "TikTok", icon: "tiktok" },
@@ -36,65 +57,6 @@ const Services = () => {
     { name: "Free", icon: "gift" },
   ];
 
-  // Fetch services and commission
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [servicesRes, commissionRes] = await Promise.all([
-          API.get("/services"),
-          API.get("/admin/settings/commission"),
-        ]);
-
-        setServices(servicesRes.data || []);
-        setCommission(commissionRes.data?.commission || 0);
-      } catch (err) {
-        console.error("Failed to load services or commission", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // =============================
-  // Debounce search input
-  // =============================
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 300); // 300ms debounce delay
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Filter services based on selected platform
-  const platformFiltered = useMemo(() => {
-    if (selectedPlatform === "All") return services;
-    return services.filter(
-      (s) =>
-        (s.platform || "").toString().toLowerCase() ===
-        selectedPlatform.toLowerCase()
-    );
-  }, [services, selectedPlatform]);
-
-  // Further filter based on debounced search term
-  const filteredServices = useMemo(() => {
-    if (!debouncedSearch.trim()) return platformFiltered;
-
-    const lowerSearch = debouncedSearch.toLowerCase();
-    return platformFiltered.filter((s) => {
-      const serviceId = (s.serviceId || "").toString().toLowerCase();
-      const name = (s.name || "").toLowerCase();
-      const category = (s.category || "").toLowerCase();
-
-      return (
-        serviceId.includes(lowerSearch) ||
-        name.includes(lowerSearch) ||
-        category.includes(lowerSearch)
-      );
-    });
-  }, [platformFiltered, debouncedSearch]);
-
   if (loading) {
     return (
       <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-6 text-center text-gray-500">
@@ -105,11 +67,10 @@ const Services = () => {
 
   return (
     <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-6">
-
       {/* Back Button */}
       <div className="mb-4">
         <button
-          onClick={() => navigate(-1)} // <--- go back
+          onClick={() => navigate(-1)}
           className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded shadow-sm text-sm transition"
         >
           ← Back
@@ -124,7 +85,7 @@ const Services = () => {
       <CategoryIcons
         categoriesGrid={categoriesGrid}
         selectedPlatform={selectedPlatform}
-        setSelectedPlatform={(platform) => setSelectedPlatform(platform)}
+        setSelectedPlatform={setSelectedPlatform}
       />
 
       {/* Search input */}
@@ -146,7 +107,6 @@ const Services = () => {
       ) : (
         <ServiceTable services={filteredServices} commission={commission} />
       )}
-
     </div>
   );
 };
