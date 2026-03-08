@@ -15,7 +15,8 @@ import Profile from "./pages/Profile";
 import Orders from "./pages/Orders";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-
+import Services from "./pages/Services";
+import Reseller from "./pages/Reseller";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminService from "./pages/AdminService";
@@ -86,6 +87,23 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+         <Route
+          path="/services"
+          element={
+            <ProtectedRoute>
+              <Services />
+            </ProtectedRoute>
+          }
+        />
+
+         <Route
+          path="/resellers"
+          element={
+            <ProtectedRoute>
+              <Reseller />
+            </ProtectedRoute>
+          }
+      />
 
         {/* 👑 Admin Routes */}
         <Route
@@ -161,4 +179,4 @@ export default function App() {
       </ServicesProvider>
     </AuthProvider>
   );
-}
+   }
