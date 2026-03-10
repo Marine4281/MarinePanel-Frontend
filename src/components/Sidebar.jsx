@@ -6,6 +6,10 @@ const links = [
   { name: "Users", icon: "fa-solid fa-users", path: "/admin/users" },
   { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
   { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
+
+  // ✅ NEW PAGE
+  { name: "Provider Sync", icon: "fa-solid fa-arrows-rotate", path: "/admin/provider-sync" },
+
   { name: "User Orders", icon: "fa-solid fa-clipboard-list", path: "/admin/user-orders" },
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
   { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
@@ -64,7 +68,7 @@ const Sidebar = () => {
           >
             {({ isActive }) => (
               <>
-                {/* ✅ Active left indicator only when active */}
+                {/* ACTIVE INDICATOR */}
                 {isActive && (
                   <span className="absolute left-0 top-0 h-full w-1 bg-orange-500 rounded-r-lg"></span>
                 )}
