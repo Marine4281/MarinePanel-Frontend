@@ -27,6 +27,7 @@ import AdminUserOrders from "./pages/AdminUserOrders";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { setupNetworkManager } from "./utils/networkManager";
+import ProviderSync from "./pages/ProviderSync";
 
 /* ======================================================
    INTERNAL ROUTES COMPONENT
@@ -159,6 +160,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+         <Route 
+            path="/admin/provider-sync" 
+            element={
+               <ProtectedRoute adminOnly>            
+                  <ProviderSync />
+               </ProtectedRoute>
+            } 
+            />
       </Routes>
     </>
   );
