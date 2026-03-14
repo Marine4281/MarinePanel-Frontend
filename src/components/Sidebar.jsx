@@ -12,6 +12,7 @@ const links = [
 
   { name: "User Orders", icon: "fa-solid fa-clipboard-list", path: "/admin/user-orders" },
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
+  { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
   { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
 ];
 
