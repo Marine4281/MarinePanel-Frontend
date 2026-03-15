@@ -6,7 +6,7 @@ import { useReseller } from "../context/ResellerContext";
 const Footer = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { reseller } = useReseller(); // ✅ Get reseller info
+  const { reseller, slug } = useReseller(); // Get reseller info + slug
 
   // Default links
   const defaultLinks = [
@@ -17,19 +17,20 @@ const Footer = () => {
     { name: "Profile", icon: "fas fa-user", path: "/profile" },
   ];
 
-  // Replace Resellers tab with Services if visiting a reseller
-  const links = reseller
-    ? defaultLinks.map((link) =>
-        link.name === "Resellers"
-          ? { ...link, name: "Services", path: "/services" }
-          : link
-      )
-    : defaultLinks;
+  // Only replace Resellers tab if visiting a reseller subdomain
+  const links =
+    reseller && slug
+      ? defaultLinks.map((link) =>
+          link.name === "Resellers"
+            ? { ...link, name: "Services", path: "/services" }
+            : link
+        )
+      : defaultLinks;
 
   return (
     <nav
       className="fixed bottom-0 w-full z-50"
-      style={{ backgroundColor: reseller?.themeColor || "#f97316" }} // dynamic color
+      style={{ backgroundColor: reseller?.themeColor || "#f97316" }}
     >
       <div className="flex justify-between text-center p-2">
         {links.map((link) =>
