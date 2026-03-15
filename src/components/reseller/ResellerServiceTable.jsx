@@ -39,11 +39,15 @@ const ResellerServiceTable = ({
 
           <tbody>
             {services.map((service, index) => {
+
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              // Calculate system price after admin commission
-              const systemPrice = ((service.rate || service.price) * (1 + (commission || 0) / 100)).toFixed(4);
+              // System rate = same rate normal users see
+              const systemRate = Number(service.rate || service.price || 0);
+
+              // Reseller selling rate
+              const resellerRate = systemRate * (1 + (commission || 0) / 100);
 
               return (
                 <React.Fragment key={service._id || service.serviceId}>
@@ -52,17 +56,28 @@ const ResellerServiceTable = ({
                   {showCategory && (
                     <tr className="bg-orange-50 border-t border-orange-200">
                       <td colSpan="7" className="px-3 py-2 font-semibold text-orange-700">
+
                         <input
                           type="text"
                           defaultValue={service.category}
                           onBlur={(e) => {
+
                             const newCategory = e.target.value.trim();
+
                             if (newCategory && newCategory !== service.category) {
-                              updateService(service._id, null, newCategory);
+
+                              updateService(
+                                service._id,
+                                null,
+                                newCategory
+                              );
+
                             }
+
                           }}
                           className="bg-transparent border-b border-orange-300 focus:outline-none"
                         />
+
                       </td>
                     </tr>
                   )}
@@ -73,6 +88,7 @@ const ResellerServiceTable = ({
                       index % 2 === 0 ? "bg-white" : "bg-gray-50"
                     }`}
                   >
+
                     {/* ID */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                       {service.serviceId || service._id}
@@ -80,27 +96,38 @@ const ResellerServiceTable = ({
 
                     {/* SERVICE NAME */}
                     <td className="px-3 py-2 text-gray-800">
+
                       <input
                         type="text"
                         defaultValue={service.name}
                         onBlur={(e) => {
+
                           const newName = e.target.value.trim();
+
                           if (newName && newName !== service.name) {
-                            updateService(service._id, newName, null);
+
+                            updateService(
+                              service._id,
+                              newName,
+                              null
+                            );
+
                           }
+
                         }}
                         className="border rounded px-2 py-[2px] w-full text-[11px]"
                       />
+
                     </td>
 
-                    {/* SYSTEM PRICE (post-admin commission) */}
+                    {/* SYSTEM PRICE */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      ${systemPrice}
+                      ${systemRate.toFixed(4)}
                     </td>
 
                     {/* RESELLER PRICE */}
                     <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
-                      ${Number(service.finalPrice || systemPrice).toFixed(4)}
+                      ${resellerRate.toFixed(4)}
                     </td>
 
                     {/* MIN */}
@@ -115,6 +142,7 @@ const ResellerServiceTable = ({
 
                     {/* VISIBILITY */}
                     <td className="px-3 py-2">
+
                       <input
                         type="checkbox"
                         checked={service.visible}
@@ -122,6 +150,7 @@ const ResellerServiceTable = ({
                           toggleVisibility(service._id, e.target.checked)
                         }
                       />
+
                     </td>
 
                   </tr>
