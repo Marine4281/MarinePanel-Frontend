@@ -22,7 +22,7 @@ api.interceptors.request.use(
     }
 
     // 🔥 reseller domain detection
-    config.headers["x-reseller-domain"] = window.location.hostname;
+    config.headers["x-reseller-domain"] = window.location.host;
 
     return config;
   },
