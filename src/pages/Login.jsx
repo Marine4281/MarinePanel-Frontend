@@ -1,35 +1,19 @@
-import { useState, useEffect } from "react";
+// src/pages/Login.jsx
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useReseller } from "../context/ResellerContext"; // ✅ Use context
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { reseller, loading: resellerLoading } = useReseller(); // get branding
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [branding, setBranding] = useState({
-    brandName: "MarinePanel",
-    logo: null,
-    themeColor: "#ff6b00",
-  });
-
-  // Fetch reseller branding if visiting a subdomain
-  const fetchBranding = async () => {
-    try {
-      const res = await API.get("/end-user/branding");
-      if (res.data) setBranding(res.data);
-    } catch (err) {
-      console.error("Branding fetch failed:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchBranding();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,6 +42,27 @@ const Login = () => {
       toast.error(error.response?.data?.message || "Failed to send reset link");
     }
   };
+
+  // Use reseller branding or fallback defaults
+  const branding = reseller || {
+    brandName: "MarinePanel",
+    logo: null,
+    themeColor: "#ff6b00",
+  };
+
+  // Optional: show a basic skeleton while reseller is loading
+  if (resellerLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-pulse w-full max-w-md p-6 bg-white rounded-2xl shadow">
+          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="h-6 bg-gray-200 rounded mb-2"></div>
+          <div className="h-6 bg-gray-200 rounded mb-2"></div>
+          <div className="h-6 bg-gray-200 rounded mb-2"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
