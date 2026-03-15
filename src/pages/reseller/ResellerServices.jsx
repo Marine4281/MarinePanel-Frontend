@@ -1,4 +1,3 @@
-// src/pages/reseller/ResellerServices.jsx
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -28,7 +27,6 @@ export default function ResellerServices() {
       setServices(servicesData);
       setCommission(commissionData);
       setNewCommission(commissionData);
-
     } catch (error) {
       console.error(error);
       toast.error("Failed to load services");
@@ -73,7 +71,7 @@ export default function ResellerServices() {
 
   /*
   -----------------------------
-  Update Service
+  Update Service (name/category)
   -----------------------------
   */
   const updateService = async (serviceId, newName, newCategoryName) => {
@@ -128,18 +126,18 @@ export default function ResellerServices() {
       const category = s.category?.toLowerCase() || "";
       const id = s.serviceId?.toString() || s._id.toString();
 
-      // System rate (rate users see, after admin commission)
-      const systemRate = Number(s.rate || s.price || 0).toFixed(2);
+      // System rate (already includes admin commission)
+      const systemRate = Number(s.rate || s.price || 0);
 
-      // Reseller price (system rate + reseller commission)
-      const resellerRate = (systemRate * (1 + (commission || 0) / 100)).toFixed(2);
+      // Reseller rate
+      const resellerRate = systemRate * (1 + (commission || 0) / 100);
 
       return (
         name.includes(lower) ||
         category.includes(lower) ||
         id.includes(lower) ||
-        systemRate.includes(lower) ||
-        resellerRate.includes(lower)
+        systemRate.toFixed(2).includes(lower) ||
+        resellerRate.toFixed(2).includes(lower)
       );
     });
   }, [services, debouncedSearch, commission]);
@@ -196,4 +194,4 @@ export default function ResellerServices() {
       />
     </div>
   );
-        }
+}
