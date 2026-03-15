@@ -2,13 +2,7 @@
 import React from "react";
 import formatNumber from "../../utils/formatNumber";
 
-const ResellerServiceTable = ({
-  services,
-  commission,
-  toggleVisibility,
-  updateService
-}) => {
-
+const ResellerServiceTable = ({ services, commission, toggleVisibility, updateService }) => {
   if (!services || services.length === 0) {
     return (
       <div className="text-center text-gray-500 py-4 text-sm">
@@ -39,14 +33,10 @@ const ResellerServiceTable = ({
 
           <tbody>
             {services.map((service, index) => {
-
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              // System rate = same rate normal users see
               const systemRate = Number(service.rate || service.price || 0);
-
-              // Reseller selling rate
               const resellerRate = systemRate * (1 + (commission || 0) / 100);
 
               return (
@@ -56,39 +46,25 @@ const ResellerServiceTable = ({
                   {showCategory && (
                     <tr className="bg-orange-50 border-t border-orange-200">
                       <td colSpan="7" className="px-3 py-2 font-semibold text-orange-700">
-
                         <input
                           type="text"
                           defaultValue={service.category}
                           onBlur={(e) => {
-
                             const newCategory = e.target.value.trim();
-
                             if (newCategory && newCategory !== service.category) {
-
-                              updateService(
-                                service._id,
-                                null,
-                                newCategory
-                              );
-
+                              updateService(service._id, null, newCategory);
                             }
-
                           }}
-                          className="bg-transparent border-b border-orange-300 focus:outline-none"
+                          className="bg-transparent border-b border-orange-300 focus:outline-none w-full"
                         />
-
                       </td>
                     </tr>
                   )}
 
                   {/* SERVICE ROW */}
                   <tr
-                    className={`border-t hover:bg-gray-50 ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    }`}
+                    className={`border-t hover:bg-gray-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
                   >
-
                     {/* ID */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                       {service.serviceId || service._id}
@@ -96,28 +72,17 @@ const ResellerServiceTable = ({
 
                     {/* SERVICE NAME */}
                     <td className="px-3 py-2 text-gray-800">
-
                       <input
                         type="text"
                         defaultValue={service.name}
                         onBlur={(e) => {
-
                           const newName = e.target.value.trim();
-
                           if (newName && newName !== service.name) {
-
-                            updateService(
-                              service._id,
-                              newName,
-                              null
-                            );
-
+                            updateService(service._id, newName, null);
                           }
-
                         }}
                         className="border rounded px-2 py-[2px] w-full text-[11px]"
                       />
-
                     </td>
 
                     {/* SYSTEM PRICE */}
@@ -140,21 +105,15 @@ const ResellerServiceTable = ({
                       {formatNumber(service.max)}
                     </td>
 
-                    {/* VISIBILITY */}
+                    {/* VISIBILITY (per reseller) */}
                     <td className="px-3 py-2">
-
                       <input
                         type="checkbox"
                         checked={service.visible}
-                        onChange={(e) =>
-                          toggleVisibility(service._id, e.target.checked)
-                        }
+                        onChange={(e) => toggleVisibility(service._id, e.target.checked)}
                       />
-
                     </td>
-
                   </tr>
-
                 </React.Fragment>
               );
             })}
