@@ -1,10 +1,10 @@
+// src/pages/reseller/ResellerServices.jsx
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import ResellerServiceTable from "../../components/reseller/ResellerServiceTable";
 
 export default function ResellerServices() {
-
   const [services, setServices] = useState([]);
   const [commission, setCommission] = useState(0);
   const [newCommission, setNewCommission] = useState(0);
@@ -19,7 +19,6 @@ export default function ResellerServices() {
   */
   const fetchServices = async () => {
     try {
-
       setLoading(true);
 
       const res = await API.get("/reseller/services");
@@ -30,16 +29,11 @@ export default function ResellerServices() {
       setServices(servicesData);
       setCommission(commissionData);
       setNewCommission(commissionData);
-
     } catch (error) {
-
       console.error(error);
       toast.error("Failed to load services");
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
@@ -58,7 +52,6 @@ export default function ResellerServices() {
     }, 300);
 
     return () => clearTimeout(timer);
-
   }, [searchTerm]);
 
   /*
@@ -68,7 +61,6 @@ export default function ResellerServices() {
   */
   const toggleVisibility = async (serviceId, visible) => {
     try {
-
       await API.patch("/reseller/services/visibility", { serviceId, visible });
 
       setServices((prev) =>
@@ -78,12 +70,9 @@ export default function ResellerServices() {
       );
 
       toast.success("Visibility updated");
-
     } catch (error) {
-
       console.error(error);
       toast.error("Failed to update visibility");
-
     }
   };
 
@@ -94,7 +83,6 @@ export default function ResellerServices() {
   */
   const updateService = async (serviceId, newName, newCategoryName) => {
     try {
-
       await API.patch("/reseller/services/update", {
         serviceId,
         newName,
@@ -102,14 +90,10 @@ export default function ResellerServices() {
       });
 
       toast.success("Updated successfully");
-
       fetchServices();
-
     } catch (error) {
-
       console.error(error);
       toast.error("Update failed");
-
     }
   };
 
@@ -120,7 +104,6 @@ export default function ResellerServices() {
   */
   const updateCommission = async () => {
     try {
-
       const value = Number(newCommission);
 
       const res = await API.patch("/reseller/services/commission", {
@@ -133,14 +116,10 @@ export default function ResellerServices() {
       setNewCommission(updatedCommission);
 
       toast.success("Commission updated");
-
       fetchServices();
-
     } catch (error) {
-
       console.error(error);
       toast.error("Failed to update commission");
-
     }
   };
 
@@ -150,19 +129,18 @@ export default function ResellerServices() {
   -----------------------------
   */
   const filteredServices = useMemo(() => {
-
     if (!debouncedSearch.trim()) return services;
 
     const lower = debouncedSearch.toLowerCase();
 
     return services.filter((s) => {
-
       const name = s.name?.toLowerCase() || "";
       const category = s.category?.toLowerCase() || "";
       const id = s.serviceId?.toString() || s._id.toString();
-
-      const systemPrice = (s.price || 0).toString();
       const resellerPrice = (s.finalPrice || 0).toString();
+
+      // System price after admin global commission
+      const systemPrice = ((s.rate || 0) * (1 + (commission || 0) / 100)).toFixed(2);
 
       return (
         name.includes(lower) ||
@@ -171,19 +149,15 @@ export default function ResellerServices() {
         systemPrice.includes(lower) ||
         resellerPrice.includes(lower)
       );
-
     });
-
-  }, [services, debouncedSearch]);
+  }, [services, debouncedSearch, commission]);
 
   if (loading) {
     return <div className="p-6 text-gray-500">Loading services...</div>;
   }
 
   return (
-
     <div className="p-6">
-
       {/* PAGE TITLE */}
       <h1 className="text-2xl font-bold text-orange-500 mb-6">
         Reseller Services
@@ -191,34 +165,27 @@ export default function ResellerServices() {
 
       {/* COMMISSION PANEL */}
       <div className="bg-white p-4 rounded shadow mb-6">
-
         <label className="block font-semibold mb-2">
           Global Commission (%)
         </label>
-
         <div className="flex gap-2">
-
           <input
             type="number"
             value={newCommission}
             onChange={(e) => setNewCommission(e.target.value)}
             className="border p-2 rounded w-32"
           />
-
           <button
             onClick={updateCommission}
             className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
           >
             Update
           </button>
-
         </div>
-
       </div>
 
       {/* SEARCH */}
       <div className="mb-4 max-w-md">
-
         <input
           type="text"
           placeholder="Search by name, category, ID, system price, reseller price"
@@ -226,7 +193,6 @@ export default function ResellerServices() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full p-3 rounded-xl shadow border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
         />
-
       </div>
 
       {/* TABLE */}
@@ -236,8 +202,6 @@ export default function ResellerServices() {
         toggleVisibility={toggleVisibility}
         updateService={updateService}
       />
-
     </div>
-
   );
-        }
+                                    }
