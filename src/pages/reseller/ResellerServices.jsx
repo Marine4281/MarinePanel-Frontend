@@ -20,9 +20,7 @@ export default function ResellerServices() {
   const fetchServices = async () => {
     try {
       setLoading(true);
-
       const res = await API.get("/reseller/services");
-
       const servicesData = res.data.services || [];
       const commissionData = Number(res.data.commission || 0);
 
@@ -62,13 +60,11 @@ export default function ResellerServices() {
   const toggleVisibility = async (serviceId, visible) => {
     try {
       await API.patch("/reseller/services/visibility", { serviceId, visible });
-
       setServices((prev) =>
         prev.map((s) =>
           s._id === serviceId ? { ...s, visible } : s
         )
       );
-
       toast.success("Visibility updated");
     } catch (error) {
       console.error(error);
@@ -88,7 +84,6 @@ export default function ResellerServices() {
         newName,
         newCategoryName
       });
-
       toast.success("Updated successfully");
       fetchServices();
     } catch (error) {
@@ -105,16 +100,13 @@ export default function ResellerServices() {
   const updateCommission = async () => {
     try {
       const value = Number(newCommission);
-
       const res = await API.patch("/reseller/services/commission", {
         commission: value
       });
-
       const updatedCommission = Number(res.data.commission ?? value);
 
       setCommission(updatedCommission);
       setNewCommission(updatedCommission);
-
       toast.success("Commission updated");
       fetchServices();
     } catch (error) {
@@ -137,10 +129,10 @@ export default function ResellerServices() {
       const name = s.name?.toLowerCase() || "";
       const category = s.category?.toLowerCase() || "";
       const id = s.serviceId?.toString() || s._id.toString();
-      const resellerPrice = (s.finalPrice || 0).toString();
+      const resellerPrice = (s.finalPrice || 0).toFixed(2);
 
       // System price after admin global commission
-      const systemPrice = ((s.rate || 0) * (1 + (commission || 0) / 100)).toFixed(2);
+      const systemPrice = ((s.price || 0) * (1 + (commission || 0) / 100)).toFixed(2);
 
       return (
         name.includes(lower) ||
@@ -164,8 +156,8 @@ export default function ResellerServices() {
       </h1>
 
       {/* COMMISSION PANEL */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <label className="block font-semibold mb-2">
+      <div className="bg-white p-4 rounded shadow mb-6 border-l-4 border-orange-500">
+        <label className="block font-semibold mb-2 text-orange-500">
           Global Commission (%)
         </label>
         <div className="flex gap-2">
@@ -191,7 +183,7 @@ export default function ResellerServices() {
           placeholder="Search by name, category, ID, system price, reseller price"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-3 rounded-xl shadow border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="w-full p-3 rounded-xl shadow border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
         />
       </div>
 
@@ -204,4 +196,4 @@ export default function ResellerServices() {
       />
     </div>
   );
-                                    }
+        }
