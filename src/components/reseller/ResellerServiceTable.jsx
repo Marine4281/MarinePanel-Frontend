@@ -2,7 +2,7 @@
 import React from "react";
 import formatNumber from "../../utils/formatNumber";
 
-const ResellerServiceTable = ({ services, commission, toggleVisibility, updateService }) => {
+const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => {
   if (!services || services.length === 0) {
     return (
       <div className="text-center text-gray-500 py-4 text-sm">
@@ -36,8 +36,9 @@ const ResellerServiceTable = ({ services, commission, toggleVisibility, updateSe
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              const normalRate = Number(service.rate || 0); // what normal users see
-              const resellerRate = Number(service.finalPrice || normalRate); // after reseller commission
+              // Use backend fields
+              const normalRate = Number(service.systemRate || 0);      // normal users see
+              const resellerRate = Number(service.resellerRate || normalRate); // after reseller commission
 
               return (
                 <React.Fragment key={service._id || service.serviceId}>
