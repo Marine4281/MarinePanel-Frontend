@@ -1,15 +1,26 @@
 // src/pages/LandingPage.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { useReseller } from "../context/ResellerContext";
 
 const LandingPage = () => {
+  const { reseller } = useReseller();
+
+  // Fallbacks
+  const brandName = reseller?.brandName || "MarinePanel";
+  const themeColor = reseller?.themeColor || "#f97316"; // orange fallback
+  const logo = reseller?.logo || null;
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
-      <section className="flex-1 flex flex-col justify-center items-center text-center 
-        bg-gradient-to-br from-orange-400 via-orange-300 to-yellow-200 
-        text-white px-6 py-20 relative overflow-hidden">
-
+      <section
+        className="flex-1 flex flex-col justify-center items-center text-center px-6 py-20 relative overflow-hidden"
+        style={{
+          background: `linear-gradient(to bottom right, ${themeColor}80, ${themeColor}50, ${themeColor}20)`,
+          color: "#fff",
+        }}
+      >
         {/* Hero Illustration */}
         <div className="absolute -top-10 -left-10 opacity-20 animate-spin-slow">
           <svg width="200" height="200" fill="none">
@@ -17,11 +28,17 @@ const LandingPage = () => {
           </svg>
         </div>
 
-        <h1 className="text-5xl md:text-6xl font-bold mb-4 drop-shadow-lg">
-          Welcome to MarinePanel
-        </h1>
+        {/* Logo + Brand Name */}
+        <div className="flex items-center justify-center mb-6">
+          {logo && <img src={logo} alt="Logo" className="h-12 mr-4" />}
+          <h1 className="text-5xl md:text-6xl font-bold drop-shadow-lg">
+            Welcome to {brandName}
+          </h1>
+        </div>
+
         <p className="text-lg md:text-xl mb-10 max-w-2xl drop-shadow-md">
-          Grow your social media accounts effortlessly with our SMM panel. Fast, secure, and reliable services for likes, views, followers, and more.
+          Grow your social media accounts effortlessly with our SMM panel.
+          Fast, secure, and reliable services for likes, views, followers, and more.
         </p>
 
         {/* Buttons */}
@@ -62,8 +79,11 @@ const LandingPage = () => {
       </section>
 
       {/* Sticky Footer */}
-      <footer className="mt-auto w-full text-center py-6 bg-orange-500 text-white font-medium">
-        &copy; 2026 MarinePanel. All rights reserved.
+      <footer
+        className="mt-auto w-full text-center py-6 font-medium text-white"
+        style={{ backgroundColor: themeColor }}
+      >
+        &copy; 2026 {brandName}. All rights reserved.
       </footer>
 
       {/* Animations */}
