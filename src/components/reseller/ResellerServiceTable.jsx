@@ -2,7 +2,7 @@
 import React from "react";
 import formatNumber from "../../utils/formatNumber";
 
-const ResellerServiceTable = ({ services, commission, toggleVisibility, updateService }) => {
+const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => {
   if (!services || services.length === 0) {
     return (
       <div className="text-center text-gray-500 py-4 text-sm">
@@ -23,8 +23,7 @@ const ResellerServiceTable = ({ services, commission, toggleVisibility, updateSe
             <tr>
               <th className="px-3 py-2 text-left">ID</th>
               <th className="px-3 py-2 text-left min-w-[220px]">Service</th>
-              <th className="px-3 py-2 text-left">System</th>
-              <th className="px-3 py-2 text-left">Reseller</th>
+              <th className="px-3 py-2 text-left">Price</th>
               <th className="px-3 py-2 text-left">Min</th>
               <th className="px-3 py-2 text-left">Max</th>
               <th className="px-3 py-2 text-left">Visible</th>
@@ -36,8 +35,8 @@ const ResellerServiceTable = ({ services, commission, toggleVisibility, updateSe
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              const systemRate = Number(service.rate || service.price || 0);
-              const resellerRate = systemRate * (1 + (commission || 0) / 100);
+              // Use backend finalPrice for reseller
+              const resellerRate = Number(service.finalPrice || 0);
 
               return (
                 <React.Fragment key={service._id || service.serviceId}>
@@ -45,7 +44,7 @@ const ResellerServiceTable = ({ services, commission, toggleVisibility, updateSe
                   {/* CATEGORY ROW */}
                   {showCategory && (
                     <tr className="bg-orange-50 border-t border-orange-200">
-                      <td colSpan="7" className="px-3 py-2 font-semibold text-orange-700">
+                      <td colSpan="6" className="px-3 py-2 font-semibold text-orange-700">
                         <input
                           type="text"
                           defaultValue={service.category}
@@ -83,11 +82,6 @@ const ResellerServiceTable = ({ services, commission, toggleVisibility, updateSe
                         }}
                         className="border rounded px-2 py-[2px] w-full text-[11px]"
                       />
-                    </td>
-
-                    {/* SYSTEM PRICE */}
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      ${systemRate.toFixed(4)}
                     </td>
 
                     {/* RESELLER PRICE */}
