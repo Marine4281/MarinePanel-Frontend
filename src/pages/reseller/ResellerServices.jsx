@@ -118,30 +118,27 @@ export default function ResellerServices() {
   -----------------------------
   */
   const filteredServices = useMemo(() => {
-    if (!debouncedSearch.trim()) return services;
+  if (!debouncedSearch.trim()) return services;
 
-    const lower = debouncedSearch.toLowerCase();
+  const lower = debouncedSearch.toLowerCase();
 
-    return services.filter((s) => {
-      const name = s.name?.toLowerCase() || "";
-      const category = s.category?.toLowerCase() || "";
-      const id = s.serviceId?.toString() || s._id.toString();
+  return services.filter((s) => {
+    const name = s.name?.toLowerCase() || "";
+    const category = s.category?.toLowerCase() || "";
+    const id = s.serviceId?.toString() || s._id.toString();
 
-      // System rate (already includes admin commission)
-      const systemRate = Number(s.rate || s.price || 0);
+    const systemRate = Number(s.rate || 0);
+    const resellerRate = Number(s.finalPrice || 0);
 
-      // Reseller rate
-      const resellerRate = systemRate * (1 + (commission || 0) / 100);
-
-      return (
-        name.includes(lower) ||
-        category.includes(lower) ||
-        id.includes(lower) ||
-        systemRate.toFixed(2).includes(lower) ||
-        resellerRate.toFixed(2).includes(lower)
-      );
-    });
-  }, [services, debouncedSearch, commission]);
+    return (
+      name.includes(lower) ||
+      category.includes(lower) ||
+      id.includes(lower) ||
+      systemRate.toFixed(6).includes(lower) ||
+      resellerRate.toFixed(6).includes(lower)
+    );
+  });
+}, [services, debouncedSearch]);
 
   if (loading) {
     return <div className="p-6 text-gray-500">Loading services...</div>;
