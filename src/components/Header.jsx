@@ -1,11 +1,13 @@
 // src/components/Header.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useReseller } from "../context/ResellerContext"; // ✅ Import context
 import API from "../api/axios";
 import { io } from "socket.io-client";
 
 const Header = () => {
   const { user } = useAuth();
+  const { reseller, loading: resellerLoading } = useReseller(); // get reseller branding
   const [balance, setBalance] = useState(0);
 
   // Fetch wallet balance
@@ -25,16 +27,14 @@ const Header = () => {
     fetchBalance();
 
     // Connect to Socket.IO
-    const socket = io("http://localhost:5000", {
+    const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:5000", {
       query: { userId: user._id }, // 🔑 pass userId to server if needed
     });
 
     // Listen for wallet updates
     socket.on("wallet:update", (data) => {
-      // Check if the update is for this user
-      // Some backends send { userId, balance } or { balance, userId, transactions }
       if (data.userId === user._id) {
-        setBalance(data.balance ?? data.newBalance ?? balance); // fallback just in case
+        setBalance(data.balance ?? data.newBalance ?? balance);
       }
     });
 
@@ -44,13 +44,48 @@ const Header = () => {
     };
   }, [user]);
 
+  // While reseller branding loads, use fallback
+  const brand = reseller || {
+    brandName: "MarinePanel",
+    logo: null,
+    themeColor: "#ff6b00",
+  };
+
+  // Optional: basic skeleton while loading
+  if (resellerLoading) {
+    return (
+      <nav className="w-full bg-gray-200 sticky top-0 z-50 animate-pulse">
+        <div className="flex justify-between p-2 items-center">
+          <div className="flex items-center">
+            <h1 className="text-gray-400 font-semibold mx-4 text-xl">Loading...</h1>
+          </div>
+          <div className="bg-gray-300 rounded-2xl p-2 shadow-lg text-gray-400 text-center w-24">
+            <p className="text-sm">Balance</p>
+            <h2 className="text-xl font-bold">0.0000</h2>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
-    <nav className="w-full bg-orange-500 sticky top-0 z-50">
+    <nav
+      className="w-full sticky top-0 z-50"
+      style={{ backgroundColor: brand.themeColor }}
+    >
       <div className="flex justify-between p-2 items-center">
         <div className="flex items-center">
-          <h1 className="text-white font-semibold mx-4 text-xl">MARINE PANEL</h1>
+          {brand.logo && (
+            <img src={brand.logo} alt="Logo" className="h-10 mr-3" />
+          )}
+          <h1 className="text-white font-semibold mx-4 text-xl">
+            {brand.brandName}
+          </h1>
         </div>
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-2 shadow-lg text-white text-center">
+        <div
+          className="bg-gradient-to-r rounded-2xl p-2 shadow-lg text-white text-center"
+          style={{ background: `linear-gradient(to right, ${brand.themeColor}, #ff3b00)` }}
+        >
           <p className="text-sm">Balance</p>
           <h2 className="text-xl font-bold">${Number(balance).toFixed(4)}</h2>
         </div>
