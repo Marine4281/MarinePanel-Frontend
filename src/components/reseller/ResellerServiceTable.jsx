@@ -1,9 +1,15 @@
 // src/components/reseller/ResellerServiceTable.jsx
+
 import React from "react";
 import formatNumber from "../../utils/formatNumber";
 
-const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => {
-  if (!services || services.length === 0) {
+const ResellerServiceTable = ({
+  services = [],
+  toggleVisibility,
+  updateService,
+}) => {
+
+  if (!services.length) {
     return (
       <div className="text-center text-gray-500 py-4 text-sm">
         No services available
@@ -11,11 +17,23 @@ const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => 
     );
   }
 
+  // Sort services by category then name
+  const sortedServices = [...services].sort((a, b) => {
+    if ((a.category || "") < (b.category || "")) return -1;
+    if ((a.category || "") > (b.category || "")) return 1;
+
+    if ((a.name || "") < (b.name || "")) return -1;
+    if ((a.name || "") > (b.name || "")) return 1;
+
+    return 0;
+  });
+
   let lastCategory = null;
 
   return (
     <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
       <div className="w-full overflow-x-auto">
+
         <table className="w-full table-auto text-[11px] border border-gray-200">
 
           {/* HEADER */}
@@ -32,13 +50,13 @@ const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => 
           </thead>
 
           <tbody>
-            {services.map((service, index) => {
+            {sortedServices.map((service, index) => {
+
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              // Use backend fields
-              const normalRate = Number(service.systemRate || 0);      // normal users see
-              const resellerRate = Number(service.resellerRate || normalRate); // after reseller commission
+              const normalRate = Number(service.systemRate || 0);
+              const resellerRate = Number(service.resellerRate || normalRate);
 
               return (
                 <React.Fragment key={service._id || service.serviceId}>
@@ -46,14 +64,25 @@ const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => 
                   {/* CATEGORY ROW */}
                   {showCategory && (
                     <tr className="bg-orange-50 border-t border-orange-200">
-                      <td colSpan="7" className="px-3 py-2 font-semibold text-orange-700">
+                      <td
+                        colSpan="7"
+                        className="px-3 py-2 font-semibold text-orange-700"
+                      >
                         <input
                           type="text"
-                          defaultValue={service.category}
+                          defaultValue={service.category || "General"}
                           onBlur={(e) => {
                             const newCategory = e.target.value.trim();
-                            if (newCategory && newCategory !== service.category) {
-                              updateService(service._id, null, newCategory);
+
+                            if (
+                              newCategory &&
+                              newCategory !== service.category
+                            ) {
+                              updateService(
+                                service._id,
+                                null,
+                                newCategory
+                              );
                             }
                           }}
                           className="bg-transparent border-b border-orange-300 focus:outline-none w-full"
@@ -64,8 +93,11 @@ const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => 
 
                   {/* SERVICE ROW */}
                   <tr
-                    className={`border-t hover:bg-gray-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                    className={`border-t hover:bg-gray-50 ${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    }`}
                   >
+
                     {/* ID */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                       {service.serviceId || service._id}
@@ -75,9 +107,10 @@ const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => 
                     <td className="px-3 py-2 text-gray-800">
                       <input
                         type="text"
-                        defaultValue={service.name}
+                        defaultValue={service.name || ""}
                         onBlur={(e) => {
                           const newName = e.target.value.trim();
+
                           if (newName && newName !== service.name) {
                             updateService(service._id, newName, null);
                           }
@@ -98,29 +131,34 @@ const ResellerServiceTable = ({ services, toggleVisibility, updateService }) => 
 
                     {/* MIN */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      {formatNumber(service.min)}
+                      {formatNumber(service.min || 0)}
                     </td>
 
                     {/* MAX */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      {formatNumber(service.max)}
+                      {formatNumber(service.max || 0)}
                     </td>
 
                     {/* VISIBILITY */}
                     <td className="px-3 py-2">
                       <input
                         type="checkbox"
-                        checked={service.visible}
-                        onChange={(e) => toggleVisibility(service._id, e.target.checked)}
+                        checked={Boolean(service.visible)}
+                        onChange={(e) =>
+                          toggleVisibility(service._id, e.target.checked)
+                        }
                       />
                     </td>
+
                   </tr>
+
                 </React.Fragment>
               );
             })}
           </tbody>
 
         </table>
+
       </div>
     </div>
   );
