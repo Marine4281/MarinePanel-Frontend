@@ -19,7 +19,7 @@ export default function ResellerBranding() {
   const [logo, setLogo] = useState("");
   const [themeColor, setThemeColor] = useState("#ff6600");
 
-  // Load branding
+  // Load branding dynamically
   useEffect(() => {
     const fetchBranding = async () => {
       try {
@@ -40,7 +40,7 @@ export default function ResellerBranding() {
     fetchBranding();
   }, []);
 
-  // Save branding
+  // Save branding (logo & theme only)
   const saveBranding = async () => {
     try {
       const payload = { logo, themeColor };
