@@ -13,6 +13,7 @@ export default function ResellerBranding() {
   const { reseller, setReseller } = useReseller();
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [brandName, setBrandName] = useState("");
   const [logo, setLogo] = useState("");
@@ -41,18 +42,26 @@ export default function ResellerBranding() {
 
   // Save branding (logo & theme only)
   const saveBranding = async () => {
-    try {
-      const payload = { logo, themeColor };
+    if (!logo && !themeColor) {
+      toast.error("Nothing to update");
+      return;
+    }
 
+    try {
+      setSaving(true);
+
+      const payload = { logo, themeColor };
       await API.patch("/branding", payload);
 
+      // Update context
       if (setReseller) setReseller({ ...reseller, ...payload });
 
       toast.success("Branding updated successfully");
-
     } catch (err) {
       console.error(err);
       toast.error("Failed to save branding");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -101,23 +110,30 @@ export default function ResellerBranding() {
         ) : (
           <div className="bg-white shadow rounded-lg p-6 max-w-xl">
 
-            <h2 className="text-lg font-bold text-orange-500 mb-6">
-              Reseller Branding
-            </h2>
+            {/* Live Header Preview */}
+            <div
+              className="flex items-center gap-4 mb-6 p-4 rounded"
+              style={{ backgroundColor: themeColor }}
+            >
+              {logo && (
+                <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
+              )}
+              <h2 className="text-white text-lg font-bold">
+                {brandName || "Reseller"}
+              </h2>
+            </div>
 
             {/* Brand Name */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
                 Brand Name
               </label>
-
               <input
                 type="text"
                 value={brandName}
                 disabled
                 className="w-full border rounded p-2 bg-gray-100"
               />
-
               <p className="text-xs text-gray-500 mt-1">
                 Brand name is linked to your domain and cannot be changed.
               </p>
@@ -128,20 +144,14 @@ export default function ResellerBranding() {
               <label className="block text-sm font-medium mb-1">
                 Logo URL
               </label>
-
               <input
                 type="text"
                 value={logo}
                 onChange={(e) => setLogo(e.target.value)}
                 className="w-full border rounded p-2"
               />
-
               {logo && (
-                <img
-                  src={logo}
-                  alt="Logo Preview"
-                  className="h-12 mt-2"
-                />
+                <img src={logo} alt="Logo Preview" className="h-12 mt-2" />
               )}
             </div>
 
@@ -150,7 +160,6 @@ export default function ResellerBranding() {
               <label className="block text-sm font-medium mb-1">
                 Theme Color
               </label>
-
               <input
                 type="color"
                 value={themeColor}
@@ -161,9 +170,12 @@ export default function ResellerBranding() {
 
             <button
               onClick={saveBranding}
-              className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+              disabled={saving}
+              className={`px-4 py-2 rounded text-white ${
+                saving ? "bg-gray-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"
+              }`}
             >
-              Save Branding
+              {saving ? "Saving..." : "Save Branding"}
             </button>
 
           </div>
@@ -172,4 +184,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-}
+              }
