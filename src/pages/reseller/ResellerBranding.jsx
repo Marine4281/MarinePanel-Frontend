@@ -15,6 +15,7 @@ export default function ResellerBranding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Local state mirrors reseller context
   const [brandName, setBrandName] = useState("");
   const [logo, setLogo] = useState("");
   const [themeColor, setThemeColor] = useState("#16a34a"); // default green
@@ -23,23 +24,27 @@ export default function ResellerBranding() {
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        const res = await API.get("/branding", { withCredentials: true });
+        const hostname = window.location.hostname; // Send current host to backend
+        const res = await API.get("/branding", {
+          headers: { "x-reseller-domain": hostname },
+          withCredentials: true,
+        });
 
+        // Update local state
         setBrandName(res.data.brandName || "");
         setLogo(res.data.logo || "");
         setThemeColor(res.data.themeColor || "#16a34a");
 
         // Update context immediately
-        if (setReseller) {
-          setReseller((prev) => ({
-            ...prev,
-            brandName: res.data.brandName || prev.brandName,
-            logo: res.data.logo || prev.logo,
-            themeColor: res.data.themeColor || prev.themeColor,
-          }));
-        }
+        setReseller((prev) => ({
+          ...prev,
+          brandName: res.data.brandName || prev.brandName,
+          logo: res.data.logo || prev.logo,
+          themeColor: res.data.themeColor || prev.themeColor,
+          domain: res.data.domain || prev.domain,
+        }));
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load branding:", err);
         toast.error("Failed to load branding");
       } finally {
         setLoading(false);
@@ -59,21 +64,19 @@ export default function ResellerBranding() {
     }
   }, [themeColor, setReseller]);
 
-  // Save branding (logo & theme only)
+  // Save branding (logo & theme)
   const saveBranding = async () => {
-    if (!logo && !themeColor) {
-      toast.error("Nothing to update");
-      return;
-    }
-
     try {
       setSaving(true);
-
       const payload = { logo, themeColor };
       await API.patch("/branding", payload, { withCredentials: true });
 
       // Update context
-      if (setReseller) setReseller({ ...reseller, ...payload });
+      setReseller((prev) => ({
+        ...prev,
+        logo,
+        themeColor,
+      }));
 
       toast.success("Branding updated successfully");
     } catch (err) {
@@ -86,7 +89,6 @@ export default function ResellerBranding() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-
       {/* Sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-64 bg-white shadow-md p-6">
         <h1 className="text-xl font-bold text-orange-500 mb-6">
@@ -129,7 +131,6 @@ export default function ResellerBranding() {
           </div>
         ) : (
           <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-
             {/* Live Header Preview */}
             <div
               className="flex items-center gap-4 mb-6 p-4 rounded"
@@ -202,4 +203,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-          }
+    }
