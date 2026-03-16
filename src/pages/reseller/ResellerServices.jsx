@@ -125,10 +125,10 @@ export default function ResellerServices() {
   return services.filter((s) => {
     const name = s.name?.toLowerCase() || "";
     const category = s.category?.toLowerCase() || "";
-    const id = s.serviceId?.toString() || s._id.toString();
+    const id = s.serviceId?.toString() || s._id?.toString() || "";
 
-    const systemRate = Number(s.rate || 0);
-    const resellerRate = Number(s.finalPrice || 0);
+    const systemRate = Number(s.systemRate || 0);
+    const resellerRate = Number(s.resellerRate || 0);
 
     return (
       name.includes(lower) ||
@@ -139,7 +139,6 @@ export default function ResellerServices() {
     );
   });
 }, [services, debouncedSearch]);
-
   if (loading) {
     return <div className="p-6 text-gray-500">Loading services...</div>;
   }
