@@ -17,18 +17,27 @@ export default function ResellerBranding() {
 
   const [brandName, setBrandName] = useState("");
   const [logo, setLogo] = useState("");
-  const [themeColor, setThemeColor] = useState("#ff6600");
+  const [themeColor, setThemeColor] = useState("#16a34a"); // default green
 
   // Load branding dynamically
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        const res = await API.get("/branding");
+        const res = await API.get("/branding", { withCredentials: true });
 
         setBrandName(res.data.brandName || "");
         setLogo(res.data.logo || "");
-        setThemeColor(res.data.themeColor || "#ff6600");
+        setThemeColor(res.data.themeColor || "#16a34a");
 
+        // Update context immediately
+        if (setReseller) {
+          setReseller((prev) => ({
+            ...prev,
+            brandName: res.data.brandName || prev.brandName,
+            logo: res.data.logo || prev.logo,
+            themeColor: res.data.themeColor || prev.themeColor,
+          }));
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load branding");
@@ -38,7 +47,17 @@ export default function ResellerBranding() {
     };
 
     fetchBranding();
-  }, []);
+  }, [setReseller]);
+
+  // Live theme preview
+  useEffect(() => {
+    if (setReseller) {
+      setReseller((prev) => ({
+        ...prev,
+        themeColor,
+      }));
+    }
+  }, [themeColor, setReseller]);
 
   // Save branding (logo & theme only)
   const saveBranding = async () => {
@@ -51,7 +70,7 @@ export default function ResellerBranding() {
       setSaving(true);
 
       const payload = { logo, themeColor };
-      await API.patch("/branding", payload);
+      await API.patch("/branding", payload, { withCredentials: true });
 
       // Update context
       if (setReseller) setReseller({ ...reseller, ...payload });
@@ -70,7 +89,9 @@ export default function ResellerBranding() {
 
       {/* Sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-64 bg-white shadow-md p-6">
-        <h1 className="text-xl font-bold text-orange-500 mb-6">Reseller Panel</h1>
+        <h1 className="text-xl font-bold text-orange-500 mb-6">
+          {reseller.brandName || "Reseller Panel"}
+        </h1>
 
         <nav className="flex flex-col gap-4">
           <button
@@ -102,7 +123,6 @@ export default function ResellerBranding() {
 
       {/* Main */}
       <div className="flex-1 p-6">
-
         {loading ? (
           <div className="text-center py-20 text-gray-500">
             Loading branding...
@@ -119,7 +139,7 @@ export default function ResellerBranding() {
                 <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
               )}
               <h2 className="text-white text-lg font-bold">
-                {brandName || "Reseller"}
+                {brandName || reseller.brandName || "Reseller"}
               </h2>
             </div>
 
@@ -130,7 +150,7 @@ export default function ResellerBranding() {
               </label>
               <input
                 type="text"
-                value={brandName}
+                value={brandName || reseller.brandName || ""}
                 disabled
                 className="w-full border rounded p-2 bg-gray-100"
               />
@@ -177,11 +197,9 @@ export default function ResellerBranding() {
             >
               {saving ? "Saving..." : "Save Branding"}
             </button>
-
           </div>
         )}
-
       </div>
     </div>
   );
-              }
+          }
