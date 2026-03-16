@@ -10,7 +10,7 @@ export const ResellerProvider = ({ children }) => {
   const [reseller, setReseller] = useState({
     brandName: "MarinePanel",
     logo: null,
-    themeColor: "#2563eb", // default platform color
+    themeColor: "#f97316", // default platform color (orange)
     domain: "marinepanel.online",
   });
 
@@ -29,19 +29,16 @@ export const ResellerProvider = ({ children }) => {
   };
 
   // Normalize branding data from API
-  const normalizeBranding = (data) => {
-    return {
-      brandName: data.brandName || "Reseller Panel",
-      logo: data.logo || null,
-      themeColor: data.themeColor || "#16a34a",
-      domain: data.domain || data.resellerDomain || "marinepanel.online",
-    };
-  };
+  const normalizeBranding = (data) => ({
+    brandName: data.brandName || "Reseller Panel",
+    logo: data.logo || null,
+    themeColor: data.themeColor || "#16a34a",
+    domain: data.domain || data.resellerDomain || "marinepanel.online",
+  });
 
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        // Use the browser host as the reseller identifier
         const hostname = window.location.hostname; // e.g., smmlord.marinepanel.online
 
         const res = await API.get("/branding", {
@@ -54,10 +51,10 @@ export const ResellerProvider = ({ children }) => {
 
           setReseller(branding);
 
-          // Apply global theme
+          // Apply theme immediately
           applyTheme(branding.themeColor);
 
-          // Update browser title dynamically
+          // Update title immediately
           updateTitle(branding.brandName);
         }
       } catch (err) {
@@ -70,20 +67,23 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, []);
 
-  // Watch for live updates when `setReseller` changes
+  // Ensure theme & title update if reseller changes dynamically
   useEffect(() => {
     applyTheme(reseller.themeColor);
     updateTitle(reseller.brandName);
   }, [reseller]);
 
+  // ❌ Don't render children until branding is loaded
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading branding...
+      </div>
+    );
+  }
+
   return (
-    <ResellerContext.Provider
-      value={{
-        reseller,
-        setReseller,
-        loading,
-      }}
-    >
+    <ResellerContext.Provider value={{ reseller, setReseller, loading }}>
       {children}
     </ResellerContext.Provider>
   );
