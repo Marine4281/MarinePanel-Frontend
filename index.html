@@ -61,6 +61,40 @@
       }
     </script>
 
+    <!-- 🔹 Instant Branding Script -->
+    <script>
+      (function() {
+        // Default platform branding
+        const DEFAULT_BRAND = {
+          brandName: "MarinePanel",
+          logo: "/logo.png",
+          themeColor: "#f97316", // orange
+          domain: "marinepanel.online"
+        };
+
+        // Detect subdomain for reseller
+        const host = window.location.hostname; // e.g., smmlord.marinepanel.online
+        let brand = {...DEFAULT_BRAND};
+
+        if (host !== "marinepanel.online" && host.includes(".marinepanel.online")) {
+          // Optionally, prefill branding based on subdomain mapping
+          // Example: You can replace this with server-injected JSON or hardcoded test mapping
+          const subdomain = host.split(".")[0];
+          const resellerMap = {
+            smmlord: { brandName: "SMMLord", logo: "/resellers/smmlord.png", themeColor: "#16a34a" },
+            socialboost: { brandName: "SocialBoost", logo: "/resellers/socialboost.png", themeColor: "#1d4ed8" }
+          };
+          if (resellerMap[subdomain]) brand = { ...brand, ...resellerMap[subdomain] };
+        }
+
+        // Expose to React
+        window.__BRANDING__ = brand;
+
+        // Apply theme and title immediately
+        document.documentElement.style.setProperty("--theme-color", brand.themeColor);
+        document.title = brand.brandName;
+      })();
+    </script>
   </head>
 
   <body>
