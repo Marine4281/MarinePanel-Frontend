@@ -1,4 +1,5 @@
 // src/pages/reseller/ResellerBranding.jsx
+
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -8,6 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useReseller } from "../../context/ResellerContext";
 
 export default function ResellerBranding() {
+
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { reseller, setReseller } = useReseller();
@@ -18,10 +20,18 @@ export default function ResellerBranding() {
   const [logo, setLogo] = useState("");
   const [themeColor, setThemeColor] = useState("#ff6600");
 
-  // Load branding dynamically
+  /*
+  --------------------------------
+  Load Branding
+  --------------------------------
+  */
+
   useEffect(() => {
+
     const fetchBranding = async () => {
+
       try {
+
         const res = await API.get("/branding");
 
         setBrandName(res.data.brandName || "");
@@ -29,51 +39,118 @@ export default function ResellerBranding() {
         setThemeColor(res.data.themeColor || "#ff6600");
 
       } catch (err) {
+
         console.error(err);
         toast.error("Failed to load branding");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     fetchBranding();
+
   }, []);
 
-  // Save branding (logo & theme only)
+  /*
+  --------------------------------
+  Save Branding
+  --------------------------------
+  */
+
   const saveBranding = async () => {
+
     try {
-      const payload = { logo, themeColor };
+
+      const payload = {
+        brandName,
+        logo,
+        themeColor,
+      };
 
       await API.patch("/branding", payload);
 
-      if (setReseller) setReseller({ ...reseller, ...payload });
+      /*
+      Update Global Context
+      */
+
+      if (setReseller) {
+
+        const updated = {
+          ...reseller,
+          ...payload,
+        };
+
+        setReseller(updated);
+
+        /*
+        Apply theme instantly
+        */
+
+        if (themeColor) {
+          document.documentElement.style.setProperty(
+            "--theme-color",
+            themeColor
+          );
+        }
+
+        /*
+        Update page title
+        */
+
+        if (brandName) {
+          document.title = brandName;
+        }
+
+      }
 
       toast.success("Branding updated successfully");
 
     } catch (err) {
+
       console.error(err);
       toast.error("Failed to save branding");
+
     }
+
   };
 
   return (
+
     <div className="flex min-h-screen bg-gray-100">
 
       {/* Sidebar */}
+
       <aside className="hidden lg:flex lg:flex-col w-64 bg-white shadow-md p-6">
-        <h1 className="text-xl font-bold text-orange-500 mb-6">Reseller Panel</h1>
+
+        <h1 className="text-xl font-bold text-orange-500 mb-6">
+          {reseller?.brandName || "Reseller Panel"}
+        </h1>
 
         <nav className="flex flex-col gap-4">
+
           <button
             onClick={() => navigate("/home")}
             className="flex items-center gap-2 text-gray-700 hover:text-orange-500"
           >
-            <FiArrowLeft /> Back
+            <FiArrowLeft />
+            Back
           </button>
 
-          <Link to="/reseller/dashboard">Dashboard</Link>
-          <Link to="/reseller/users">Users</Link>
-          <Link to="/reseller/orders">Orders</Link>
+          <Link to="/reseller/dashboard">
+            Dashboard
+          </Link>
+
+          <Link to="/reseller/users">
+            Users
+          </Link>
+
+          <Link to="/reseller/orders">
+            Orders
+          </Link>
 
           <Link
             to="/reseller/branding"
@@ -86,19 +163,26 @@ export default function ResellerBranding() {
             onClick={logout}
             className="flex items-center gap-2 text-red-500 mt-6"
           >
-            <FiLogOut /> Logout
+            <FiLogOut />
+            Logout
           </button>
+
         </nav>
+
       </aside>
 
       {/* Main */}
+
       <div className="flex-1 p-6">
 
         {loading ? (
+
           <div className="text-center py-20 text-gray-500">
             Loading branding...
           </div>
+
         ) : (
+
           <div className="bg-white shadow rounded-lg p-6 max-w-xl">
 
             <h2 className="text-lg font-bold text-orange-500 mb-6">
@@ -106,7 +190,9 @@ export default function ResellerBranding() {
             </h2>
 
             {/* Brand Name */}
+
             <div className="mb-4">
+
               <label className="block text-sm font-medium mb-1">
                 Brand Name
               </label>
@@ -114,17 +200,20 @@ export default function ResellerBranding() {
               <input
                 type="text"
                 value={brandName}
-                disabled
-                className="w-full border rounded p-2 bg-gray-100"
+                onChange={(e) => setBrandName(e.target.value)}
+                className="w-full border rounded p-2"
               />
 
               <p className="text-xs text-gray-500 mt-1">
-                Brand name is linked to your domain and cannot be changed.
+                Changing this will update your panel branding.
               </p>
+
             </div>
 
             {/* Logo */}
+
             <div className="mb-4">
+
               <label className="block text-sm font-medium mb-1">
                 Logo URL
               </label>
@@ -137,16 +226,21 @@ export default function ResellerBranding() {
               />
 
               {logo && (
+
                 <img
                   src={logo}
                   alt="Logo Preview"
                   className="h-12 mt-2"
                 />
+
               )}
+
             </div>
 
             {/* Theme Color */}
+
             <div className="mb-6">
+
               <label className="block text-sm font-medium mb-1">
                 Theme Color
               </label>
@@ -157,6 +251,7 @@ export default function ResellerBranding() {
                 onChange={(e) => setThemeColor(e.target.value)}
                 className="h-10 w-16 p-0 border-0 rounded"
               />
+
             </div>
 
             <button
@@ -167,9 +262,13 @@ export default function ResellerBranding() {
             </button>
 
           </div>
+
         )}
 
       </div>
+
     </div>
+
   );
-}
+
+                                    }
