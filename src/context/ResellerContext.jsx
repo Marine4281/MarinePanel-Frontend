@@ -44,8 +44,9 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, [slug]);
 
+  // ✅ Include setReseller in context so components can update dynamically
   return (
-    <ResellerContext.Provider value={{ reseller, slug, loading }}>
+    <ResellerContext.Provider value={{ reseller, setReseller, slug, loading }}>
       {children}
     </ResellerContext.Provider>
   );
