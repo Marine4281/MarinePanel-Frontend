@@ -11,7 +11,7 @@ export const ResellerProvider = ({ children }) => {
   const [reseller, setReseller] = useState({
     brandName: "Reseller Panel",
     logo: null,
-    themeColor: "#ff6b00",
+    themeColor: "#16a34a", // default green to match backend
     domain: null,
   });
 
@@ -20,31 +20,40 @@ export const ResellerProvider = ({ children }) => {
   // Detect subdomain if present
   const slug = getResellerSlug();
 
-  // Function to apply theme color globally
+  // Apply theme color globally
   const applyTheme = (color) => {
     if (color) {
       document.documentElement.style.setProperty("--theme-color", color);
     }
   };
 
-  // Function to update page title
+  // Update page title dynamically
   const updateTitle = (name) => {
     document.title = name || "Reseller Panel";
   };
 
-  // Fetch branding info
+  // Normalize branding data from API
+  const normalizeBranding = (data) => {
+    return {
+      brandName:
+        data.brandName ||
+        data.resellerBrand ||
+        data.brandSlug ||
+        "Reseller Panel",
+      logo: data.logo || null,
+      themeColor: data.themeColor || "#16a34a",
+      domain: data.domain || data.resellerDomain || null,
+    };
+  };
+
+  // Fetch branding info from backend
   useEffect(() => {
     const fetchBranding = async () => {
       try {
         const res = await API.get("/branding", { withCredentials: true });
 
         if (res.data) {
-          const branding = {
-            brandName: res.data.brandName || "Reseller Panel",
-            logo: res.data.logo || null,
-            themeColor: res.data.themeColor || "#ff6b00",
-            domain: res.data.domain || null,
-          };
+          const branding = normalizeBranding(res.data);
 
           setReseller(branding);
 
@@ -64,7 +73,7 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, [slug]);
 
-  // Watch for live updates (if setReseller changes)
+  // Watch for live updates when `setReseller` changes
   useEffect(() => {
     applyTheme(reseller.themeColor);
     updateTitle(reseller.brandName);
