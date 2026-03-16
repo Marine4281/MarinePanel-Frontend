@@ -28,30 +28,28 @@ const Header = () => {
 
     // Connect to Socket.IO
     const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:5000", {
-      query: { userId: user._id }, // 🔑 pass userId to server if needed
+      query: { userId: user._id },
     });
 
-    // Listen for wallet updates
     socket.on("wallet:update", (data) => {
       if (data.userId === user._id) {
         setBalance(data.balance ?? data.newBalance ?? balance);
       }
     });
 
-    // Cleanup
     return () => {
       socket.disconnect();
     };
   }, [user]);
 
-  // While reseller branding loads, use fallback
+  // Use dynamic branding from reseller context, fallback to defaults
   const brand = reseller || {
-    brandName: "MarinePanel",
+    brandName: "Marine Panel",
     logo: null,
     themeColor: "#ff6b00",
   };
 
-  // Optional: basic skeleton while loading
+  // Loading skeleton while reseller branding is fetching
   if (resellerLoading) {
     return (
       <nav className="w-full bg-gray-200 sticky top-0 z-50 animate-pulse">
