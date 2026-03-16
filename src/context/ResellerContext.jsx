@@ -1,4 +1,5 @@
 // src/context/ResellerContext.jsx
+
 import { createContext, useContext, useEffect, useState } from "react";
 import API from "../api/axios";
 import { getResellerSlug } from "../utils/domain";
@@ -9,30 +10,44 @@ export const useReseller = () => useContext(ResellerContext);
 
 export const ResellerProvider = ({ children }) => {
   const [reseller, setReseller] = useState({
-    brandName: "MarinePanel",
+    brandName: "Reseller Panel",
     logo: null,
     themeColor: "#ff6b00",
+    domain: null,
   });
+
   const [loading, setLoading] = useState(true);
 
-  const slug = getResellerSlug(); // detects subdomain
+  // Detect subdomain if present
+  const slug = getResellerSlug();
 
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        if (!slug) {
-          setLoading(false);
-          return;
-        }
-
         const res = await API.get("/branding", { withCredentials: true });
 
         if (res.data) {
-          setReseller({
-            brandName: res.data.brandName || "MarinePanel",
+          const branding = {
+            brandName: res.data.brandName || "Reseller Panel",
             logo: res.data.logo || null,
             themeColor: res.data.themeColor || "#ff6b00",
-          });
+            domain: res.data.domain || null,
+          };
+
+          setReseller(branding);
+
+          // Apply theme color globally
+          if (branding.themeColor) {
+            document.documentElement.style.setProperty(
+              "--theme-color",
+              branding.themeColor
+            );
+          }
+
+          // Update browser title dynamically
+          if (branding.brandName) {
+            document.title = branding.brandName;
+          }
         }
       } catch (err) {
         console.error("Reseller branding error:", err);
@@ -44,9 +59,15 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, [slug]);
 
-  // ✅ Include setReseller in context so components can update dynamically
   return (
-    <ResellerContext.Provider value={{ reseller, setReseller, slug, loading }}>
+    <ResellerContext.Provider
+      value={{
+        reseller,
+        setReseller,
+        slug,
+        loading,
+      }}
+    >
       {children}
     </ResellerContext.Provider>
   );
