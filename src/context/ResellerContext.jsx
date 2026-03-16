@@ -9,30 +9,50 @@ export const useReseller = () => useContext(ResellerContext);
 
 export const ResellerProvider = ({ children }) => {
   const [reseller, setReseller] = useState({
-    brandName: "MarinePanel",
+    brandName: "Reseller Panel",
     logo: null,
     themeColor: "#ff6b00",
+    domain: null,
   });
+
   const [loading, setLoading] = useState(true);
 
-  const slug = getResellerSlug(); // detects subdomain
+  // Detect subdomain if present
+  const slug = getResellerSlug();
 
+  // Function to apply theme color globally
+  const applyTheme = (color) => {
+    if (color) {
+      document.documentElement.style.setProperty("--theme-color", color);
+    }
+  };
+
+  // Function to update page title
+  const updateTitle = (name) => {
+    document.title = name || "Reseller Panel";
+  };
+
+  // Fetch branding info
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        if (!slug) {
-          setLoading(false);
-          return;
-        }
-
         const res = await API.get("/branding", { withCredentials: true });
 
         if (res.data) {
-          setReseller({
-            brandName: res.data.brandName || "MarinePanel",
+          const branding = {
+            brandName: res.data.brandName || "Reseller Panel",
             logo: res.data.logo || null,
             themeColor: res.data.themeColor || "#ff6b00",
-          });
+            domain: res.data.domain || null,
+          };
+
+          setReseller(branding);
+
+          // Apply global theme
+          applyTheme(branding.themeColor);
+
+          // Update browser title dynamically
+          updateTitle(branding.brandName);
         }
       } catch (err) {
         console.error("Reseller branding error:", err);
@@ -44,9 +64,21 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, [slug]);
 
-  // ✅ Include setReseller in context so components can update dynamically
+  // Watch for live updates (if setReseller changes)
+  useEffect(() => {
+    applyTheme(reseller.themeColor);
+    updateTitle(reseller.brandName);
+  }, [reseller]);
+
   return (
-    <ResellerContext.Provider value={{ reseller, setReseller, slug, loading }}>
+    <ResellerContext.Provider
+      value={{
+        reseller,
+        setReseller,
+        slug,
+        loading,
+      }}
+    >
       {children}
     </ResellerContext.Provider>
   );
