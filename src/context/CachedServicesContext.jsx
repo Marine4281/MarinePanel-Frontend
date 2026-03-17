@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { io } from "socket.io-client";
 import API from "../api/axios";
+import { getResellerSlug } from "../utils/domain";
 
 const CachedServicesContext = createContext();
 
@@ -15,13 +16,35 @@ export const CachedServicesProvider = ({ children }) => {
   // =========================
   const fetchData = async () => {
     try {
-      const [servicesRes, commissionRes] = await Promise.all([
-        API.get("/services"),
-        API.get("/settings/commission"), // commission.js public endpoint
-      ]);
+      setLoading(true);
 
-      setServices(servicesRes.data || []);
-      setCommission(commissionRes.data?.commission || 0);
+      const slug = getResellerSlug();
+
+      const endpoint = slug
+        ? "/reseller/services"
+        : "/services";
+
+      const res = await API.get(endpoint);
+
+      let servicesData = [];
+      let commissionData = 0;
+
+      if (slug) {
+        // ✅ Reseller response
+        servicesData = res.data.services || [];
+        commissionData = res.data.commission || 0;
+      } else {
+        // ✅ Normal response
+        servicesData = res.data || [];
+
+        // Keep your existing commission fetch
+        const commissionRes = await API.get("/settings/commission");
+        commissionData = commissionRes.data?.commission || 0;
+      }
+
+      setServices(servicesData);
+      setCommission(commissionData);
+
     } catch (error) {
       console.error("Failed to fetch services or commission", error);
     } finally {
@@ -62,13 +85,22 @@ export const CachedServicesProvider = ({ children }) => {
   // =========================
   // Memoized derived data
   // =========================
-  const platforms = useMemo(() => [...new Set(services.map((s) => s.platform))], [services]);
+  const platforms = useMemo(
+    () => [...new Set(services.map((s) => s.platform))],
+    [services]
+  );
 
   const getCategoriesByPlatform = (platform) =>
-    [...new Set(services.filter((s) => s.platform === platform).map((s) => s.category))];
+    [...new Set(
+      services
+        .filter((s) => s.platform === platform)
+        .map((s) => s.category)
+    )];
 
   const getServicesByCategory = (platform, category) =>
-    services.filter((s) => s.platform === platform && s.category === category);
+    services.filter(
+      (s) => s.platform === platform && s.category === category
+    );
 
   // Manual refresh if needed
   const refreshServices = async () => await fetchData();
