@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import formatNumber from "../utils/formatNumber";
 import ServiceDescriptionModal from "./ServiceDescriptionModal";
 
-const ServiceTable = ({ services, commission = 0 }) => {
+const ServiceTable = ({ services }) => {
   const [selectedService, setSelectedService] = useState(null);
 
   const openDescription = (service) => setSelectedService(service);
@@ -17,25 +17,24 @@ const ServiceTable = ({ services, commission = 0 }) => {
     );
   }
 
-  // ✅ UPDATED: Supports resellerRate, systemRate, and fallback to original logic
-  const calculateRateWithCommission = (service) => {
-    // ✅ 1. Reseller rate (FINAL price for reseller users)
+  // ✅ FINAL: NO FRONTEND COMMISSION CALCULATION
+  const calculateRate = (service) => {
+    // 1. Reseller price (highest priority)
     if (service?.resellerRate !== undefined && service?.resellerRate !== null) {
       return Number(service.resellerRate).toFixed(4);
     }
 
-    // ✅ 2. System rate (admin/global adjusted rate)
+    // 2. Admin/system price
     if (service?.systemRate !== undefined && service?.systemRate !== null) {
       return Number(service.systemRate).toFixed(4);
     }
 
-    // ✅ 3. Original fallback (main panel logic)
-    if (!service?.rate) return "0.00";
+    // 3. Fallback (already processed from backend)
+    if (service?.rate !== undefined && service?.rate !== null) {
+      return Number(service.rate).toFixed(4);
+    }
 
-    const finalRate =
-      Number(service.rate) * (1 + Number(commission) / 100);
-
-    return finalRate.toFixed(4);
+    return "0.0000";
   };
 
   let lastCategory = null;
@@ -78,7 +77,11 @@ const ServiceTable = ({ services, commission = 0 }) => {
                   )}
 
                   {/* SERVICE ROW */}
-                  <tr className={`border-t hover:bg-gray-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+                  <tr
+                    className={`border-t hover:bg-gray-50 ${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    }`}
+                  >
 
                     {/* ID */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
@@ -88,16 +91,16 @@ const ServiceTable = ({ services, commission = 0 }) => {
                     {/* SERVICE */}
                     <td className="px-3 py-2 text-gray-800 leading-snug whitespace-normal break-words max-w-[320px] md:max-w-full">
 
-                      {/* Mobile layout */}
+                      {/* Mobile */}
                       <div className="md:hidden">
-                        {service.name.split("~").map((part, idx) => (
+                        {service.name?.split("~").map((part, idx) => (
                           <div key={idx}>
                             {idx === 0 ? part.trim() : `~ ${part.trim()}`}
                           </div>
                         ))}
                       </div>
 
-                      {/* Desktop layout */}
+                      {/* Desktop */}
                       <div className="hidden md:block">
                         {service.name
                           ?.replace(/\n/g, " ")
@@ -109,7 +112,7 @@ const ServiceTable = ({ services, commission = 0 }) => {
 
                     {/* RATE */}
                     <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
-                      ${calculateRateWithCommission(service)}
+                      ${calculateRate(service)}
                     </td>
 
                     {/* MIN */}
@@ -122,7 +125,7 @@ const ServiceTable = ({ services, commission = 0 }) => {
                       {formatNumber(service.max)}
                     </td>
 
-                    {/* INFO BUTTON */}
+                    {/* INFO */}
                     <td className="px-3 py-2">
                       <button
                         onClick={() => openDescription(service)}
@@ -142,14 +145,13 @@ const ServiceTable = ({ services, commission = 0 }) => {
         </table>
       </div>
 
-      {/* DESCRIPTION MODAL */}
+      {/* MODAL */}
       {selectedService && (
         <ServiceDescriptionModal
           service={selectedService}
           onClose={closeDescription}
         />
       )}
-
     </div>
   );
 };
