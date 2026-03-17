@@ -25,13 +25,11 @@ export default function ResellerServices() {
       const servicesData = res.data.services || [];
       const commissionData = Number(res.data.commission || 0);
 
-      // ✅ Calculate final rate per service
-      const servicesWithFinalRate = servicesData.map((s) => {
-        const systemRate = Number(s.systemRate || 0);
-        const resellerRate = Number(s.resellerRate ?? systemRate);
-        const finalRate = resellerRate * (1 + commissionData / 100); // include global commission
-        return { ...s, finalRate };
-      });
+      // Use backend-provided resellerRate directly (already includes reseller commission)
+      const servicesWithFinalRate = servicesData.map((s) => ({
+        ...s,
+        finalRate: Number(s.resellerRate ?? s.systemRate ?? 0),
+      }));
 
       setServices(servicesWithFinalRate);
       setCommission(commissionData);
@@ -200,4 +198,4 @@ export default function ResellerServices() {
       />
     </div>
   );
-        }
+}
