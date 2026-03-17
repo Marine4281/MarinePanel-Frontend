@@ -6,6 +6,7 @@ const ResellerServiceTable = ({
   services = [],
   toggleVisibility,
   updateService,
+  commission = 0, // Add commission prop
 }) => {
 
   if (!services.length) {
@@ -54,9 +55,10 @@ const ResellerServiceTable = ({
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              // Use finalRate if present (resellerRate included)
+              // Rates
               const normalRate = Number(service.systemRate || service.rate || 0);
-              const resellerRate = Number(service.finalRate ?? normalRate);
+              const baseResellerRate = Number(service.resellerRate ?? normalRate);
+              const finalResellerRate = baseResellerRate * (1 + Number(commission) / 100);
 
               return (
                 <React.Fragment key={service._id || service.serviceId}>
@@ -124,9 +126,9 @@ const ResellerServiceTable = ({
                       ${normalRate.toFixed(4)}
                     </td>
 
-                    {/* RESELLER RATE */}
+                    {/* RESELLER RATE (with global commission applied) */}
                     <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
-                      ${resellerRate.toFixed(4)}
+                      ${finalResellerRate.toFixed(4)}
                     </td>
 
                     {/* MIN */}
