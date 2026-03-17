@@ -17,10 +17,24 @@ const ServiceTable = ({ services, commission = 0 }) => {
     );
   }
 
-  // Helper to calculate rate including global commission
+  // ✅ UPDATED: Supports resellerRate, systemRate, and fallback to original logic
   const calculateRateWithCommission = (service) => {
+    // ✅ 1. Reseller rate (FINAL price for reseller users)
+    if (service?.resellerRate !== undefined && service?.resellerRate !== null) {
+      return Number(service.resellerRate).toFixed(4);
+    }
+
+    // ✅ 2. System rate (admin/global adjusted rate)
+    if (service?.systemRate !== undefined && service?.systemRate !== null) {
+      return Number(service.systemRate).toFixed(4);
+    }
+
+    // ✅ 3. Original fallback (main panel logic)
     if (!service?.rate) return "0.00";
-    const finalRate = Number(service.rate) * (1 + Number(commission) / 100);
+
+    const finalRate =
+      Number(service.rate) * (1 + Number(commission) / 100);
+
     return finalRate.toFixed(4);
   };
 
