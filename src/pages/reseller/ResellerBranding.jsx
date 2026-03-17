@@ -12,13 +12,13 @@ export default function ResellerBranding() {
   const navigate = useNavigate();
   const { reseller, setReseller } = useReseller();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!reseller.brandName); // loading only if branding not ready
   const [saving, setSaving] = useState(false);
 
-  // Initialize local state from context (avoids flash of main branding)
+  // Initialize local state from context (prevents flash)
   const [brandName, setBrandName] = useState(reseller.brandName || "");
   const [logo, setLogo] = useState(reseller.logo || "");
-  const [themeColor, setThemeColor] = useState(reseller.themeColor || "#16a34a");
+  const [themeColor, setThemeColor] = useState(reseller.themeColor || "#f97316");
 
   // Fetch latest branding from backend on mount
   useEffect(() => {
@@ -58,8 +58,8 @@ export default function ResellerBranding() {
       }
     };
 
-    fetchBranding();
-  }, [setReseller]);
+    if (!reseller.brandName) fetchBranding();
+  }, [reseller.brandName, reseller.domain, setReseller]);
 
   // Live theme color preview
   useEffect(() => {
@@ -70,12 +70,13 @@ export default function ResellerBranding() {
   const saveBranding = async () => {
     try {
       setSaving(true);
-      const payload = { logo, themeColor };
+      const payload = { brandName, logo, themeColor };
       await API.patch("/branding", payload, { withCredentials: true });
 
-      // Update context after successful save
+      // Update context after save
       setReseller((prev) => ({
         ...prev,
+        brandName,
         logo,
         themeColor,
       }));
@@ -88,6 +89,14 @@ export default function ResellerBranding() {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="text-center py-20 text-gray-500">
+        Loading branding...
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -127,82 +136,78 @@ export default function ResellerBranding() {
 
       {/* Main Content */}
       <div className="flex-1 p-6">
-        {loading ? (
-          <div className="text-center py-20 text-gray-500">
-            Loading branding...
+        <div className="bg-white shadow rounded-lg p-6 max-w-xl">
+          {/* Live Header Preview */}
+          <div
+            className="flex items-center gap-4 mb-6 p-4 rounded"
+            style={{ backgroundColor: themeColor }}
+          >
+            {logo && (
+              <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
+            )}
+            <h2 className="text-white text-lg font-bold">
+              {brandName || reseller.brandName || "Reseller"}
+            </h2>
           </div>
-        ) : (
-          <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-            {/* Live Header Preview */}
-            <div
-              className="flex items-center gap-4 mb-6 p-4 rounded"
-              style={{ backgroundColor: themeColor }}
-            >
-              {logo && (
-                <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
-              )}
-              <h2 className="text-white text-lg font-bold">
-                {brandName || reseller.brandName || "Reseller"}
-              </h2>
-            </div>
 
-            {/* Brand Name */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Brand Name
-              </label>
-              <input
-                type="text"
-                value={brandName}
-                disabled
-                className="w-full border rounded p-2 bg-gray-100"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Brand name is linked to your domain and cannot be changed.
-              </p>
-            </div>
-
-            {/* Logo */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Logo URL
-              </label>
-              <input
-                type="text"
-                value={logo}
-                onChange={(e) => setLogo(e.target.value)}
-                className="w-full border rounded p-2"
-              />
-              {logo && (
-                <img src={logo} alt="Logo Preview" className="h-12 mt-2" />
-              )}
-            </div>
-
-            {/* Theme Color */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-1">
-                Theme Color
-              </label>
-              <input
-                type="color"
-                value={themeColor}
-                onChange={(e) => setThemeColor(e.target.value)}
-                className="h-10 w-16 p-0 border-0 rounded"
-              />
-            </div>
-
-            <button
-              onClick={saveBranding}
-              disabled={saving}
-              className={`px-4 py-2 rounded text-white ${
-                saving ? "bg-gray-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"
-              }`}
-            >
-              {saving ? "Saving..." : "Save Branding"}
-            </button>
+          {/* Brand Name */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">
+              Brand Name
+            </label>
+            <input
+              type="text"
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+              className="w-full border rounded p-2"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Your brand name will appear on your panel.
+            </p>
           </div>
-        )}
+
+          {/* Logo */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">
+              Logo URL
+            </label>
+            <input
+              type="text"
+              value={logo}
+              onChange={(e) => setLogo(e.target.value)}
+              className="w-full border rounded p-2"
+            />
+            {logo && (
+              <img src={logo} alt="Logo Preview" className="h-12 mt-2" />
+            )}
+          </div>
+
+          {/* Theme Color */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-1">
+              Theme Color
+            </label>
+            <input
+              type="color"
+              value={themeColor}
+              onChange={(e) => setThemeColor(e.target.value)}
+              className="h-10 w-16 p-0 border-0 rounded"
+            />
+          </div>
+
+          <button
+            onClick={saveBranding}
+            disabled={saving}
+            className={`px-4 py-2 rounded text-white ${
+              saving
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
+          >
+            {saving ? "Saving..." : "Save Branding"}
+          </button>
+        </div>
       </div>
     </div>
   );
-      }
+          }
