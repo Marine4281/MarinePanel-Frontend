@@ -15,34 +15,41 @@ export default function ResellerBranding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Local state mirrors reseller context
-  const [brandName, setBrandName] = useState("");
-  const [logo, setLogo] = useState("");
-  const [themeColor, setThemeColor] = useState("#16a34a"); // default green
+  // Initialize local state from context (avoids flash of main branding)
+  const [brandName, setBrandName] = useState(reseller.brandName || "");
+  const [logo, setLogo] = useState(reseller.logo || "");
+  const [themeColor, setThemeColor] = useState(reseller.themeColor || "#16a34a");
 
-  // Load branding dynamically
+  // Fetch latest branding from backend on mount
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        const hostname = window.location.hostname; // Send current host to backend
+        const hostname = window.location.hostname;
         const res = await API.get("/branding", {
           headers: { "x-reseller-domain": hostname },
           withCredentials: true,
         });
 
-        // Update local state
-        setBrandName(res.data.brandName || "");
-        setLogo(res.data.logo || "");
-        setThemeColor(res.data.themeColor || "#16a34a");
+        const data = res.data;
+
+        const newBranding = {
+          brandName: data.brandName || reseller.brandName,
+          logo: data.logo || reseller.logo,
+          themeColor: data.themeColor || reseller.themeColor,
+          domain: data.domain || reseller.domain,
+        };
 
         // Update context immediately
-        setReseller((prev) => ({
-          ...prev,
-          brandName: res.data.brandName || prev.brandName,
-          logo: res.data.logo || prev.logo,
-          themeColor: res.data.themeColor || prev.themeColor,
-          domain: res.data.domain || prev.domain,
-        }));
+        setReseller(newBranding);
+
+        // Update local form state
+        setBrandName(newBranding.brandName);
+        setLogo(newBranding.logo);
+        setThemeColor(newBranding.themeColor);
+
+        // Apply theme instantly
+        document.documentElement.style.setProperty("--theme-color", newBranding.themeColor);
+        document.title = newBranding.brandName;
       } catch (err) {
         console.error("Failed to load branding:", err);
         toast.error("Failed to load branding");
@@ -54,24 +61,19 @@ export default function ResellerBranding() {
     fetchBranding();
   }, [setReseller]);
 
-  // Live theme preview
+  // Live theme color preview
   useEffect(() => {
-    if (setReseller) {
-      setReseller((prev) => ({
-        ...prev,
-        themeColor,
-      }));
-    }
-  }, [themeColor, setReseller]);
+    document.documentElement.style.setProperty("--theme-color", themeColor);
+  }, [themeColor]);
 
-  // Save branding (logo & theme)
+  // Save branding updates
   const saveBranding = async () => {
     try {
       setSaving(true);
       const payload = { logo, themeColor };
       await API.patch("/branding", payload, { withCredentials: true });
 
-      // Update context
+      // Update context after successful save
       setReseller((prev) => ({
         ...prev,
         logo,
@@ -123,7 +125,7 @@ export default function ResellerBranding() {
         </nav>
       </aside>
 
-      {/* Main */}
+      {/* Main Content */}
       <div className="flex-1 p-6">
         {loading ? (
           <div className="text-center py-20 text-gray-500">
@@ -151,7 +153,7 @@ export default function ResellerBranding() {
               </label>
               <input
                 type="text"
-                value={brandName || reseller.brandName || ""}
+                value={brandName}
                 disabled
                 className="w-full border rounded p-2 bg-gray-100"
               />
@@ -203,4 +205,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-    }
+      }
