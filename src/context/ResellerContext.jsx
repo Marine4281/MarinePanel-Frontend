@@ -3,32 +3,28 @@ import { createContext, useContext, useEffect, useState } from "react";
 import API from "../api/axios";
 
 const ResellerContext = createContext();
-
 export const useReseller = () => useContext(ResellerContext);
 
 export const ResellerProvider = ({ children }) => {
   const [reseller, setReseller] = useState({
     brandName: "MarinePanel",
     logo: null,
-    themeColor: "#f97316", // default platform color (orange)
+    themeColor: "#f97316", // default orange
     domain: "marinepanel.online",
   });
 
-  const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false); // instead of loading
 
-  // Apply theme color globally
   const applyTheme = (color) => {
     if (color) {
       document.documentElement.style.setProperty("--theme-color", color);
     }
   };
 
-  // Update page title dynamically
   const updateTitle = (name) => {
     document.title = name || "MarinePanel";
   };
 
-  // Normalize branding data from API
   const normalizeBranding = (data) => ({
     brandName: data.brandName || "Reseller Panel",
     logo: data.logo || null,
@@ -39,7 +35,7 @@ export const ResellerProvider = ({ children }) => {
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        const hostname = window.location.hostname; // e.g., smmlord.marinepanel.online
+        const hostname = window.location.hostname;
 
         const res = await API.get("/branding", {
           headers: { "x-reseller-domain": hostname },
@@ -50,41 +46,31 @@ export const ResellerProvider = ({ children }) => {
           const branding = normalizeBranding(res.data);
 
           setReseller(branding);
-
-          // Apply theme immediately
           applyTheme(branding.themeColor);
-
-          // Update title immediately
           updateTitle(branding.brandName);
         }
       } catch (err) {
-        console.error("Reseller branding fetch failed:", err);
+        console.error("Branding fetch failed:", err);
       } finally {
-        setLoading(false);
+        // Mark UI ready AFTER theme is applied
+        setReady(true);
       }
     };
 
     fetchBranding();
   }, []);
 
-  // Ensure theme & title update if reseller changes dynamically
   useEffect(() => {
     applyTheme(reseller.themeColor);
     updateTitle(reseller.brandName);
   }, [reseller]);
 
-  // ❌ Don't render children until branding is loaded
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Loading branding...
-      </div>
-    );
-  }
-
   return (
-    <ResellerContext.Provider value={{ reseller, setReseller, loading }}>
-      {children}
+    <ResellerContext.Provider value={{ reseller, setReseller }}>
+      {/* 👇 Hide UI until branding is ready (no loading screen) */}
+      <div style={{ visibility: ready ? "visible" : "hidden" }}>
+        {children}
+      </div>
     </ResellerContext.Provider>
   );
 };
