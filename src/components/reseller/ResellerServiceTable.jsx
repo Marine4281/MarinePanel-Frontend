@@ -1,5 +1,4 @@
 // src/components/reseller/ResellerServiceTable.jsx
-
 import React from "react";
 import formatNumber from "../../utils/formatNumber";
 
@@ -55,8 +54,9 @@ const ResellerServiceTable = ({
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              const normalRate = Number(service.systemRate || 0);
-              const resellerRate = Number(service.resellerRate || normalRate);
+              // Use finalRate if present (resellerRate included)
+              const normalRate = Number(service.systemRate || service.rate || 0);
+              const resellerRate = Number(service.finalRate ?? normalRate);
 
               return (
                 <React.Fragment key={service._id || service.serviceId}>
