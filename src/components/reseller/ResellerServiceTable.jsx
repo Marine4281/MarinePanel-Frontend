@@ -6,7 +6,6 @@ const ResellerServiceTable = ({
   services = [],
   toggleVisibility,
   updateService,
-  commission = 0, // global commission %
 }) => {
 
   if (!services.length) {
@@ -56,10 +55,10 @@ const ResellerServiceTable = ({
               const showCategory = service.category !== lastCategory;
               lastCategory = service.category;
 
-              // Rates
+              // Use backend-provided rates directly
               const normalRate = Number(service.systemRate || 0);
-              const baseResellerRate = Number(service.resellerRate ?? normalRate);
-              const endUserRate = baseResellerRate * (1 + Number(commission) / 100);
+              const resellerRate = Number(service.resellerRate || normalRate);
+              const endUserRate = Number(service.finalRate || resellerRate);
 
               return (
                 <React.Fragment key={service._id || service.serviceId}>
@@ -113,7 +112,7 @@ const ResellerServiceTable = ({
 
                     {/* RESELLER RATE */}
                     <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
-                      ${baseResellerRate.toFixed(4)}
+                      ${resellerRate.toFixed(4)}
                     </td>
 
                     {/* END-USER RATE */}
