@@ -1,6 +1,8 @@
+// src/context/ServicesContext.jsx
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { io } from "socket.io-client";
 import API from "../api/axios";
+import { getResellerSlug } from "../utils/domain";
 
 const ServicesContext = createContext();
 
@@ -13,8 +15,26 @@ export const ServicesProvider = ({ children }) => {
   // =========================
   const fetchServices = async () => {
     try {
-      const res = await API.get("/services");
-      const data = res.data || [];
+      setLoading(true);
+
+      const slug = getResellerSlug();
+
+      const endpoint = slug
+        ? "/reseller/services"
+        : "/services";
+
+      const res = await API.get(endpoint);
+
+      let data = [];
+
+      if (slug) {
+        // ✅ Reseller response
+        data = res.data.services || [];
+      } else {
+        // ✅ Normal response
+        data = res.data || [];
+      }
+
       setServices(data);
     } catch (error) {
       console.error("Failed to fetch services", error);
