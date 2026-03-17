@@ -6,34 +6,32 @@ const ResellerContext = createContext();
 export const useReseller = () => useContext(ResellerContext);
 
 export const ResellerProvider = ({ children }) => {
-  // ✅ Use backend-injected branding instantly
-  const initialBranding = window.__BRANDING__ || {
+  const [reseller, setReseller] = useState({
     brandName: "MarinePanel",
     logo: null,
     themeColor: "#f97316", // default orange
     domain: "marinepanel.online",
+  });
+
+  const [ready, setReady] = useState(false); // instead of loading
+
+  const applyTheme = (color) => {
+    if (color) {
+      document.documentElement.style.setProperty("--theme-color", color);
+    }
   };
 
-  const [reseller, setReseller] = useState(initialBranding);
+  const updateTitle = (name) => {
+    document.title = name || "MarinePanel";
+  };
 
-  // Apply theme + title immediately on first load
-  useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--theme-color",
-      initialBranding.themeColor
-    );
-    document.title = initialBranding.brandName;
-  }, []);
-
-  // Normalize backend response
   const normalizeBranding = (data) => ({
     brandName: data.brandName || "Reseller Panel",
     logo: data.logo || null,
     themeColor: data.themeColor || "#16a34a",
-    domain: data.domain || data.resellerDomain || window.location.hostname,
+    domain: data.domain || data.resellerDomain || "marinepanel.online",
   });
 
-  // 🔄 Fetch latest branding in background (no UI blocking)
   useEffect(() => {
     const fetchBranding = async () => {
       try {
@@ -48,25 +46,31 @@ export const ResellerProvider = ({ children }) => {
           const branding = normalizeBranding(res.data);
 
           setReseller(branding);
-
-          // Apply updated branding instantly
-          document.documentElement.style.setProperty(
-            "--theme-color",
-            branding.themeColor
-          );
-          document.title = branding.brandName;
+          applyTheme(branding.themeColor);
+          updateTitle(branding.brandName);
         }
       } catch (err) {
         console.error("Branding fetch failed:", err);
+      } finally {
+        // Mark UI ready AFTER theme is applied
+        setReady(true);
       }
     };
 
     fetchBranding();
   }, []);
 
+  useEffect(() => {
+    applyTheme(reseller.themeColor);
+    updateTitle(reseller.brandName);
+  }, [reseller]);
+
   return (
     <ResellerContext.Provider value={{ reseller, setReseller }}>
-      {children}
+      {/* 👇 Hide UI until branding is ready (no loading screen) */}
+      <div style={{ visibility: ready ? "visible" : "hidden" }}>
+        {children}
+      </div>
     </ResellerContext.Provider>
   );
 };
