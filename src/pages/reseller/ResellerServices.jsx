@@ -1,4 +1,4 @@
-//src/pages/reseller/ResellerServices.jsx
+// src/pages/reseller/ResellerServices.jsx
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -25,7 +25,15 @@ export default function ResellerServices() {
       const servicesData = res.data.services || [];
       const commissionData = Number(res.data.commission || 0);
 
-      setServices(servicesData);
+      // ✅ Calculate final rate per service
+      const servicesWithFinalRate = servicesData.map((s) => {
+        const systemRate = Number(s.systemRate || 0);
+        const resellerRate = Number(s.resellerRate ?? systemRate);
+        const finalRate = resellerRate * (1 + commissionData / 100); // include global commission
+        return { ...s, finalRate };
+      });
+
+      setServices(servicesWithFinalRate);
       setCommission(commissionData);
       setNewCommission(commissionData);
     } catch (error) {
@@ -118,27 +126,28 @@ export default function ResellerServices() {
   -----------------------------
   */
   const filteredServices = useMemo(() => {
-  if (!debouncedSearch.trim()) return services;
+    if (!debouncedSearch.trim()) return services;
 
-  const lower = debouncedSearch.toLowerCase();
+    const lower = debouncedSearch.toLowerCase();
 
-  return services.filter((s) => {
-    const name = s.name?.toLowerCase() || "";
-    const category = s.category?.toLowerCase() || "";
-    const id = s.serviceId?.toString() || s._id?.toString() || "";
+    return services.filter((s) => {
+      const name = s.name?.toLowerCase() || "";
+      const category = s.category?.toLowerCase() || "";
+      const id = s.serviceId?.toString() || s._id?.toString() || "";
 
-    const systemRate = Number(s.systemRate || 0);
-    const resellerRate = Number(s.resellerRate || 0);
+      const systemRate = Number(s.systemRate || 0);
+      const resellerRate = Number(s.resellerRate ?? systemRate);
 
-    return (
-      name.includes(lower) ||
-      category.includes(lower) ||
-      id.includes(lower) ||
-      systemRate.toFixed(6).includes(lower) ||
-      resellerRate.toFixed(6).includes(lower)
-    );
-  });
-}, [services, debouncedSearch]);
+      return (
+        name.includes(lower) ||
+        category.includes(lower) ||
+        id.includes(lower) ||
+        systemRate.toFixed(6).includes(lower) ||
+        resellerRate.toFixed(6).includes(lower)
+      );
+    });
+  }, [services, debouncedSearch]);
+
   if (loading) {
     return <div className="p-6 text-gray-500">Loading services...</div>;
   }
@@ -191,4 +200,4 @@ export default function ResellerServices() {
       />
     </div>
   );
-}
+        }
