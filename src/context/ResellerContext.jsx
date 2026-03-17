@@ -6,23 +6,16 @@ const ResellerContext = createContext();
 export const useReseller = () => useContext(ResellerContext);
 
 export const ResellerProvider = ({ children }) => {
-  // Use preloaded branding from index.html
+  // Use window.__BRANDING__ as initial state
   const initial = window.__BRANDING__ || {
     brandName: "MarinePanel",
     logo: null,
-    themeColor: "#f97316", // default orange
+    themeColor: "#f97316",
     domain: "marinepanel.online",
   };
 
   const [reseller, setReseller] = useState(initial);
 
-  // Apply initial theme and title immediately
-  useEffect(() => {
-    document.documentElement.style.setProperty("--theme-color", reseller.themeColor);
-    document.title = reseller.brandName;
-  }, []); // only once on mount
-
-  // Fetch latest branding from backend (async update)
   useEffect(() => {
     const fetchBranding = async () => {
       try {
@@ -42,8 +35,6 @@ export const ResellerProvider = ({ children }) => {
           };
 
           setReseller(branding);
-
-          // Apply theme & title instantly
           document.documentElement.style.setProperty("--theme-color", branding.themeColor);
           document.title = branding.brandName;
         }
