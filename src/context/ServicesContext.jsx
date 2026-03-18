@@ -27,14 +27,21 @@ export const ServicesProvider = ({ children }) => {
       let commissionData = 0;
 
       if (endpoint === "/reseller/services") {
-        // ✅ Reseller / reseller users
+        // Reseller / reseller users
         servicesData = res.data.services || [];
         commissionData = res.data.commission || 0;
       } else {
-        // ✅ Main panel users (backend already applied admin commission)
+        // Main panel users (admin commission baked in)
         servicesData = res.data || [];
-        commissionData = 0; // optional (since already baked into price)
+        commissionData = 0;
       }
+
+      // ✅ Normalize platform and category strings
+      servicesData = servicesData.map((s) => ({
+        ...s,
+        platform: (s.platform || "General").toString().trim(),
+        category: (s.category || "General").toString().trim(),
+      }));
 
       setServices(servicesData);
       setCommission(commissionData);
@@ -54,12 +61,10 @@ export const ServicesProvider = ({ children }) => {
     });
 
     socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
-
     socket.on("servicesUpdated", () => {
       console.log("🔄 Services updated — refreshing...");
       fetchServices();
     });
-
     socket.on("disconnect", () => console.log("❌ Socket disconnected"));
 
     return () => socket.disconnect();
@@ -70,23 +75,29 @@ export const ServicesProvider = ({ children }) => {
   // =========================
 
   const platforms = useMemo(() => {
-    return [...new Set(services.map((s) => s.platform || "General"))];
+    const unique = [...new Set(services.map((s) => s.platform))];
+    return ["All", ...unique]; // ✅ Ensure "All" is first
   }, [services]);
 
-  const getCategoriesByPlatform = (platform) => [
-    ...new Set(
-      services
-        .filter((s) => (s.platform || "General") === platform)
-        .map((s) => s.category)
-    ),
-  ];
+  const getCategoriesByPlatform = (platform) => {
+    if (platform === "All") {
+      return [...new Set(services.map((s) => s.category))];
+    }
+    return [
+      ...new Set(
+        services
+          .filter((s) => s.platform === platform)
+          .map((s) => s.category)
+      ),
+    ];
+  };
 
   const getServicesByCategory = (platform, category) =>
-    services.filter(
-      (s) =>
-        (s.platform || "General") === platform &&
-        s.category === category
-    );
+    services.filter((s) => {
+      const platformMatch = platform === "All" ? true : s.platform === platform;
+      const categoryMatch = s.category === category;
+      return platformMatch && categoryMatch;
+    });
 
   const getGlobalDefault = () =>
     services.find((s) => s.isDefaultCategoryGlobal);
@@ -98,9 +109,7 @@ export const ServicesProvider = ({ children }) => {
         s.isDefaultCategoryPlatform
     );
 
-  const refreshServices = async () => {
-    await fetchServices();
-  };
+  const refreshServices = async () => await fetchServices();
 
   return (
     <ServicesContext.Provider
