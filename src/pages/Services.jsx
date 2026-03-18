@@ -21,32 +21,11 @@ const Services = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // =============================
-  // Platform name mapping
-  // =============================
-  const platformMap = {
-    "All": "All",
-    "TikTok": "TikTok",
-    "Instagram": "Instagram",
-    "YouTube": "YouTube",
-    "Facebook": "Facebook",
-    "WhatsApp": "WhatsApp",
-    "Telegram": "Telegram",
-    "X/Twitter": "X",       // <-- Adjust this to match your service.platform value
-    "LinkedIn": "LinkedIn",
-    "Snapchat": "Snapchat",
-    "Spotify": "Spotify",
-    "Free": "Free",
-  };
-
   // Filter services based on selected platform
   const platformFiltered = useMemo(() => {
     if (selectedPlatform === "All") return services;
-
-    const platformKey = platformMap[selectedPlatform] || selectedPlatform;
-
     return services.filter(
-      (s) => (s.platform || "").toString().toLowerCase() === platformKey.toLowerCase()
+      (s) => (s.platform || "").toString().toLowerCase() === selectedPlatform.toLowerCase()
     );
   }, [services, selectedPlatform]);
 
