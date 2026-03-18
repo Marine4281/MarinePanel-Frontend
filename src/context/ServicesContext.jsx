@@ -14,6 +14,7 @@ export const ServicesProvider = ({ children }) => {
   const fetchServices = async () => {
     try {
       setLoading(true);
+
       const slug = getResellerSlug();
       const token = localStorage.getItem("token");
 
@@ -26,27 +27,18 @@ export const ServicesProvider = ({ children }) => {
       let commissionData = 0;
 
       if (endpoint === "/reseller/services") {
-        // Reseller/admin or end-user
+        // ✅ Reseller / reseller users
         servicesData = res.data.services || [];
         commissionData = res.data.commission || 0;
       } else {
-        // Main-panel public users
+        // ✅ Main panel users (backend already applied admin commission)
         servicesData = res.data || [];
-
-        // Fetch system/admin commission
-        const commissionRes = await API.get("/settings/commission");
-        commissionData = commissionRes.data?.commission || 0;
-
-        // Compute finalRate in frontend
-        servicesData = servicesData.map((s) => {
-          const providerRate = Number(s.rate || 0);
-          const finalRate = providerRate + (providerRate * commissionData) / 100;
-          return { ...s, finalRate, rate: finalRate };
-        });
+        commissionData = 0; // optional (since already baked into price)
       }
 
       setServices(servicesData);
       setCommission(commissionData);
+
     } catch (error) {
       console.error("Failed to fetch services", error);
     } finally {
@@ -62,36 +54,53 @@ export const ServicesProvider = ({ children }) => {
     });
 
     socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
+
     socket.on("servicesUpdated", () => {
       console.log("🔄 Services updated — refreshing...");
       fetchServices();
     });
+
     socket.on("disconnect", () => console.log("❌ Socket disconnected"));
 
     return () => socket.disconnect();
   }, []);
 
-  // Memoized derived data
+  // =========================
+  // Derived Data
+  // =========================
+
   const platforms = useMemo(() => {
     return [...new Set(services.map((s) => s.platform || "General"))];
   }, [services]);
 
   const getCategoriesByPlatform = (platform) => [
     ...new Set(
-      services.filter((s) => (s.platform || "General") === platform).map((s) => s.category)
+      services
+        .filter((s) => (s.platform || "General") === platform)
+        .map((s) => s.category)
     ),
   ];
 
   const getServicesByCategory = (platform, category) =>
     services.filter(
-      (s) => (s.platform || "General") === platform && s.category === category
+      (s) =>
+        (s.platform || "General") === platform &&
+        s.category === category
     );
 
-  const getGlobalDefault = () => services.find((s) => s.isDefaultCategoryGlobal);
-  const getPlatformDefault = (platform) =>
-    services.find((s) => (s.platform || "General") === platform && s.isDefaultCategoryPlatform);
+  const getGlobalDefault = () =>
+    services.find((s) => s.isDefaultCategoryGlobal);
 
-  const refreshServices = async () => await fetchServices();
+  const getPlatformDefault = (platform) =>
+    services.find(
+      (s) =>
+        (s.platform || "General") === platform &&
+        s.isDefaultCategoryPlatform
+    );
+
+  const refreshServices = async () => {
+    await fetchServices();
+  };
 
   return (
     <ServicesContext.Provider
