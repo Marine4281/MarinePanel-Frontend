@@ -12,20 +12,15 @@ export default function ResellerBranding() {
   const navigate = useNavigate();
   const { reseller, setReseller } = useReseller();
 
-  const [loading, setLoading] = useState(!reseller.brandName); // only loading if no context
+  const [loading, setLoading] = useState(!reseller.brandName); // loading only if branding not ready
   const [saving, setSaving] = useState(false);
 
-  // Initialize local state from context
+  // Initialize local state from context (prevents flash)
   const [brandName, setBrandName] = useState(reseller.brandName || "");
   const [logo, setLogo] = useState(reseller.logo || "");
   const [themeColor, setThemeColor] = useState(reseller.themeColor || "#f97316");
 
-  // Apply theme instantly whenever themeColor changes
-  useEffect(() => {
-    document.documentElement.style.setProperty("--theme-color", themeColor);
-  }, [themeColor]);
-
-  // Fetch branding from backend only if context is empty
+  // Fetch latest branding from backend on mount
   useEffect(() => {
     const fetchBranding = async () => {
       try {
@@ -37,7 +32,6 @@ export default function ResellerBranding() {
 
         const data = res.data;
 
-        // Only update context if backend returns valid branding
         const newBranding = {
           brandName: data.brandName || reseller.brandName,
           logo: data.logo || reseller.logo,
@@ -46,14 +40,15 @@ export default function ResellerBranding() {
         };
 
         // Update context immediately
-        setReseller((prev) => ({ ...prev, ...newBranding }));
+        setReseller(newBranding);
 
-        // Update local state for form and preview
+        // Update local form state
         setBrandName(newBranding.brandName);
         setLogo(newBranding.logo);
         setThemeColor(newBranding.themeColor);
 
         // Apply theme instantly
+        document.documentElement.style.setProperty("--theme-color", newBranding.themeColor);
         document.title = newBranding.brandName;
       } catch (err) {
         console.error("Failed to load branding:", err);
@@ -66,6 +61,11 @@ export default function ResellerBranding() {
     if (!reseller.brandName) fetchBranding();
   }, [reseller.brandName, reseller.domain, setReseller]);
 
+  // Live theme color preview
+  useEffect(() => {
+    document.documentElement.style.setProperty("--theme-color", themeColor);
+  }, [themeColor]);
+
   // Save branding updates
   const saveBranding = async () => {
     try {
@@ -73,7 +73,7 @@ export default function ResellerBranding() {
       const payload = { brandName, logo, themeColor };
       await API.patch("/branding", payload, { withCredentials: true });
 
-      // Update context immediately after save
+      // Update context after save
       setReseller((prev) => ({
         ...prev,
         brandName,
@@ -102,11 +102,11 @@ export default function ResellerBranding() {
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-64 bg-white shadow-md p-6">
-        <h1 className="text-xl font-bold" style={{ color: themeColor }}>
-          {brandName || reseller.brandName || "Reseller Panel"}
+        <h1 className="text-xl font-bold text-orange-500 mb-6">
+          {reseller.brandName || "Reseller Panel"}
         </h1>
 
-        <nav className="flex flex-col gap-4 mt-6">
+        <nav className="flex flex-col gap-4">
           <button
             onClick={() => navigate("/home")}
             className="flex items-center gap-2 text-gray-700 hover:text-orange-500"
@@ -120,8 +120,7 @@ export default function ResellerBranding() {
 
           <Link
             to="/reseller/branding"
-            className="font-semibold"
-            style={{ color: themeColor }}
+            className="text-orange-500 font-semibold"
           >
             Branding
           </Link>
@@ -153,7 +152,9 @@ export default function ResellerBranding() {
 
           {/* Brand Name */}
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Brand Name</label>
+            <label className="block text-sm font-medium mb-1">
+              Brand Name
+            </label>
             <input
               type="text"
               value={brandName}
@@ -167,7 +168,9 @@ export default function ResellerBranding() {
 
           {/* Logo */}
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Logo URL</label>
+            <label className="block text-sm font-medium mb-1">
+              Logo URL
+            </label>
             <input
               type="text"
               value={logo}
@@ -181,7 +184,9 @@ export default function ResellerBranding() {
 
           {/* Theme Color */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-1">Theme Color</label>
+            <label className="block text-sm font-medium mb-1">
+              Theme Color
+            </label>
             <input
               type="color"
               value={themeColor}
@@ -196,9 +201,8 @@ export default function ResellerBranding() {
             className={`px-4 py-2 rounded text-white ${
               saving
                 ? "bg-gray-400 cursor-not-allowed"
-                : `bg-[${themeColor}] hover:brightness-90`
+                : "bg-orange-500 hover:bg-orange-600"
             }`}
-            style={{ backgroundColor: themeColor }}
           >
             {saving ? "Saving..." : "Save Branding"}
           </button>
@@ -206,4 +210,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-                    }
+            }
