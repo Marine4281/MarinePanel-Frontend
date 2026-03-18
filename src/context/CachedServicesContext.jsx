@@ -16,10 +16,10 @@ export const CachedServicesProvider = ({ children }) => {
       setLoading(true);
 
       const slug = getResellerSlug();
-      const token = localStorage.getItem("token"); // check login
+      const token = localStorage.getItem("token");
 
       let endpoint = "/services";
-      if ((slug && token)) {
+      if (slug && token) {
         endpoint = "/reseller/services";
       }
 
@@ -29,22 +29,20 @@ export const CachedServicesProvider = ({ children }) => {
       let commissionData = 0;
 
       if (endpoint === "/reseller/services") {
+        // ✅ Reseller / reseller users
         servicesData = res.data.services || [];
         commissionData = res.data.commission || 0;
       } else {
+        // ✅ Main panel users (backend already applied commission)
         servicesData = res.data || [];
-        try {
-          const commissionRes = await API.get("/settings/commission");
-          commissionData = commissionRes.data?.commission || 0;
-        } catch {
-          commissionData = 0;
-        }
+        commissionData = 0; // no need to fetch separately
       }
 
       setServices(servicesData);
       setCommission(commissionData);
+
     } catch (error) {
-      console.error("Failed to fetch services or commission", error);
+      console.error("Failed to fetch services", error);
     } finally {
       setLoading(false);
     }
@@ -64,8 +62,9 @@ export const CachedServicesProvider = ({ children }) => {
       fetchData();
     });
 
+    // ✅ Only useful for reseller dashboard
     socket.on("commissionUpdated", (data) => {
-      console.log("💰 Commission updated via socket:", data.commission);
+      console.log("💰 Commission updated:", data.commission);
       setCommission(data.commission);
     });
 
