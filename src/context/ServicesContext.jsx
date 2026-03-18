@@ -8,34 +8,42 @@ const ServicesContext = createContext();
 
 export const ServicesProvider = ({ children }) => {
   const [services, setServices] = useState([]);
+  const [commission, setCommission] = useState(0); // ✅ FIX
   const [loading, setLoading] = useState(true);
 
   // =========================
-  // Fetch Services (Always Fresh)
+  // Fetch Services
   // =========================
   const fetchServices = async () => {
     try {
       setLoading(true);
 
       const slug = getResellerSlug();
+      const token = localStorage.getItem("token");
 
-      const endpoint = slug
-        ? "/reseller/services"
-        : "/services";
+      // ✅ Decide endpoint properly
+      let endpoint = "/services";
+
+      if (slug && token) {
+        endpoint = "/reseller/services";
+      }
 
       const res = await API.get(endpoint);
 
       let data = [];
 
-      if (slug) {
+      if (endpoint === "/reseller/services") {
         // ✅ Reseller response
         data = res.data.services || [];
+        setCommission(res.data.commission || 0); // ✅ FIX
       } else {
-        // ✅ Normal response
+        // ✅ Public response
         data = res.data || [];
+        setCommission(0);
       }
 
       setServices(data);
+
     } catch (error) {
       console.error("Failed to fetch services", error);
     } finally {
@@ -44,11 +52,10 @@ export const ServicesProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Initial fetch
     fetchServices();
 
     // =========================
-    // 🔥 SOCKET CONNECTION
+    // SOCKET CONNECTION
     // =========================
     const socket = io("https://marinepanel-backend.onrender.com", {
       transports: ["websocket"],
@@ -58,7 +65,6 @@ export const ServicesProvider = ({ children }) => {
       console.log("✅ Socket connected:", socket.id);
     });
 
-    // Listen for service updates from backend
     socket.on("servicesUpdated", () => {
       console.log("🔄 Services updated — refreshing...");
       fetchServices();
@@ -68,24 +74,24 @@ export const ServicesProvider = ({ children }) => {
       console.log("❌ Socket disconnected");
     });
 
-    // Cleanup
     return () => {
       socket.disconnect();
     };
   }, []);
 
   // =========================
-  // Memoized Derived Data
+  // Derived Data
   // =========================
+
   const platforms = useMemo(() => {
-    return [...new Set(services.map((s) => s.platform))];
+    return [...new Set(services.map((s) => s.platform || "General"))];
   }, [services]);
 
   const getCategoriesByPlatform = (platform) => {
     return [
       ...new Set(
         services
-          .filter((s) => s.platform === platform)
+          .filter((s) => (s.platform || "General") === platform)
           .map((s) => s.category)
       ),
     ];
@@ -93,7 +99,9 @@ export const ServicesProvider = ({ children }) => {
 
   const getServicesByCategory = (platform, category) => {
     return services.filter(
-      (s) => s.platform === platform && s.category === category
+      (s) =>
+        (s.platform || "General") === platform &&
+        s.category === category
     );
   };
 
@@ -103,7 +111,9 @@ export const ServicesProvider = ({ children }) => {
 
   const getPlatformDefault = (platform) => {
     return services.find(
-      (s) => s.platform === platform && s.isDefaultCategoryPlatform
+      (s) =>
+        (s.platform || "General") === platform &&
+        s.isDefaultCategoryPlatform
     );
   };
 
@@ -115,6 +125,7 @@ export const ServicesProvider = ({ children }) => {
     <ServicesContext.Provider
       value={{
         services,
+        commission, // ✅ FIX
         loading,
         platforms,
         getCategoriesByPlatform,
