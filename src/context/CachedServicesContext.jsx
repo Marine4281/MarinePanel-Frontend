@@ -11,40 +11,38 @@ export const CachedServicesProvider = ({ children }) => {
   const [commission, setCommission] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // =========================
-  // Fetch services + commission from backend
-  // =========================
   const fetchData = async () => {
     try {
       setLoading(true);
 
       const slug = getResellerSlug();
+      const token = localStorage.getItem("token"); // check login
 
-      const endpoint = slug
-        ? "/reseller/services"
-        : "/services";
+      let endpoint = "/services";
+      if ((slug && token)) {
+        endpoint = "/reseller/services";
+      }
 
       const res = await API.get(endpoint);
 
       let servicesData = [];
       let commissionData = 0;
 
-      if (slug) {
-        // ✅ Reseller response
+      if (endpoint === "/reseller/services") {
         servicesData = res.data.services || [];
         commissionData = res.data.commission || 0;
       } else {
-        // ✅ Normal response
         servicesData = res.data || [];
-
-        // Keep your existing commission fetch
-        const commissionRes = await API.get("/settings/commission");
-        commissionData = commissionRes.data?.commission || 0;
+        try {
+          const commissionRes = await API.get("/settings/commission");
+          commissionData = commissionRes.data?.commission || 0;
+        } catch {
+          commissionData = 0;
+        }
       }
 
       setServices(servicesData);
       setCommission(commissionData);
-
     } catch (error) {
       console.error("Failed to fetch services or commission", error);
     } finally {
@@ -53,25 +51,19 @@ export const CachedServicesProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Initial fetch on mount / login
     fetchData();
 
-    // =========================
-    // Socket.IO for live updates
-    // =========================
     const socket = io("https://marinepanel-backend.onrender.com", {
       transports: ["websocket"],
     });
 
     socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
 
-    // Update services in real-time
     socket.on("servicesUpdated", () => {
       console.log("🔄 Services updated — refreshing cache...");
       fetchData();
     });
 
-    // Update commission in real-time
     socket.on("commissionUpdated", (data) => {
       console.log("💰 Commission updated via socket:", data.commission);
       setCommission(data.commission);
@@ -82,27 +74,23 @@ export const CachedServicesProvider = ({ children }) => {
     return () => socket.disconnect();
   }, []);
 
-  // =========================
-  // Memoized derived data
-  // =========================
   const platforms = useMemo(
-    () => [...new Set(services.map((s) => s.platform))],
+    () => [...new Set(services.map((s) => s.platform || "General"))],
     [services]
   );
 
   const getCategoriesByPlatform = (platform) =>
     [...new Set(
       services
-        .filter((s) => s.platform === platform)
+        .filter((s) => (s.platform || "General") === platform)
         .map((s) => s.category)
     )];
 
   const getServicesByCategory = (platform, category) =>
     services.filter(
-      (s) => s.platform === platform && s.category === category
+      (s) => (s.platform || "General") === platform && s.category === category
     );
 
-  // Manual refresh if needed
   const refreshServices = async () => await fetchData();
 
   return (
