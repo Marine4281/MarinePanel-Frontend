@@ -12,21 +12,27 @@ export default function ResellerBranding() {
   const navigate = useNavigate();
   const { reseller, setReseller } = useReseller();
 
-  const [loading, setLoading] = useState(!reseller.brandName); // loading only if branding not ready
+  const [loading, setLoading] = useState(!reseller.brandName);
   const [saving, setSaving] = useState(false);
 
-  // Initialize local state from context (prevents flash)
+  // Local state (initialized from context)
   const [brandName, setBrandName] = useState(reseller.brandName || "");
   const [logo, setLogo] = useState(reseller.logo || "");
-  const [themeColor, setThemeColor] = useState(reseller.themeColor || "#f97316");
+  const [themeColor, setThemeColor] = useState(
+    reseller.themeColor || "#f97316"
+  );
 
-  // Fetch latest branding from backend on mount
+  /*
+  --------------------------------
+  FETCH DASHBOARD BRANDING
+  --------------------------------
+  Uses logged-in reseller (NO domain header)
+  --------------------------------
+  */
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        const hostname = window.location.hostname;
-        const res = await API.get("/branding", {
-          headers: { "x-reseller-domain": hostname },
+        const res = await API.get("/branding/dashboard", {
           withCredentials: true,
         });
 
@@ -39,16 +45,19 @@ export default function ResellerBranding() {
           domain: data.domain || reseller.domain,
         };
 
-        // Update context immediately
+        // Update context
         setReseller(newBranding);
 
-        // Update local form state
+        // Update local state
         setBrandName(newBranding.brandName);
         setLogo(newBranding.logo);
         setThemeColor(newBranding.themeColor);
 
         // Apply theme instantly
-        document.documentElement.style.setProperty("--theme-color", newBranding.themeColor);
+        document.documentElement.style.setProperty(
+          "--theme-color",
+          newBranding.themeColor
+        );
         document.title = newBranding.brandName;
       } catch (err) {
         console.error("Failed to load branding:", err);
@@ -61,19 +70,34 @@ export default function ResellerBranding() {
     if (!reseller.brandName) fetchBranding();
   }, [reseller.brandName, reseller.domain, setReseller]);
 
-  // Live theme color preview
+  /*
+  --------------------------------
+  LIVE THEME PREVIEW
+  --------------------------------
+  */
   useEffect(() => {
-    document.documentElement.style.setProperty("--theme-color", themeColor);
+    document.documentElement.style.setProperty(
+      "--theme-color",
+      themeColor
+    );
   }, [themeColor]);
 
-  // Save branding updates
+  /*
+  --------------------------------
+  SAVE BRANDING
+  --------------------------------
+  */
   const saveBranding = async () => {
     try {
       setSaving(true);
-      const payload = { brandName, logo, themeColor };
-      await API.patch("/branding", payload, { withCredentials: true });
 
-      // Update context after save
+      const payload = { brandName, logo, themeColor };
+
+      await API.patch("/branding", payload, {
+        withCredentials: true,
+      });
+
+      // Update context AFTER save
       setReseller((prev) => ({
         ...prev,
         brandName,
@@ -137,13 +161,17 @@ export default function ResellerBranding() {
       {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-          {/* Live Header Preview */}
+          {/* Live Preview */}
           <div
             className="flex items-center gap-4 mb-6 p-4 rounded"
             style={{ backgroundColor: themeColor }}
           >
             {logo && (
-              <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-12 w-12 object-contain"
+              />
             )}
             <h2 className="text-white text-lg font-bold">
               {brandName || reseller.brandName || "Reseller"}
@@ -210,4 +238,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-            }
+        }
