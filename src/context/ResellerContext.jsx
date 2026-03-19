@@ -37,7 +37,7 @@ export const ResellerProvider = ({ children }) => {
       try {
         const hostname = window.location.hostname;
 
-        const res = await API.get("/branding", {
+        const res = await API.get("/branding/public", {
           headers: { "x-reseller-domain": hostname },
           withCredentials: true,
         });
