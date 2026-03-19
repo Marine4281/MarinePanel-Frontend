@@ -1,4 +1,5 @@
 // src/pages/reseller/ResellerBranding.jsx
+
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -12,21 +13,32 @@ export default function ResellerBranding() {
   const navigate = useNavigate();
   const { reseller, setReseller } = useReseller();
 
-  const [loading, setLoading] = useState(!reseller.brandName);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Local state (initialized from context)
-  const [brandName, setBrandName] = useState(reseller.brandName || "");
-  const [logo, setLogo] = useState(reseller.logo || "");
-  const [themeColor, setThemeColor] = useState(
-    reseller.themeColor || "#f97316"
-  );
+  // Local state
+  const [brandName, setBrandName] = useState("");
+  const [logo, setLogo] = useState("");
+  const [themeColor, setThemeColor] = useState("#16a34a"); // ✅ correct default
 
   /*
   --------------------------------
-  FETCH DASHBOARD BRANDING
+  APPLY EXISTING THEME IMMEDIATELY
+  (Prevents flicker on refresh)
   --------------------------------
-  Uses logged-in reseller (NO domain header)
+  */
+  useEffect(() => {
+    if (reseller?.themeColor) {
+      document.documentElement.style.setProperty(
+        "--theme-color",
+        reseller.themeColor
+      );
+    }
+  }, []);
+
+  /*
+  --------------------------------
+  FETCH DASHBOARD BRANDING (ALWAYS)
   --------------------------------
   */
   useEffect(() => {
@@ -39,26 +51,26 @@ export default function ResellerBranding() {
         const data = res.data;
 
         const newBranding = {
-          brandName: data.brandName || reseller.brandName,
-          logo: data.logo || reseller.logo,
-          themeColor: data.themeColor || reseller.themeColor,
-          domain: data.domain || reseller.domain,
+          brandName: data.brandName,
+          logo: data.logo,
+          themeColor: data.themeColor,
+          domain: data.domain,
         };
 
-        // Update context
+        // ✅ Update context (single source of truth)
         setReseller(newBranding);
 
-        // Update local state
-        setBrandName(newBranding.brandName);
-        setLogo(newBranding.logo);
-        setThemeColor(newBranding.themeColor);
+        // ✅ Sync local state
+        setBrandName(data.brandName);
+        setLogo(data.logo);
+        setThemeColor(data.themeColor);
 
-        // Apply theme instantly
+        // ✅ Apply theme + title
         document.documentElement.style.setProperty(
           "--theme-color",
-          newBranding.themeColor
+          data.themeColor
         );
-        document.title = newBranding.brandName;
+        document.title = data.brandName;
       } catch (err) {
         console.error("Failed to load branding:", err);
         toast.error("Failed to load branding");
@@ -67,8 +79,8 @@ export default function ResellerBranding() {
       }
     };
 
-    if (!reseller.brandName) fetchBranding();
-  }, [reseller.brandName, reseller.domain, setReseller]);
+    fetchBranding(); // ✅ ALWAYS RUN
+  }, [setReseller]);
 
   /*
   --------------------------------
@@ -97,13 +109,20 @@ export default function ResellerBranding() {
         withCredentials: true,
       });
 
-      // Update context AFTER save
+      // ✅ Update context AFTER save
       setReseller((prev) => ({
         ...prev,
         brandName,
         logo,
         themeColor,
       }));
+
+      // ✅ Apply immediately
+      document.documentElement.style.setProperty(
+        "--theme-color",
+        themeColor
+      );
+      document.title = brandName;
 
       toast.success("Branding updated successfully");
     } catch (err) {
@@ -174,7 +193,7 @@ export default function ResellerBranding() {
               />
             )}
             <h2 className="text-white text-lg font-bold">
-              {brandName || reseller.brandName || "Reseller"}
+              {brandName || "Reseller"}
             </h2>
           </div>
 
