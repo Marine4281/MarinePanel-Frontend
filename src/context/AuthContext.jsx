@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await API.get("/users", { withCredentials: true });
+        const res = await API.get("/profile", { withCredentials: true });
         if (res.data) {
           setUser(res.data);
           localStorage.setItem("user", JSON.stringify(res.data));
