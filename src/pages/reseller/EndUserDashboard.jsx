@@ -16,7 +16,7 @@ export default function EndUserDashboard() {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/end-user/dashboard");
+      const res = await API.get("/dashboard/public");
       setUserData(res.data.user);
       setOrders(res.data.orders || []);
     } catch (err) {
