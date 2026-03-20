@@ -2,30 +2,44 @@
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { io } from "socket.io-client";
 import API from "../api/axios";
+import { getResellerSlug } from "../utils/domain";
 
 const CachedServicesContext = createContext();
 
 export const CachedServicesProvider = ({ children }) => {
   const [services, setServices] = useState([]);
-  const [commission, setCommission] = useState(0); // optional (can remove later)
+  const [commission, setCommission] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  /*
-  ========================================
-  FETCH SERVICES (UNIFIED)
-  ========================================
-  */
   const fetchData = async () => {
     try {
       setLoading(true);
 
-      // ✅ ALWAYS use public endpoint
-      const res = await API.get("/services");
+      const slug = getResellerSlug();
+      const token = localStorage.getItem("token");
 
-      setServices(res.data || []);
+      let endpoint = "/services";
+      if (slug && token) {
+        endpoint = "/reseller/services";
+      }
 
-      // ✅ Commission no longer needed (backend already applied pricing)
-      setCommission(0);
+      const res = await API.get(endpoint);
+
+      let servicesData = [];
+      let commissionData = 0;
+
+      if (endpoint === "/reseller/services") {
+        // ✅ Reseller / reseller users
+        servicesData = res.data.services || [];
+        commissionData = res.data.commission || 0;
+      } else {
+        // ✅ Main panel users (backend already applied commission)
+        servicesData = res.data || [];
+        commissionData = 0; // no need to fetch separately
+      }
+
+      setServices(servicesData);
+      setCommission(commissionData);
 
     } catch (error) {
       console.error("Failed to fetch services", error);
@@ -34,11 +48,6 @@ export const CachedServicesProvider = ({ children }) => {
     }
   };
 
-  /*
-  ========================================
-  INITIAL LOAD + SOCKET
-  ========================================
-  */
   useEffect(() => {
     fetchData();
 
@@ -46,33 +55,23 @@ export const CachedServicesProvider = ({ children }) => {
       transports: ["websocket"],
     });
 
-    socket.on("connect", () =>
-      console.log("✅ Socket connected:", socket.id)
-    );
+    socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
 
     socket.on("servicesUpdated", () => {
       console.log("🔄 Services updated — refreshing cache...");
       fetchData();
     });
 
-    // ✅ Optional: keep if you use reseller dashboard live updates
+    // ✅ Only useful for reseller dashboard
     socket.on("commissionUpdated", (data) => {
-      console.log("💰 Commission updated:", data?.commission);
-      setCommission(data?.commission || 0);
+      console.log("💰 Commission updated:", data.commission);
+      setCommission(data.commission);
     });
 
-    socket.on("disconnect", () =>
-      console.log("❌ Socket disconnected")
-    );
+    socket.on("disconnect", () => console.log("❌ Socket disconnected"));
 
     return () => socket.disconnect();
   }, []);
-
-  /*
-  ========================================
-  DERIVED DATA
-  ========================================
-  */
 
   const platforms = useMemo(
     () => [...new Set(services.map((s) => s.platform || "General"))],
@@ -80,24 +79,18 @@ export const CachedServicesProvider = ({ children }) => {
   );
 
   const getCategoriesByPlatform = (platform) =>
-    [
-      ...new Set(
-        services
-          .filter((s) => (s.platform || "General") === platform)
-          .map((s) => s.category)
-      ),
-    ];
+    [...new Set(
+      services
+        .filter((s) => (s.platform || "General") === platform)
+        .map((s) => s.category)
+    )];
 
   const getServicesByCategory = (platform, category) =>
     services.filter(
-      (s) =>
-        (s.platform || "General") === platform &&
-        s.category === category
+      (s) => (s.platform || "General") === platform && s.category === category
     );
 
-  const refreshServices = async () => {
-    await fetchData();
-  };
+  const refreshServices = async () => await fetchData();
 
   return (
     <CachedServicesContext.Provider
