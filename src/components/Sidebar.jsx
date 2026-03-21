@@ -7,10 +7,15 @@ const links = [
   { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
   { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
 
-  // ✅ NEW PAGE
+  // ✅ NEW PAGE: Provider Sync
   { name: "Provider Sync", icon: "fa-solid fa-arrows-rotate", path: "/admin/provider-sync" },
 
+  // ✅ NEW PAGE: User Orders
   { name: "User Orders", icon: "fa-solid fa-clipboard-list", path: "/admin/user-orders" },
+
+  // ✅ NEW PAGE: Resellers
+  { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
+
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
   { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
   { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
