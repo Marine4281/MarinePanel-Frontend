@@ -37,6 +37,8 @@ import ResellerOrders from "./pages/reseller/ResellerOrders";
 import ResellerBranding from "./pages/reseller/ResellerBranding";
 import ResellerServices from "./pages/reseller/ResellerServices";
 import EndUserDashboard from "./pages/reseller/EndUserDashboard";
+import ResellersList from "./pages/admin/ResellersList";
+import ResellerDetails from "./pages/admin/ResellerDetails";
 
 
 
