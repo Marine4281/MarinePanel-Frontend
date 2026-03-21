@@ -1,7 +1,8 @@
-//src/pages/ResellerDetails.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../../api/axios";
+
+import ResellerLayout from "./ResellerLayout"; // ✅ ADD THIS
 
 import ResellerStats from "../../components/reseller/ResellerStats";
 import ResellerUsers from "../../components/reseller/ResellerUsers";
@@ -25,18 +26,26 @@ const ResellerDetails = () => {
     fetchDetails();
   }, [id]);
 
-  if (!data) return <p>Loading...</p>;
+  if (!data) {
+    return (
+      <ResellerLayout>
+        <p>Loading...</p>
+      </ResellerLayout>
+    );
+  }
 
   return (
-    <div className="p-4 space-y-6">
-      <h1 className="text-xl font-bold">Reseller Details</h1>
+    <ResellerLayout>
+      <div className="space-y-6">
+        <h1 className="text-xl font-bold">Reseller Details</h1>
 
-      <ResellerStats reseller={data.reseller} stats={data.stats} />
+        <ResellerStats reseller={data.reseller} stats={data.stats} />
 
-      <ResellerUsers users={data.users} />
+        <ResellerUsers users={data.users} />
 
-      <ResellerOrders resellerId={id} />
-    </div>
+        <ResellerOrders resellerId={id} />
+      </div>
+    </ResellerLayout>
   );
 };
 
