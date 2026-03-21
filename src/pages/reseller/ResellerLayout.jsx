@@ -1,5 +1,5 @@
 //src/pages/reseller/ResellerLayout.jsx
-import Sidebar from "../../components/reseller/Sidebar";
+import Sidebar from "../../components/Sidebar";
 
 const ResellerLayout = ({ children }) => {
   return (
