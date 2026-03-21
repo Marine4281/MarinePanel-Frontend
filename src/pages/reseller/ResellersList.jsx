@@ -1,4 +1,4 @@
-//
+//src/pages/reseller/ResellersList.jsx
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import ResellerTable from "../../components/reseller/ResellerTable";
