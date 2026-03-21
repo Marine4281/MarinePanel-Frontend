@@ -296,6 +296,24 @@ function AppRoutes() {
           }
         />
 
+         <Route 
+            path="/admin/resellers" 
+            element={
+              <ProtectedRoute adminOnly>
+                 <ResellersList />
+              </ProtectedRoute>
+            } 
+           />
+         
+        <Route 
+           path="/admin/resellers/:id" 
+           element={<ProtectedRoute adminOnly>
+              <ResellerDetails />
+           </ProtectedRoute>
+          } 
+         />
+      
+
       </Routes>
     </>
   );
