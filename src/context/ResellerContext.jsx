@@ -9,18 +9,18 @@ export const ResellerProvider = ({ children }) => {
   const [reseller, setReseller] = useState({
     brandName: "MarinePanel",
     logo: null,
-    themeColor: "#f97316", // default orange
+    themeColor: "#f97316",
     domain: "marinepanel.online",
-    
-    // Support
-  support: {
-    whatsapp: data.support?.whatsapp || "",
-    telegram: data.support?.telegram || "",
-    whatsappChannel: data.support?.whatsappChannel || "",
-  },
+
+    // ✅ DEFAULT SUPPORT (no "data" here)
+    support: {
+      whatsapp: "",
+      telegram: "",
+      whatsappChannel: "",
+    },
   });
 
-  const [ready, setReady] = useState(false); // instead of loading
+  const [ready, setReady] = useState(false);
 
   const applyTheme = (color) => {
     if (color) {
@@ -32,11 +32,18 @@ export const ResellerProvider = ({ children }) => {
     document.title = name || "MarinePanel";
   };
 
+  // ✅ FIXED: include support here
   const normalizeBranding = (data) => ({
     brandName: data.brandName || "Reseller Panel",
     logo: data.logo || null,
     themeColor: data.themeColor || "#16a34a",
     domain: data.domain || data.resellerDomain || "marinepanel.online",
+
+    support: {
+      whatsapp: data.support?.whatsapp || "",
+      telegram: data.support?.telegram || "",
+      whatsappChannel: data.support?.whatsappChannel || "",
+    },
   });
 
   useEffect(() => {
@@ -59,7 +66,6 @@ export const ResellerProvider = ({ children }) => {
       } catch (err) {
         console.error("Branding fetch failed:", err);
       } finally {
-        // Mark UI ready AFTER theme is applied
         setReady(true);
       }
     };
@@ -74,7 +80,6 @@ export const ResellerProvider = ({ children }) => {
 
   return (
     <ResellerContext.Provider value={{ reseller, setReseller }}>
-      {/* 👇 Hide UI until branding is ready (no loading screen) */}
       <div style={{ visibility: ready ? "visible" : "hidden" }}>
         {children}
       </div>
