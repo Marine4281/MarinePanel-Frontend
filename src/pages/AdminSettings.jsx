@@ -1,4 +1,5 @@
-// AdminSettings.jsx
+// src/pages/AdminSettings.jsx
+
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import API from "../api/axios";
@@ -10,24 +11,39 @@ const AdminSettings = () => {
   const [withdrawMin, setWithdrawMin] = useState(10);
   const [platformDomain, setPlatformDomain] = useState("marinepanel.online");
 
+  // ✅ NEW: Support fields
+  const [supportWhatsapp, setSupportWhatsapp] = useState("");
+  const [supportTelegram, setSupportTelegram] = useState("");
+  const [supportWhatsappChannel, setSupportWhatsappChannel] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   /*
   --------------------------------
-  Fetch Settings
+  Fetch Settings (ALL)
   --------------------------------
   */
   useEffect(() => {
     const fetchSettings = async () => {
       try {
+        // Commission
         const { data } = await API.get("/admin/settings/commission");
         setCommission(data.commission || 50);
 
+        // Reseller + Platform
         const reseller = await API.get("/admin/settings/reseller");
 
         setActivationFee(reseller.data.resellerActivationFee || 25);
         setWithdrawMin(reseller.data.resellerWithdrawMin || 10);
         setPlatformDomain(reseller.data.platformDomain || "marinepanel.online");
+
+        // ✅ NEW: Support (from same settings object)
+        setSupportWhatsapp(reseller.data.supportWhatsapp || "");
+        setSupportTelegram(reseller.data.supportTelegram || "");
+        setSupportWhatsappChannel(
+          reseller.data.supportWhatsappChannel || ""
+        );
+
       } catch (err) {
         console.error("Failed to fetch settings", err);
       }
@@ -56,7 +72,7 @@ const AdminSettings = () => {
 
   /*
   --------------------------------
-  Update Reseller Settings
+  Update Reseller + Support Settings
   --------------------------------
   */
   const handleSaveReseller = async () => {
@@ -67,12 +83,18 @@ const AdminSettings = () => {
         resellerActivationFee: activationFee,
         resellerWithdrawMin: withdrawMin,
         platformDomain,
+
+        // ✅ NEW support fields
+        supportWhatsapp,
+        supportTelegram,
+        supportWhatsappChannel,
       });
 
-      alert("Reseller settings updated");
+      alert("Settings updated successfully");
+
     } catch (err) {
       console.error(err);
-      alert("Failed to update reseller settings");
+      alert("Failed to update settings");
     } finally {
       setLoading(false);
     }
@@ -107,18 +129,15 @@ const AdminSettings = () => {
       <Sidebar />
 
       <main className="flex-1 p-6 max-w-4xl mx-auto">
-
         <h1 className="text-2xl font-bold mb-6">Admin Settings</h1>
 
-        {/* COMMISSION SETTINGS */}
+        {/* ================= COMMISSION ================= */}
         <div className="bg-white rounded-2xl shadow p-6 mb-6">
-
           <h2 className="text-lg font-semibold mb-4">
             Default Commission
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-
             <div>
               <label className="text-sm text-gray-500">
                 Commission Percentage (%)
@@ -130,139 +149,116 @@ const AdminSettings = () => {
                 onChange={(e) => setCommission(Number(e.target.value))}
                 className="w-full border rounded-lg p-3 text-lg font-semibold"
               />
-
-              <p className="text-xs text-gray-400 mt-2">
-                Applied automatically to all services
-              </p>
             </div>
 
             <div className="bg-gray-50 rounded-xl p-4 text-sm">
-
               <p className="font-semibold mb-1">Example</p>
-
-              <p>
-                Provider price:
-                <span className="font-medium"> $0.50 / 1K</span>
-              </p>
-
-              <p>
-                User sees:
-                <span className="font-bold text-green-600"> $1.00 / 1K</span>
-              </p>
-
+              <p>Provider: $0.50 → User: $1.00</p>
             </div>
-
           </div>
 
           <div className="mt-6">
-
             <button
               onClick={handleSaveCommission}
               disabled={loading}
-              className="bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition disabled:opacity-50"
+              className="bg-orange-500 text-white px-6 py-3 rounded-xl hover:bg-orange-600"
             >
               Save Commission
             </button>
-
           </div>
-
         </div>
 
-        {/* RESELLER SETTINGS */}
+        {/* ================= RESELLER SETTINGS ================= */}
         <div className="bg-white rounded-2xl shadow p-6 mb-6">
-
           <h2 className="text-lg font-semibold mb-4">
             Reseller Platform Settings
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <div>
+            <input
+              type="number"
+              value={activationFee}
+              onChange={(e) => setActivationFee(Number(e.target.value))}
+              placeholder="Activation Fee"
+              className="border p-3 rounded-lg"
+            />
 
-              <label className="text-sm text-gray-500">
-                Reseller Activation Fee ($)
-              </label>
+            <input
+              type="number"
+              value={withdrawMin}
+              onChange={(e) => setWithdrawMin(Number(e.target.value))}
+              placeholder="Withdraw Min"
+              className="border p-3 rounded-lg"
+            />
 
-              <input
-                type="number"
-                value={activationFee}
-                onChange={(e) => setActivationFee(Number(e.target.value))}
-                className="w-full border rounded-lg p-3"
-              />
+            <input
+              type="text"
+              value={platformDomain}
+              onChange={(e) => setPlatformDomain(e.target.value)}
+              placeholder="Platform Domain"
+              className="border p-3 rounded-lg md:col-span-2"
+            />
+          </div>
 
-            </div>
+          {/* ================= SUPPORT ================= */}
+          <h3 className="mt-6 font-semibold">Support Settings</h3>
 
-            <div>
+          <div className="grid grid-cols-1 gap-4 mt-3">
 
-              <label className="text-sm text-gray-500">
-                Minimum Withdraw ($)
-              </label>
+            <input
+              type="text"
+              placeholder="WhatsApp (2547...)"
+              value={supportWhatsapp}
+              onChange={(e) => setSupportWhatsapp(e.target.value)}
+              className="border p-3 rounded-lg"
+            />
 
-              <input
-                type="number"
-                value={withdrawMin}
-                onChange={(e) => setWithdrawMin(Number(e.target.value))}
-                className="w-full border rounded-lg p-3"
-              />
+            <input
+              type="text"
+              placeholder="Telegram link"
+              value={supportTelegram}
+              onChange={(e) => setSupportTelegram(e.target.value)}
+              className="border p-3 rounded-lg"
+            />
 
-            </div>
-
-            <div className="md:col-span-2">
-
-              <label className="text-sm text-gray-500">
-                Platform Domain
-              </label>
-
-              <input
-                type="text"
-                value={platformDomain}
-                onChange={(e) => setPlatformDomain(e.target.value)}
-                className="w-full border rounded-lg p-3"
-              />
-
-              <p className="text-xs text-gray-400 mt-2">
-                Example: resellerbrand.<b>{platformDomain}</b>
-              </p>
-
-            </div>
+            <input
+              type="text"
+              placeholder="WhatsApp Channel link"
+              value={supportWhatsappChannel}
+              onChange={(e) =>
+                setSupportWhatsappChannel(e.target.value)
+              }
+              className="border p-3 rounded-lg"
+            />
 
           </div>
 
           <div className="mt-6">
-
             <button
               onClick={handleSaveReseller}
               disabled={loading}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700"
             >
-              Save Reseller Settings
+              Save Settings
             </button>
-
           </div>
-
         </div>
 
-        {/* RESET REVENUE */}
+        {/* ================= RESET ================= */}
         <div className="bg-white rounded-2xl shadow p-6">
-
           <h2 className="text-lg font-semibold mb-4 text-red-600">
             Revenue Control
           </h2>
 
-          <p className="text-sm text-gray-500 mb-4">
-            This will reset total revenue statistics. Orders will NOT be affected.
-          </p>
-
           <button
             onClick={handleResetRevenue}
             disabled={loading}
-            className="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600 transition disabled:opacity-50"
+            className="bg-red-500 text-white px-6 py-3 rounded-xl hover:bg-red-600"
           >
             Reset Revenue
           </button>
-
         </div>
-
       </main>
     </div>
   );
