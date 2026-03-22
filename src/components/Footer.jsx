@@ -6,7 +6,15 @@ import { useReseller } from "../context/ResellerContext";
 const Footer = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { reseller, slug } = useReseller(); // Get reseller info + slug
+  const { reseller } = useReseller();
+
+  const hostname = window.location.hostname;
+
+  const isMainPanel =
+    hostname === "marinepanel.online" ||
+    hostname === "www.marinepanel.online";
+
+  const isResellerPanel = !isMainPanel;
 
   // Default links
   const defaultLinks = [
@@ -17,15 +25,19 @@ const Footer = () => {
     { name: "Profile", icon: "fas fa-user", path: "/profile" },
   ];
 
-  // Only replace Resellers tab if visiting a reseller subdomain
-  const links =
-    reseller && slug
-      ? defaultLinks.map((link) =>
-          link.name === "Resellers"
-            ? { ...link, name: "Services", path: "/services" }
-            : link
-        )
-      : defaultLinks;
+  // Replace Resellers tab ONLY for reseller domains
+  const links = isResellerPanel
+    ? defaultLinks.map((link) =>
+        link.name === "Resellers"
+          ? {
+              ...link,
+              name: "Services",
+              icon: "fas fa-list", // better icon for services
+              path: "/services",
+            }
+          : link
+      )
+    : defaultLinks;
 
   return (
     <nav
@@ -56,7 +68,9 @@ const Footer = () => {
               key={link.name}
               onClick={() => navigate(link.path)}
               className={`flex flex-col items-center gap-1 ${
-                location.pathname === link.path ? "text-green-300" : "text-white"
+                location.pathname === link.path
+                  ? "text-green-300"
+                  : "text-white"
               }`}
             >
               <i className={`${link.icon} text-lg`}></i>
