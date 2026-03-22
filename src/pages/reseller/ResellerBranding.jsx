@@ -21,7 +21,7 @@ export default function ResellerBranding() {
   const [logo, setLogo] = useState("");
   const [themeColor, setThemeColor] = useState("#16a34a");
 
-  // ✅ NEW: Support fields
+  // ✅ NEW: Support
   const [supportWhatsapp, setSupportWhatsapp] = useState("");
   const [supportTelegram, setSupportTelegram] = useState("");
   const [supportWhatsappChannel, setSupportWhatsappChannel] = useState("");
@@ -131,7 +131,7 @@ export default function ResellerBranding() {
 
       const updated = res.data?.branding;
 
-      // ✅ Update context properly
+      // ✅ Update context
       setReseller((prev) => ({
         ...prev,
         brandName: updated.brandName,
@@ -260,45 +260,49 @@ export default function ResellerBranding() {
             />
           </div>
 
-          {/* ================= SUPPORT ================= */}
-          <h3 className="font-semibold mb-2">Support Settings</h3>
+          {/* ✅ SUPPORT SECTION */}
+          <div className="border-t pt-6 mt-6">
+            <h3 className="font-semibold mb-3">Support Settings</h3>
 
-          <div className="mb-3">
-            <input
-              type="text"
-              placeholder="WhatsApp number (e.g 2547...)"
-              value={supportWhatsapp}
-              onChange={(e) => setSupportWhatsapp(e.target.value)}
-              className="w-full border rounded p-2"
-            />
-          </div>
+            <div className="space-y-3">
 
-          <div className="mb-3">
-            <input
-              type="text"
-              placeholder="Telegram link"
-              value={supportTelegram}
-              onChange={(e) => setSupportTelegram(e.target.value)}
-              className="w-full border rounded p-2"
-            />
-          </div>
+              <input
+                type="text"
+                placeholder="WhatsApp Number (with country code, no +)"
+                value={supportWhatsapp}
+                onChange={(e) => setSupportWhatsapp(e.target.value)}
+                className="w-full border rounded p-2"
+              />
 
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="WhatsApp channel link"
-              value={supportWhatsappChannel}
-              onChange={(e) =>
-                setSupportWhatsappChannel(e.target.value)
-              }
-              className="w-full border rounded p-2"
-            />
+              <input
+                type="text"
+                placeholder="Telegram Username or Link"
+                value={supportTelegram}
+                onChange={(e) => setSupportTelegram(e.target.value)}
+                className="w-full border rounded p-2"
+              />
+
+              <input
+                type="text"
+                placeholder="WhatsApp Channel Invite Link"
+                value={supportWhatsappChannel}
+                onChange={(e) =>
+                  setSupportWhatsappChannel(e.target.value)
+                }
+                className="w-full border rounded p-2"
+              />
+
+            </div>
+
+            <p className="text-xs text-gray-400 mt-2">
+              These links will be shown to your users as support options.
+            </p>
           </div>
 
           <button
             onClick={saveBranding}
             disabled={saving}
-            className={`px-4 py-2 rounded text-white ${
+            className={`mt-6 px-4 py-2 rounded text-white ${
               saving
                 ? "bg-gray-400"
                 : "bg-orange-500 hover:bg-orange-600"
@@ -306,8 +310,9 @@ export default function ResellerBranding() {
           >
             {saving ? "Saving..." : "Save Branding"}
           </button>
+
         </div>
       </div>
     </div>
   );
-          }
+}
