@@ -12,7 +12,7 @@ export const ResellerProvider = ({ children }) => {
     themeColor: "#f97316",
     domain: "marinepanel.online",
 
-    // ✅ DEFAULT SUPPORT (no "data" here)
+    // ✅ Safe default support
     support: {
       whatsapp: "",
       telegram: "",
@@ -32,20 +32,29 @@ export const ResellerProvider = ({ children }) => {
     document.title = name || "MarinePanel";
   };
 
-  // ✅ FIXED: include support here
-  const normalizeBranding = (data) => ({
+  /*
+  --------------------------------
+  Normalize Branding (SAFE)
+  --------------------------------
+  */
+  const normalizeBranding = (data = {}) => ({
     brandName: data.brandName || "Reseller Panel",
     logo: data.logo || null,
     themeColor: data.themeColor || "#16a34a",
     domain: data.domain || data.resellerDomain || "marinepanel.online",
 
     support: {
-      whatsapp: data.support?.whatsapp || "",
-      telegram: data.support?.telegram || "",
-      whatsappChannel: data.support?.whatsappChannel || "",
+      whatsapp: data?.support?.whatsapp || "",
+      telegram: data?.support?.telegram || "",
+      whatsappChannel: data?.support?.whatsappChannel || "",
     },
   });
 
+  /*
+  --------------------------------
+  Fetch Public Branding
+  --------------------------------
+  */
   useEffect(() => {
     const fetchBranding = async () => {
       try {
@@ -56,7 +65,7 @@ export const ResellerProvider = ({ children }) => {
           withCredentials: true,
         });
 
-        if (res.data) {
+        if (res?.data) {
           const branding = normalizeBranding(res.data);
 
           setReseller(branding);
@@ -73,13 +82,21 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, []);
 
+  /*
+  --------------------------------
+  React to Branding Changes
+  --------------------------------
+  */
   useEffect(() => {
+    if (!reseller) return;
+
     applyTheme(reseller.themeColor);
     updateTitle(reseller.brandName);
   }, [reseller]);
 
   return (
     <ResellerContext.Provider value={{ reseller, setReseller }}>
+      {/* Prevent UI flash before branding loads */}
       <div style={{ visibility: ready ? "visible" : "hidden" }}>
         {children}
       </div>
