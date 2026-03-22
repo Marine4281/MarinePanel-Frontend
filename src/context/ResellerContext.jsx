@@ -12,7 +12,7 @@ export const ResellerProvider = ({ children }) => {
     themeColor: "#f97316",
     domain: "marinepanel.online",
 
-    // ✅ Safe default support
+    // ✅ ADD SAFE DEFAULT SUPPORT
     support: {
       whatsapp: "",
       telegram: "",
@@ -32,16 +32,12 @@ export const ResellerProvider = ({ children }) => {
     document.title = name || "MarinePanel";
   };
 
-  /*
-  --------------------------------
-  Normalize Branding (SAFE)
-  --------------------------------
-  */
+  // ✅ FIXED NORMALIZER (never breaks)
   const normalizeBranding = (data = {}) => ({
-    brandName: data.brandName || "Reseller Panel",
-    logo: data.logo || null,
-    themeColor: data.themeColor || "#16a34a",
-    domain: data.domain || data.resellerDomain || "marinepanel.online",
+    brandName: data?.brandName || "Reseller Panel",
+    logo: data?.logo || null,
+    themeColor: data?.themeColor || "#16a34a",
+    domain: data?.domain || data?.resellerDomain || "marinepanel.online",
 
     support: {
       whatsapp: data?.support?.whatsapp || "",
@@ -50,11 +46,6 @@ export const ResellerProvider = ({ children }) => {
     },
   });
 
-  /*
-  --------------------------------
-  Fetch Public Branding
-  --------------------------------
-  */
   useEffect(() => {
     const fetchBranding = async () => {
       try {
@@ -65,10 +56,19 @@ export const ResellerProvider = ({ children }) => {
           withCredentials: true,
         });
 
-        if (res?.data) {
+        if (res.data) {
           const branding = normalizeBranding(res.data);
 
-          setReseller(branding);
+          // ✅ CRITICAL FIX: MERGE instead of replace
+          setReseller((prev) => ({
+            ...prev,
+            ...branding,
+            support: {
+              ...prev.support,
+              ...branding.support,
+            },
+          }));
+
           applyTheme(branding.themeColor);
           updateTitle(branding.brandName);
         }
@@ -82,21 +82,13 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, []);
 
-  /*
-  --------------------------------
-  React to Branding Changes
-  --------------------------------
-  */
   useEffect(() => {
-    if (!reseller) return;
-
-    applyTheme(reseller.themeColor);
-    updateTitle(reseller.brandName);
+    applyTheme(reseller?.themeColor);
+    updateTitle(reseller?.brandName);
   }, [reseller]);
 
   return (
     <ResellerContext.Provider value={{ reseller, setReseller }}>
-      {/* Prevent UI flash before branding loads */}
       <div style={{ visibility: ready ? "visible" : "hidden" }}>
         {children}
       </div>
