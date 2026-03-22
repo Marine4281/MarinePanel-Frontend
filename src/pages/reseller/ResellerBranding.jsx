@@ -16,15 +16,19 @@ export default function ResellerBranding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Local state
+  // Branding
   const [brandName, setBrandName] = useState("");
   const [logo, setLogo] = useState("");
-  const [themeColor, setThemeColor] = useState("#16a34a"); // ✅ correct default
+  const [themeColor, setThemeColor] = useState("#16a34a");
+
+  // ✅ NEW: Support fields
+  const [supportWhatsapp, setSupportWhatsapp] = useState("");
+  const [supportTelegram, setSupportTelegram] = useState("");
+  const [supportWhatsappChannel, setSupportWhatsappChannel] = useState("");
 
   /*
   --------------------------------
   APPLY EXISTING THEME IMMEDIATELY
-  (Prevents flicker on refresh)
   --------------------------------
   */
   useEffect(() => {
@@ -38,7 +42,7 @@ export default function ResellerBranding() {
 
   /*
   --------------------------------
-  FETCH DASHBOARD BRANDING (ALWAYS)
+  FETCH DASHBOARD BRANDING
   --------------------------------
   */
   useEffect(() => {
@@ -55,17 +59,24 @@ export default function ResellerBranding() {
           logo: data.logo,
           themeColor: data.themeColor,
           domain: data.domain,
+
+          // ✅ include support
+          support: data.support || {},
         };
 
-        // ✅ Update context (single source of truth)
         setReseller(newBranding);
 
-        // ✅ Sync local state
-        setBrandName(data.brandName);
-        setLogo(data.logo);
-        setThemeColor(data.themeColor);
+        // Branding
+        setBrandName(data.brandName || "");
+        setLogo(data.logo || "");
+        setThemeColor(data.themeColor || "#16a34a");
 
-        // ✅ Apply theme + title
+        // ✅ Support
+        setSupportWhatsapp(data?.support?.whatsapp || "");
+        setSupportTelegram(data?.support?.telegram || "");
+        setSupportWhatsappChannel(data?.support?.whatsappChannel || "");
+
+        // Apply theme
         document.documentElement.style.setProperty(
           "--theme-color",
           data.themeColor
@@ -79,7 +90,7 @@ export default function ResellerBranding() {
       }
     };
 
-    fetchBranding(); // ✅ ALWAYS RUN
+    fetchBranding();
   }, [setReseller]);
 
   /*
@@ -103,26 +114,38 @@ export default function ResellerBranding() {
     try {
       setSaving(true);
 
-      const payload = { brandName, logo, themeColor };
-
-      await API.patch("/branding", payload, {
-        withCredentials: true,
-      });
-
-      // ✅ Update context AFTER save
-      setReseller((prev) => ({
-        ...prev,
+      const payload = {
         brandName,
         logo,
         themeColor,
+
+        // ✅ NEW support fields
+        supportWhatsapp,
+        supportTelegram,
+        supportWhatsappChannel,
+      };
+
+      const res = await API.patch("/branding", payload, {
+        withCredentials: true,
+      });
+
+      const updated = res.data?.branding;
+
+      // ✅ Update context properly
+      setReseller((prev) => ({
+        ...prev,
+        brandName: updated.brandName,
+        logo: updated.logo,
+        themeColor: updated.themeColor,
+        support: updated.support,
       }));
 
-      // ✅ Apply immediately
+      // Apply instantly
       document.documentElement.style.setProperty(
         "--theme-color",
-        themeColor
+        updated.themeColor
       );
-      document.title = brandName;
+      document.title = updated.brandName;
 
       toast.success("Branding updated successfully");
     } catch (err) {
@@ -177,10 +200,11 @@ export default function ResellerBranding() {
         </nav>
       </aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <div className="flex-1 p-6">
         <div className="bg-white shadow rounded-lg p-6 max-w-xl">
-          {/* Live Preview */}
+
+          {/* Preview */}
           <div
             className="flex items-center gap-4 mb-6 p-4 rounded"
             style={{ backgroundColor: themeColor }}
@@ -208,9 +232,6 @@ export default function ResellerBranding() {
               onChange={(e) => setBrandName(e.target.value)}
               className="w-full border rounded p-2"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Your brand name will appear on your panel.
-            </p>
           </div>
 
           {/* Logo */}
@@ -224,12 +245,9 @@ export default function ResellerBranding() {
               onChange={(e) => setLogo(e.target.value)}
               className="w-full border rounded p-2"
             />
-            {logo && (
-              <img src={logo} alt="Logo Preview" className="h-12 mt-2" />
-            )}
           </div>
 
-          {/* Theme Color */}
+          {/* Theme */}
           <div className="mb-6">
             <label className="block text-sm font-medium mb-1">
               Theme Color
@@ -238,7 +256,42 @@ export default function ResellerBranding() {
               type="color"
               value={themeColor}
               onChange={(e) => setThemeColor(e.target.value)}
-              className="h-10 w-16 p-0 border-0 rounded"
+              className="h-10 w-16"
+            />
+          </div>
+
+          {/* ================= SUPPORT ================= */}
+          <h3 className="font-semibold mb-2">Support Settings</h3>
+
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="WhatsApp number (e.g 2547...)"
+              value={supportWhatsapp}
+              onChange={(e) => setSupportWhatsapp(e.target.value)}
+              className="w-full border rounded p-2"
+            />
+          </div>
+
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="Telegram link"
+              value={supportTelegram}
+              onChange={(e) => setSupportTelegram(e.target.value)}
+              className="w-full border rounded p-2"
+            />
+          </div>
+
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="WhatsApp channel link"
+              value={supportWhatsappChannel}
+              onChange={(e) =>
+                setSupportWhatsappChannel(e.target.value)
+              }
+              className="w-full border rounded p-2"
             />
           </div>
 
@@ -247,7 +300,7 @@ export default function ResellerBranding() {
             disabled={saving}
             className={`px-4 py-2 rounded text-white ${
               saving
-                ? "bg-gray-400 cursor-not-allowed"
+                ? "bg-gray-400"
                 : "bg-orange-500 hover:bg-orange-600"
             }`}
           >
@@ -257,4 +310,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-        }
+          }
