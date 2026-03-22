@@ -1,4 +1,4 @@
-import { useReseller } from "../context/ResellerContext";
+import { useReseller } from "../../context/ResellerContext";
 
 const InfoBanner = () => {
   const { reseller } = useReseller();
