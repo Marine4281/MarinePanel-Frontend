@@ -3,8 +3,14 @@ import { useReseller } from "../context/ResellerContext";
 const InfoBanner = () => {
   const { reseller } = useReseller();
 
-  // 🚫 Hide if inside reseller panel
-  if (reseller?.domain || reseller?.brandName) {
+  const hostname = window.location.hostname;
+
+  const isMainPanel =
+    hostname === "marinepanel.online" ||
+    hostname === "www.marinepanel.online";
+
+  // ❌ Hide on reseller domains
+  if (!isMainPanel) {
     return null;
   }
 
