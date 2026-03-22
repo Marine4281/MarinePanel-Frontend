@@ -11,6 +11,13 @@ export const ResellerProvider = ({ children }) => {
     logo: null,
     themeColor: "#f97316", // default orange
     domain: "marinepanel.online",
+    
+    // Support
+  support: {
+    whatsapp: data.support?.whatsapp || "",
+    telegram: data.support?.telegram || "",
+    whatsappChannel: data.support?.whatsappChannel || "",
+  },
   });
 
   const [ready, setReady] = useState(false); // instead of loading
