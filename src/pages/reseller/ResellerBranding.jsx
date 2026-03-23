@@ -16,18 +16,20 @@ export default function ResellerBranding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Core
+  // Core branding
   const [brandName, setBrandName] = useState("");
   const [logo, setLogo] = useState("");
   const [themeColor, setThemeColor] = useState("#16a34a");
 
-  // Support
+  // ✅ SUPPORT STATE
   const [supportWhatsapp, setSupportWhatsapp] = useState("");
   const [supportTelegram, setSupportTelegram] = useState("");
   const [supportWhatsappChannel, setSupportWhatsappChannel] = useState("");
 
   /*
-  APPLY THEME
+  --------------------------------
+  APPLY EXISTING THEME
+  --------------------------------
   */
   useEffect(() => {
     if (reseller?.themeColor) {
@@ -39,7 +41,9 @@ export default function ResellerBranding() {
   }, []);
 
   /*
+  --------------------------------
   FETCH BRANDING
+  --------------------------------
   */
   useEffect(() => {
     const fetchBranding = async () => {
@@ -55,27 +59,30 @@ export default function ResellerBranding() {
           logo: data?.logo || "",
           themeColor: data?.themeColor || "#16a34a",
           domain: data?.domain || "",
-          support: {
-            whatsapp: data?.support?.whatsapp || "",
-            telegram: data?.support?.telegram || "",
-            whatsappChannel: data?.support?.whatsappChannel || "",
-          },
+          support: data?.support || {},
         };
 
-        // ✅ FULL SAFE SET (not partial)
+        // ✅ SAFE MERGE (NO CRASH)
         setReseller((prev) => ({
           ...prev,
           ...newBranding,
+          support: {
+            ...prev?.support,
+            ...newBranding?.support,
+          },
         }));
 
-        // Local sync
+        // Local state
         setBrandName(newBranding.brandName);
         setLogo(newBranding.logo);
         setThemeColor(newBranding.themeColor);
 
-        setSupportWhatsapp(newBranding.support.whatsapp);
-        setSupportTelegram(newBranding.support.telegram);
-        setSupportWhatsappChannel(newBranding.support.whatsappChannel);
+        // ✅ SUPPORT SYNC
+        setSupportWhatsapp(newBranding.support?.whatsapp || "");
+        setSupportTelegram(newBranding.support?.telegram || "");
+        setSupportWhatsappChannel(
+          newBranding.support?.whatsappChannel || ""
+        );
 
         document.documentElement.style.setProperty(
           "--theme-color",
@@ -94,7 +101,9 @@ export default function ResellerBranding() {
   }, [setReseller]);
 
   /*
-  LIVE PREVIEW
+  --------------------------------
+  LIVE THEME PREVIEW
+  --------------------------------
   */
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -104,7 +113,9 @@ export default function ResellerBranding() {
   }, [themeColor]);
 
   /*
-  SAVE
+  --------------------------------
+  SAVE BRANDING + SUPPORT
+  --------------------------------
   */
   const saveBranding = async () => {
     try {
@@ -114,6 +125,8 @@ export default function ResellerBranding() {
         brandName,
         logo,
         themeColor,
+
+        // ✅ SUPPORT INCLUDED
         supportWhatsapp,
         supportTelegram,
         supportWhatsappChannel,
@@ -125,40 +138,28 @@ export default function ResellerBranding() {
 
       const updated = res.data?.branding;
 
-      if (!updated) {
-        throw new Error("Invalid response from server");
-      }
-
-      // ✅ TRUST BACKEND RESPONSE ONLY
-      const updatedBranding = {
-        brandName: updated.brandName,
-        logo: updated.logo,
-        themeColor: updated.themeColor,
-        domain: updated.domain,
-        support: {
-          whatsapp: updated.support?.whatsapp || "",
-          telegram: updated.support?.telegram || "",
-          whatsappChannel: updated.support?.whatsappChannel || "",
-        },
-      };
-
+      // ✅ SAFE UPDATE (NO STATE WIPE)
       setReseller((prev) => ({
         ...prev,
-        ...updatedBranding,
+        brandName: updated?.brandName || brandName,
+        logo: updated?.logo || logo,
+        themeColor: updated?.themeColor || themeColor,
+        support: {
+          whatsapp:
+            updated?.support?.whatsapp ?? supportWhatsapp,
+          telegram:
+            updated?.support?.telegram ?? supportTelegram,
+          whatsappChannel:
+            updated?.support?.whatsappChannel ??
+            supportWhatsappChannel,
+        },
       }));
-
-      // Sync local again (important)
-      setSupportWhatsapp(updatedBranding.support.whatsapp);
-      setSupportTelegram(updatedBranding.support.telegram);
-      setSupportWhatsappChannel(
-        updatedBranding.support.whatsappChannel
-      );
 
       document.documentElement.style.setProperty(
         "--theme-color",
-        updatedBranding.themeColor
+        themeColor
       );
-      document.title = updatedBranding.brandName;
+      document.title = brandName;
 
       toast.success("Branding updated successfully");
     } catch (err) {
@@ -223,63 +224,93 @@ export default function ResellerBranding() {
             style={{ backgroundColor: themeColor }}
           >
             {logo && (
-              <img src={logo} alt="Logo" className="h-12 w-12" />
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-12 w-12 object-contain"
+              />
             )}
-            <h2 className="text-white font-bold">
+            <h2 className="text-white text-lg font-bold">
               {brandName || "Reseller"}
             </h2>
           </div>
 
-          {/* Inputs */}
-          <input
-            value={brandName}
-            onChange={(e) => setBrandName(e.target.value)}
-            className="w-full border p-2 mb-3"
-            placeholder="Brand Name"
-          />
+          {/* Brand */}
+          <div className="mb-4">
+            <label className="text-sm font-medium">Brand Name</label>
+            <input
+              type="text"
+              value={brandName}
+              onChange={(e) => setBrandName(e.target.value)}
+              className="w-full border rounded p-2 mt-1"
+            />
+          </div>
 
-          <input
-            value={logo}
-            onChange={(e) => setLogo(e.target.value)}
-            className="w-full border p-2 mb-3"
-            placeholder="Logo URL"
-          />
+          {/* Logo */}
+          <div className="mb-4">
+            <label className="text-sm font-medium">Logo URL</label>
+            <input
+              type="text"
+              value={logo}
+              onChange={(e) => setLogo(e.target.value)}
+              className="w-full border rounded p-2 mt-1"
+            />
+          </div>
 
-          <input
-            type="color"
-            value={themeColor}
-            onChange={(e) => setThemeColor(e.target.value)}
-            className="mb-6"
-          />
+          {/* Theme */}
+          <div className="mb-6">
+            <label className="text-sm font-medium">Theme Color</label>
+            <input
+              type="color"
+              value={themeColor}
+              onChange={(e) => setThemeColor(e.target.value)}
+              className="h-10 w-16 mt-1"
+            />
+          </div>
 
-          {/* SUPPORT */}
-          <input
-            placeholder="WhatsApp"
-            value={supportWhatsapp}
-            onChange={(e) => setSupportWhatsapp(e.target.value)}
-            className="w-full border p-2 mb-3"
-          />
+          {/* ✅ SUPPORT SECTION */}
+          <div className="border-t pt-6 mt-6">
+            <h3 className="font-semibold mb-4 text-gray-700">
+              Support Links
+            </h3>
 
-          <input
-            placeholder="Telegram"
-            value={supportTelegram}
-            onChange={(e) => setSupportTelegram(e.target.value)}
-            className="w-full border p-2 mb-3"
-          />
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="WhatsApp Number (e.g. 2547...)"
+                value={supportWhatsapp}
+                onChange={(e) => setSupportWhatsapp(e.target.value)}
+                className="w-full border rounded p-2"
+              />
 
-          <input
-            placeholder="WhatsApp Channel"
-            value={supportWhatsappChannel}
-            onChange={(e) =>
-              setSupportWhatsappChannel(e.target.value)
-            }
-            className="w-full border p-2 mb-6"
-          />
+              <input
+                type="text"
+                placeholder="Telegram Username or Link"
+                value={supportTelegram}
+                onChange={(e) => setSupportTelegram(e.target.value)}
+                className="w-full border rounded p-2"
+              />
+
+              <input
+                type="text"
+                placeholder="WhatsApp Channel Link"
+                value={supportWhatsappChannel}
+                onChange={(e) =>
+                  setSupportWhatsappChannel(e.target.value)
+                }
+                className="w-full border rounded p-2"
+              />
+            </div>
+          </div>
 
           <button
             onClick={saveBranding}
             disabled={saving}
-            className="bg-orange-500 text-white px-4 py-2 rounded"
+            className={`mt-6 px-4 py-2 rounded text-white ${
+              saving
+                ? "bg-gray-400"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
           >
             {saving ? "Saving..." : "Save Branding"}
           </button>
@@ -288,4 +319,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-            }
+    }
