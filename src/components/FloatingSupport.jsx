@@ -5,7 +5,7 @@ import { useReseller } from "../context/ResellerContext";
 
 const FloatingSupport = () => {
   const [open, setOpen] = useState(false);
-  const { reseller } = useReseller();
+  const { brand } = useReseller();
 
   const toggleMenu = () => setOpen(!open);
 
