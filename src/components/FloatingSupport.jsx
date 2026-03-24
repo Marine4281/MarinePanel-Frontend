@@ -9,8 +9,6 @@ const FloatingSupport = () => {
 
   const toggleMenu = () => setOpen(!open);
 
-  const support = reseller?.support || {};
-
   // ✅ Format helpers
   const formatWhatsApp = (number) => {
     if (!number) return "";
@@ -23,9 +21,9 @@ const FloatingSupport = () => {
     return `https://t.me/${link.replace("@", "")}`;
   };
 
-  const whatsappLink = formatWhatsApp(support.whatsapp);
-  const telegramLink = formatTelegram(support.telegram);
-  const whatsappChannelLink = support.whatsappChannel || "";
+  const whatsappLink = formatWhatsApp(reseller?.supportWhatsapp);
+  const telegramLink = formatTelegram(reseller?.supportTelegram);
+  const whatsappChannelLink = reseller?.supportWhatsappChannel || "";
 
   const hasLinks =
     whatsappLink || telegramLink || whatsappChannelLink;
