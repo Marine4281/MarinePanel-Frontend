@@ -22,9 +22,9 @@ const FloatingSupport = () => {
   };
 
   // ✅ FIX: Use correct backend fields directly
-  const whatsappLink = formatWhatsApp(reseller?.supportWhatsapp);
-  const telegramLink = formatTelegram(reseller?.supportTelegram);
-  const whatsappChannelLink = reseller?.supportWhatsappChannel || "";
+  const whatsappLink = formatWhatsApp(brand?.supportWhatsapp);
+  const telegramLink = formatTelegram(brand?.supportTelegram);
+  const whatsappChannelLink = brand?.supportWhatsappChannel || "";
 
   const hasLinks =
     whatsappLink || telegramLink || whatsappChannelLink;
