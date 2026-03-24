@@ -21,7 +21,7 @@ const FloatingSupport = () => {
     return `https://t.me/${link.replace("@", "")}`;
   };
 
-  // ✅ Directly pull from reseller object
+  // ✅ FIX: Use correct backend fields directly
   const whatsappLink = formatWhatsApp(reseller?.supportWhatsapp);
   const telegramLink = formatTelegram(reseller?.supportTelegram);
   const whatsappChannelLink = reseller?.supportWhatsappChannel || "";
@@ -34,7 +34,6 @@ const FloatingSupport = () => {
       {/* Dropdown */}
       {open && (
         <div className="flex flex-col items-end gap-3 mb-2">
-
           {/* ✅ SHOW REAL LINKS ONLY IF THEY EXIST */}
           {hasLinks ? (
             <>
