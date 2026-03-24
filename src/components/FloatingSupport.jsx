@@ -21,6 +21,7 @@ const FloatingSupport = () => {
     return `https://t.me/${link.replace("@", "")}`;
   };
 
+  // ✅ Directly pull from reseller object
   const whatsappLink = formatWhatsApp(reseller?.supportWhatsapp);
   const telegramLink = formatTelegram(reseller?.supportTelegram);
   const whatsappChannelLink = reseller?.supportWhatsappChannel || "";
