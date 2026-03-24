@@ -21,7 +21,7 @@ export default function ResellerBranding() {
   const [logo, setLogo] = useState("");
   const [themeColor, setThemeColor] = useState("#16a34a");
 
-  // Support
+  // ✅ Support (unchanged structure)
   const [supportWhatsapp, setSupportWhatsapp] = useState("");
   const [supportTelegram, setSupportTelegram] = useState("");
   const [supportWhatsappChannel, setSupportWhatsappChannel] = useState("");
@@ -62,7 +62,7 @@ export default function ResellerBranding() {
           support: data?.support ?? {},
         };
 
-        // Global state
+        // ✅ FIXED SAFE MERGE
         setReseller((prev) => ({
           ...prev,
           ...newBranding,
@@ -120,41 +120,16 @@ export default function ResellerBranding() {
     try {
       setSaving(true);
 
-      /*
-      --------------------------------
-      NORMALIZE INPUTS
-      --------------------------------
-      */
-
-      let whatsapp = supportWhatsapp.trim();
-      let telegram = supportTelegram.trim();
-      let channel = supportWhatsappChannel.trim();
-
-      // WhatsApp
-      if (whatsapp && whatsapp.includes("wa.me") && !whatsapp.startsWith("http")) {
-        whatsapp = "https://" + whatsapp;
-      }
-      if (whatsapp && !whatsapp.startsWith("http")) {
-        whatsapp = whatsapp.replace(/\D/g, "");
-      }
-
-      // Telegram
-      if (telegram && !telegram.startsWith("http") && !telegram.startsWith("@")) {
-        telegram = "@" + telegram;
-      }
-
-      // Channel
-      if (channel && !channel.startsWith("http")) {
-        channel = "https://" + channel;
-      }
-
+      // ✅ NO NORMALIZATION (backend handles it)
       const payload = {
         brandName: brandName.trim(),
         logo: logo.trim(),
         themeColor,
-        supportWhatsapp: whatsapp,
-        supportTelegram: telegram,
-        supportWhatsappChannel: channel,
+
+        // ✅ send raw values
+        supportWhatsapp,
+        supportTelegram,
+        supportWhatsappChannel,
       };
 
       console.log("Sending payload:", payload);
@@ -181,9 +156,14 @@ export default function ResellerBranding() {
         updated?.support?.whatsappChannel ?? ""
       );
 
+      // ✅ FIXED SAFE MERGE
       setReseller((prev) => ({
         ...prev,
         ...updated,
+        support: {
+          ...prev?.support,
+          ...updated?.support,
+        },
       }));
 
       document.documentElement.style.setProperty(
@@ -355,4 +335,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-    }
+                     }
