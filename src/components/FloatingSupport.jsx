@@ -5,9 +5,11 @@ import { useReseller } from "../context/ResellerContext";
 
 const FloatingSupport = () => {
   const [open, setOpen] = useState(false);
-  const { brand } = useReseller();
+  const { reseller } = useReseller();
 
   const toggleMenu = () => setOpen(!open);
+
+  const support = reseller?.support || {};
 
   // ✅ Format helpers
   const formatWhatsApp = (number) => {
@@ -21,10 +23,9 @@ const FloatingSupport = () => {
     return `https://t.me/${link.replace("@", "")}`;
   };
 
-  // ✅ FIX: Use correct backend fields directly
-  const whatsappLink = formatWhatsApp(brand?.supportWhatsapp);
-  const telegramLink = formatTelegram(brand?.supportTelegram);
-  const whatsappChannelLink = brand?.supportWhatsappChannel || "";
+  const whatsappLink = formatWhatsApp(support.whatsapp);
+  const telegramLink = formatTelegram(support.telegram);
+  const whatsappChannelLink = support.whatsappChannel || "";
 
   const hasLinks =
     whatsappLink || telegramLink || whatsappChannelLink;
@@ -34,6 +35,7 @@ const FloatingSupport = () => {
       {/* Dropdown */}
       {open && (
         <div className="flex flex-col items-end gap-3 mb-2">
+
           {/* ✅ SHOW REAL LINKS ONLY IF THEY EXIST */}
           {hasLinks ? (
             <>
