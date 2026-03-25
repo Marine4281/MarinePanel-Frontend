@@ -58,9 +58,9 @@ export default function ResellerBranding() {
           domain: data.domain,
 
           // ✅ INCLUDE SUPPORT IN CONTEXT
-          supportWhatsapp: data.supportWhatsapp,
-          supportTelegram: data.supportTelegram,
-          supportWhatsappChannel: data.supportWhatsappChannel,
+          supportWhatsapp: data.supportWhatsapp || "",
+          supportTelegram: data.supportTelegram || "" ,
+          supportWhatsappChannel: data.supportWhatsappChannel || "",
         };
 
         setReseller(newBranding);
