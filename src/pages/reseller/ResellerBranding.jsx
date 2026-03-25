@@ -132,9 +132,11 @@ export default function ResellerBranding() {
         themeColor,
 
         // ✅ UPDATE CONTEXT SUPPORT
-        supportWhatsapp,
-        supportTelegram,
-        supportWhatsappChannel,
+        support: {
+          whatsapp: supportWhatsapp || "",
+          telegram: supportTelegram || "",
+          whatsappChannel: supportWhatsappChannel || "",
+         },
       }));
 
       document.documentElement.style.setProperty(
