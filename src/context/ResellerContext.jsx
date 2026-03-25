@@ -40,9 +40,9 @@ export const ResellerProvider = ({ children }) => {
     domain: data?.domain || data?.resellerDomain || "marinepanel.online",
 
     support: {
-      whatsapp: data?.support?.whatsapp || "",
-      telegram: data?.support?.telegram || "",
-      whatsappChannel: data?.support?.whatsappChannel || "",
+      whatsapp: data?.supportWhatsapp || "",
+      telegram: data?.supportTelegram || "",
+      whatsappChannel: data?.supportWhatsappChannel || "",
     },
   });
 
