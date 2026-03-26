@@ -37,7 +37,7 @@ export default function ResellerBranding() {
         reseller.themeColor
       );
     }
-  }, []);
+  }, [reseller]);
 
   /*
   FETCH BRANDING + SUPPORT
@@ -51,26 +51,27 @@ export default function ResellerBranding() {
 
         const data = res.data;
 
-        const newBranding = {
+        // ✅ FIX: KEEP CONSISTENT STRUCTURE
+        setReseller((prev) => ({
+          ...prev,
           brandName: data.brandName,
           logo: data.logo,
           themeColor: data.themeColor,
           domain: data.domain,
 
-          // ✅ INCLUDE SUPPORT IN CONTEXT
-          supportWhatsapp: data.supportWhatsapp || "",
-          supportTelegram: data.supportTelegram || "" ,
-          supportWhatsappChannel: data.supportWhatsappChannel || "",
-        };
+          support: {
+            whatsapp: data.supportWhatsapp || "",
+            telegram: data.supportTelegram || "",
+            whatsappChannel: data.supportWhatsappChannel || "",
+          },
+        }));
 
-        setReseller(newBranding);
-
-        // Branding
+        // Branding state
         setBrandName(data.brandName);
         setLogo(data.logo);
         setThemeColor(data.themeColor);
 
-        // ✅ SUPPORT
+        // ✅ SUPPORT STATE
         setSupportWhatsapp(data.supportWhatsapp || "");
         setSupportTelegram(data.supportTelegram || "");
         setSupportWhatsappChannel(
@@ -125,18 +126,18 @@ export default function ResellerBranding() {
         withCredentials: true,
       });
 
+      // ✅ FIX: KEEP STRUCTURE CONSISTENT
       setReseller((prev) => ({
         ...prev,
         brandName,
         logo,
         themeColor,
 
-        // ✅ UPDATE CONTEXT SUPPORT
         support: {
           whatsapp: supportWhatsapp || "",
           telegram: supportTelegram || "",
           whatsappChannel: supportWhatsappChannel || "",
-         },
+        },
       }));
 
       document.documentElement.style.setProperty(
@@ -260,7 +261,7 @@ export default function ResellerBranding() {
             />
           </div>
 
-          {/* ✅ SUPPORT SECTION */}
+          {/* SUPPORT SECTION */}
           <div className="mt-8 border-t pt-6">
             <h3 className="text-md font-semibold mb-4">
               Support Configuration
@@ -318,4 +319,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-          }
+            }
