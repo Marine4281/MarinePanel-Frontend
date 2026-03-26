@@ -3,8 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 
-import ResellerLayout from "./ResellerLayout"; // ✅ ADD THIS
-import ResellerTable from "../../components/reseller/ResellerTable";
+import ResellerLayout from "./ResellerAdminLayout"; // ✅ ADD THIS
+import ResellerTable from "../../components/reseller/ResellerAdminTable";
 
 const ResellersList = () => {
   const [resellers, setResellers] = useState([]);
