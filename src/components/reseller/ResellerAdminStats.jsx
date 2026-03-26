@@ -1,4 +1,4 @@
-//src/components/reseller/ResellerStats.jsx
+//src/components/reseller/ResellerAdminStats.jsx
 const ResellerStats = ({ reseller, stats }) => {
   return (
     <div className="bg-white p-4 rounded shadow grid grid-cols-2 md:grid-cols-4 gap-4">
