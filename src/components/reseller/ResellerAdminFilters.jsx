@@ -30,4 +30,4 @@ const ResellerFilters = ({ filters, setFilters }) => {
   );
 };
 
-export default ResellerFilters;
+export default ResellerAdminFilters;
