@@ -14,4 +14,4 @@ const ResellerStats = ({ reseller, stats }) => {
   );
 };
 
-export default ResellerStats;
+export default ResellerAdminStats;
