@@ -62,4 +62,4 @@ const ResellersList = () => {
   );
 };
 
-export default ResellersList;
+export default ResellersAdminList;
