@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../../api/axios";
 
-import ResellerLayout from "./ResellerLayout"; // ✅ ADD THIS
+import ResellerAdminLayout from "./ResellerAdminLayout"; // ✅ ADD THIS
 
-import ResellerStats from "../../components/reseller/ResellerStats";
-import ResellerUsers from "../../components/reseller/ResellerUsers";
-import ResellerOrders from "../../components/reseller/ResellerOrders";
+import ResellerAdminStats from "../../components/reseller/ResellerAdminStats";
+import ResellerAdminUsers from "../../components/reseller/ResellerAdminUsers";
+import ResellerAdminOrders from "../../components/reseller/ResellerAdminOrders";
 
 const ResellerDetails = () => {
   const { id } = useParams();
@@ -50,4 +50,4 @@ const ResellerDetails = () => {
   );
 };
 
-export default ResellerDetails;
+export default ResellerAdminDetails;
