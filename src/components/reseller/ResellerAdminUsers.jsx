@@ -29,4 +29,4 @@ const ResellerUsers = ({ users }) => {
   );
 };
 
-export default ResellerUsers;
+export default ResellerAdminUsers;
