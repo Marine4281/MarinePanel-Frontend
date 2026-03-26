@@ -1,4 +1,4 @@
-//src/components/reseller/ResellerOrders.jsx
+//src/components/reseller/ResellerAdminOrders.jsx
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import ResellerFilters from "./ResellerFilters";
