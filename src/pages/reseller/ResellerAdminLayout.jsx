@@ -1,4 +1,4 @@
-//src/pages/reseller/ResellerLayout.jsx
+//src/pages/reseller/ResellerAdminLayout.jsx
 import Sidebar from "../../components/Sidebar";
 
 const ResellerLayout = ({ children }) => {
