@@ -72,4 +72,4 @@ const ResellerTable = ({ resellers, refresh }) => {
   );
 };
 
-export default ResellerTable;
+export default ResellerAdminTable;
