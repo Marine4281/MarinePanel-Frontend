@@ -1,7 +1,7 @@
 //src/components/reseller/ResellerAdminOrders.jsx
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
-import ResellerFilters from "./ResellerFilters";
+import ResellerAdminFilters from "./ResellerAdminFilters";
 
 const ResellerOrders = ({ resellerId }) => {
   const [orders, setOrders] = useState([]);
