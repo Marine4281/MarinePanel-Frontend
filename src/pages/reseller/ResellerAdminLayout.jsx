@@ -15,4 +15,4 @@ const ResellerLayout = ({ children }) => {
   );
 };
 
-export default ResellerLayout;
+export default ResellerAdminLayout;
