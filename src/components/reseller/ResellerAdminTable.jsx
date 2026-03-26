@@ -1,4 +1,4 @@
-//src/components/reseller/ResellerTable.jsx
+//src/components/reseller/ResellerAdminTable.jsx
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 
