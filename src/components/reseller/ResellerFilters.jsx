@@ -1,3 +1,4 @@
+//src/components/reseller/ResellerFilters.jsx
 const ResellerFilters = ({ filters, setFilters }) => {
   return (
     <div className="flex gap-2 mb-3">
