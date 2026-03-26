@@ -58,4 +58,4 @@ const ResellerOrders = ({ resellerId }) => {
   );
 };
 
-export default ResellerOrders;
+export default ResellerAdminOrders;
