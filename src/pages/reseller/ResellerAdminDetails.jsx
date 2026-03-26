@@ -1,3 +1,4 @@
+//src/pages/reseller/ResellerAdminDetails.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../../api/axios";
