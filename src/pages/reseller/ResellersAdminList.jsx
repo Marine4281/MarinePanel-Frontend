@@ -1,4 +1,4 @@
-//src/pages/reseller/ResellersList.jsx
+//src/pages/reseller/ResellersAdminList.jsx
 import { useEffect, useState, useCallback } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
