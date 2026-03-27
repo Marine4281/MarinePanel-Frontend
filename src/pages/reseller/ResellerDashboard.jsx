@@ -240,9 +240,10 @@ const Table = ({ title, data, type }) => (
           <tr>
             {type === "users" ? (
               <>
-                <th className="px-4 py-3 text-left">Name</th>
                 <th className="px-4 py-3 text-left">Email</th>
-                <th className="px-4 py-3 text-left">Date</th>
+                <th className="px-4 py-3 text-left">Phone</th>
+                <th className="px-4 py-3 text-left">Wallet ($)</th>
+                <th className="px-4 py-3 text-left">Joined</th>
               </>
             ) : (
               <>
@@ -262,24 +263,42 @@ const Table = ({ title, data, type }) => (
 
               {type === "users" ? (
                 <>
-                  <td className="px-4 py-3 font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{item.email}</td>
+                  <td className="px-4 py-3 font-medium text-gray-700">
+                    {item.email}
+                  </td>
+
+                  <td className="px-4 py-3 text-gray-600">
+                    {item.phone || "-"}
+                  </td>
+
+                  <td className="px-4 py-3 text-orange-500 font-semibold">
+                    ${formatAmount(item.wallet || item.balance)}
+                  </td>
+
                   <td className="px-4 py-3 text-gray-500">
                     {new Date(item.createdAt).toLocaleDateString()}
                   </td>
                 </>
               ) : (
                 <>
-                  <td className="px-4 py-3 font-medium">#{item._id.slice(-6)}</td>
-                  <td className="px-4 py-3">${formatAmount(item.charge)}</td>
+                  <td className="px-4 py-3 font-medium">
+                    #{item._id.slice(-6)}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    ${formatAmount(item.charge)}
+                  </td>
+
                   <td className="px-4 py-3 text-orange-500 font-semibold">
                     ${formatAmount(item.resellerCommission)}
                   </td>
+
                   <td className="px-4 py-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(item.status)}`}>
                       {item.status}
                     </span>
                   </td>
+
                   <td className="px-4 py-3 text-gray-500">
                     {new Date(item.createdAt).toLocaleDateString()}
                   </td>
