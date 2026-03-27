@@ -3,8 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 
-import ResellerLayout from "./ResellerAdminLayout"; // ✅ ADD THIS
-import ResellerTable from "../../components/reseller/ResellerAdminTable";
+import ResellerAdminLayout from "./ResellerAdminLayout"; // ✅ ADD THIS
+import ResellerAdminTable from "../../components/reseller/ResellerAdminTable";
 
 const ResellersList = () => {
   const [resellers, setResellers] = useState([]);
@@ -30,7 +30,7 @@ const ResellersList = () => {
   }, [fetchResellers]);
 
   return (
-    <ResellerLayout>
+    <ResellerAdminLayout>
       <div className="space-y-4">
 
         {/* HEADER */}
