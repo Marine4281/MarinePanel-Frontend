@@ -3,47 +3,35 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../../api/axios";
 
-import ResellerAdminLayout from "./ResellerAdminLayout";
-import ResellerAdminStats from "../../components/reseller/ResellerAdminStats";
-import ResellerAdminUsers from "../../components/reseller/ResellerAdminUsers";
-import ResellerAdminOrders from "../../components/reseller/ResellerAdminOrders";
+import ResellerLayout from "./ResellerAdminLayout";
+import ResellerStats from "../../components/reseller/ResellerAdminStats";
+import ResellerUsers from "../../components/reseller/ResellerAdminUsers";
+import ResellerOrders from "../../components/reseller/ResellerAdminOrders";
 
-const ResellerDetails = () => {
+const ResellerAdminDetails = () => {
   const { id } = useParams();
   const [data, setData] = useState(null);
 
   const fetchDetails = async () => {
-    try {
-      const res = await API.get(`/admin/resellers/${id}`);
-      setData(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+    const res = await API.get(`/admin/resellers/${id}`);
+    setData(res.data.data);
   };
 
   useEffect(() => {
     fetchDetails();
   }, [id]);
 
-  if (!data) {
-    return (
-      <ResellerAdminLayout>
-        <p className="p-4 text-gray-500">Loading...</p>
-      </ResellerAdminLayout>
-    );
-  }
+  if (!data) return <ResellerLayout>Loading...</ResellerLayout>;
 
   return (
-    <ResellerAdminLayout>
+    <ResellerLayout>
       <div className="space-y-6">
-        <h1 className="text-xl font-semibold">Reseller Details</h1>
-
-        <ResellerAdminStats reseller={data.reseller} stats={data.stats} />
-        <ResellerAdminUsers users={data.users} />
-        <ResellerAdminOrders resellerId={id} />
+        <ResellerStats reseller={data.reseller} stats={data.stats} refresh={fetchDetails} />
+        <ResellerUsers resellerId={id} />
+        <ResellerOrders resellerId={id} />
       </div>
-    </ResellerAdminLayout>
+    </ResellerLayout>
   );
 };
 
-export default ResellerDetails;
+export default ResellerAdminDetails;
