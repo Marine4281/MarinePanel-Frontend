@@ -9,7 +9,7 @@ import ResellerAdminStats from "../../components/reseller/ResellerAdminStats";
 import ResellerAdminUsers from "../../components/reseller/ResellerAdminUsers";
 import ResellerAdminOrders from "../../components/reseller/ResellerAdminOrders";
 
-const ResellerDetails = () => {
+const ResellerAdminDetails = () => {
   const { id } = useParams();
 
   const [data, setData] = useState(null);
@@ -29,24 +29,24 @@ const ResellerDetails = () => {
 
   if (!data) {
     return (
-      <ResellerLayout>
+      <ResellerAdminLayout>
         <p>Loading...</p>
-      </ResellerLayout>
+      </ResellerAdminLayout>
     );
   }
 
   return (
-    <ResellerLayout>
+    <ResellerAdminLayout>
       <div className="space-y-6">
         <h1 className="text-xl font-bold">Reseller Details</h1>
 
-        <ResellerStats reseller={data.reseller} stats={data.stats} />
+        <ResellerAdminStats reseller={data.reseller} stats={data.stats} />
 
-        <ResellerUsers users={data.users} />
+        <ResellerAdminUsers users={data.users} />
 
-        <ResellerOrders resellerId={id} />
+        <ResellerAdminOrders resellerId={id} />
       </div>
-    </ResellerLayout>
+    </ResellerAdminLayout>
   );
 };
 
