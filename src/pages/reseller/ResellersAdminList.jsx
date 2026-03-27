@@ -3,22 +3,20 @@ import { useEffect, useState, useCallback } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 
-import ResellerAdminLayout from "./ResellerAdminLayout"; // ✅ ADD THIS
+import ResellerAdminLayout from "./ResellerAdminLayout";
 import ResellerAdminTable from "../../components/reseller/ResellerAdminTable";
 
-const ResellersAdminList = () => {
+const ResellersList = () => {
   const [resellers, setResellers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchResellers = useCallback(async () => {
     try {
       setLoading(true);
-
       const res = await API.get("/admin/resellers");
       setResellers(res.data || []);
-
     } catch (error) {
-      console.error("Failed to fetch resellers");
+      console.error(error);
       toast.error("Failed to load resellers");
     } finally {
       setLoading(false);
@@ -32,11 +30,8 @@ const ResellersAdminList = () => {
   return (
     <ResellerAdminLayout>
       <div className="space-y-4">
-
-        {/* HEADER */}
         <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold">Resellers</h1>
-
+          <h1 className="text-xl font-semibold">Resellers</h1>
           <button
             onClick={fetchResellers}
             className="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm"
@@ -45,21 +40,16 @@ const ResellersAdminList = () => {
           </button>
         </div>
 
-        {/* LOADING */}
         {loading ? (
           <div className="text-center py-10 text-gray-500">
             Loading resellers...
           </div>
         ) : (
-          <ResellerAdminTable
-            resellers={resellers}
-            refresh={fetchResellers}
-          />
+          <ResellerAdminTable resellers={resellers} refresh={fetchResellers} />
         )}
-
       </div>
     </ResellerAdminLayout>
   );
 };
 
-export default ResellersAdminList;
+export default ResellersList;
