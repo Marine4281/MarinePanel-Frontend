@@ -37,6 +37,25 @@ export default function ResellerOrders() {
     fetchOrders();
   }, []);
 
+  // ✅ Safe formatter (always 5 decimals)
+  const formatAmount = (val) => {
+    return Number(val || 0).toFixed(5);
+  };
+
+  // ✅ Status badge styling
+  const getStatusStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return "bg-green-100 text-green-600";
+      case "pending":
+        return "bg-yellow-100 text-yellow-600";
+      case "failed":
+        return "bg-red-100 text-red-600";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
 
@@ -56,11 +75,11 @@ export default function ResellerOrders() {
             <FiArrowLeft /> Back
           </button>
 
-          <Link to="/reseller/dashboard" className="font-semibold text-gray-700 hover:text-orange-500">
+          <Link to="/reseller/dashboard" className="font-semibold hover:text-orange-500">
             Dashboard
           </Link>
 
-          <Link to="/reseller/users" className="font-semibold text-gray-700 hover:text-orange-500">
+          <Link to="/reseller/users" className="font-semibold hover:text-orange-500">
             Users
           </Link>
 
@@ -68,7 +87,7 @@ export default function ResellerOrders() {
             Orders
           </Link>
 
-          <Link to="/reseller/branding" className="font-semibold text-gray-700 hover:text-orange-500">
+          <Link to="/reseller/branding" className="font-semibold hover:text-orange-500">
             Branding
           </Link>
 
@@ -96,7 +115,7 @@ export default function ResellerOrders() {
           </button>
 
           <h1 className="text-lg font-bold text-orange-500">
-            Reseller Orders
+            Orders
           </h1>
 
           <button onClick={logout}>
@@ -135,60 +154,77 @@ export default function ResellerOrders() {
         <main className="p-6 flex-1 overflow-auto">
 
           {loading ? (
-            <div className="text-center py-20 text-gray-500">
+            <div className="text-center py-20 text-gray-500 animate-pulse">
               Loading reseller orders...
             </div>
           ) : (
-            <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
+            <div className="bg-white shadow-lg rounded-xl p-6">
 
-              <h2 className="text-lg font-bold mb-4 text-orange-500">
-                All Reseller Orders
-              </h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Reseller Orders
+                </h2>
+
+                <span className="text-sm text-gray-500">
+                  Total: {orders.length}
+                </span>
+              </div>
 
               {orders.length === 0 ? (
-                <p className="text-gray-500">No orders yet</p>
+                <p className="text-gray-500 text-center py-10">
+                  No orders yet
+                </p>
               ) : (
-                <table className="w-full table-auto">
+                <div className="overflow-x-auto rounded-lg border">
 
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Order ID</th>
-                      <th className="px-4 py-2 text-left">Amount</th>
-                      <th className="px-4 py-2 text-left">Commission</th>
-                      <th className="px-4 py-2 text-left">Status</th>
-                      <th className="px-4 py-2 text-left">Date</th>
-                    </tr>
-                  </thead>
+                  <table className="w-full text-sm">
 
-                  <tbody>
-                    {orders.map((o) => (
-                      <tr key={o._id} className="border-b hover:bg-gray-50">
-
-                        <td className="px-4 py-2">
-                          {o._id.slice(-6)}
-                        </td>
-
-                        <td className="px-4 py-2">
-                          ${o.amount}
-                        </td>
-
-                        <td className="px-4 py-2 text-orange-500">
-                          ${o.resellerCommission || 0}
-                        </td>
-
-                        <td className="px-4 py-2">
-                          {o.status}
-                        </td>
-
-                        <td className="px-4 py-2">
-                          {new Date(o.createdAt).toLocaleDateString()}
-                        </td>
-
+                    <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Order</th>
+                        <th className="px-4 py-3 text-left">Amount ($)</th>
+                        <th className="px-4 py-3 text-left">Commission ($)</th>
+                        <th className="px-4 py-3 text-left">Status</th>
+                        <th className="px-4 py-3 text-left">Date</th>
                       </tr>
-                    ))}
-                  </tbody>
+                    </thead>
 
-                </table>
+                    <tbody>
+                      {orders.map((o) => (
+                        <tr
+                          key={o._id}
+                          className="border-t hover:bg-gray-50 transition"
+                        >
+
+                          <td className="px-4 py-3 font-medium text-gray-700">
+                            #{o._id.slice(-6)}
+                          </td>
+
+                          <td className="px-4 py-3">
+                            {formatAmount(o.amount)}
+                          </td>
+
+                          <td className="px-4 py-3 text-orange-500 font-semibold">
+                            {formatAmount(o.resellerCommission)}
+                          </td>
+
+                          <td className="px-4 py-3">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(o.status)}`}>
+                              {o.status}
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-3 text-gray-500">
+                            {new Date(o.createdAt).toLocaleDateString()}
+                          </td>
+
+                        </tr>
+                      ))}
+                    </tbody>
+
+                  </table>
+
+                </div>
               )}
 
             </div>
