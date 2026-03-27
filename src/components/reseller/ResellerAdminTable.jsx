@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 
-const ResellerTable = ({ resellers, refresh }) => {
+const ResellerAdminTable = ({ resellers, refresh }) => {
   const navigate = useNavigate();
 
   const toggleStatus = async (id) => {
