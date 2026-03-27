@@ -37,6 +37,8 @@ import ResellerOrders from "./pages/reseller/ResellerOrders";
 import ResellerBranding from "./pages/reseller/ResellerBranding";
 import ResellerServices from "./pages/reseller/ResellerServices";
 import EndUserDashboard from "./pages/reseller/EndUserDashboard";
+import ResellersAdminList from "./pages/reseller/ResellersAdminList";
+import ResellerAdminDetails from "./pages/reseller/ResellerAdminDetails";
 
 
 
@@ -295,6 +297,24 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+         <Route 
+            path="/admin/resellers" 
+            element={
+              <ProtectedRoute adminOnly>
+                 <ResellersAdminList />
+              </ProtectedRoute>
+            } 
+           />
+         
+        <Route 
+           path="/admin/resellers/:id" 
+           element={<ProtectedRoute adminOnly>
+              <ResellerAdminDetails />
+           </ProtectedRoute>
+          } 
+         />
+      
 
       </Routes>
     </>
