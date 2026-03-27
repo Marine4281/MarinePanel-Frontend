@@ -18,7 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 
 /* ================= Helpers ================= */
 
-const formatAmount = (val) => Number(val || 0).toFixed(5);
+const formatAmount = (val) => Number(val || 0).toFixed(4);
 
 const getStatusStyle = (status) => {
   switch (status?.toLowerCase()) {
