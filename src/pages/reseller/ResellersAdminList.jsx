@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import ResellerAdminLayout from "./ResellerAdminLayout"; // ✅ ADD THIS
 import ResellerAdminTable from "../../components/reseller/ResellerAdminTable";
 
-const ResellersList = () => {
+const ResellersAdminList = () => {
   const [resellers, setResellers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,14 +51,14 @@ const ResellersList = () => {
             Loading resellers...
           </div>
         ) : (
-          <ResellerTable
+          <ResellerAdminTable
             resellers={resellers}
             refresh={fetchResellers}
           />
         )}
 
       </div>
-    </ResellerLayout>
+    </ResellerAdminLayout>
   );
 };
 
