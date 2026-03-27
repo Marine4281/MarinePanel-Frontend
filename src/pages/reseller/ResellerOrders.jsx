@@ -39,7 +39,7 @@ export default function ResellerOrders() {
 
   // ✅ Safe formatter (always 5 decimals)
   const formatAmount = (val) => {
-    return Number(val || 0).toFixed(5);
+    return Number(val || 0).toFixed(4);
   };
 
   // ✅ Status badge styling
