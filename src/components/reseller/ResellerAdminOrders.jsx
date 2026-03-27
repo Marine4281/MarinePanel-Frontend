@@ -3,57 +3,69 @@ import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import ResellerAdminFilters from "./ResellerAdminFilters";
 
-const ResellerOrders = ({ resellerId }) => {
+const formatMoney = (v) => Number(v || 0).toFixed(4);
+
+const ResellerAdminOrders = ({ resellerId }) => {
   const [orders, setOrders] = useState([]);
   const [filters, setFilters] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const fetchOrders = async () => {
     try {
+      setLoading(true);
       const query = new URLSearchParams(filters).toString();
       const res = await API.get(
         `/admin/resellers/${resellerId}/orders?${query}`
       );
       setOrders(res.data || []);
-    } catch {
-      console.error("Failed to fetch orders");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchOrders();
-  }, [filters]);
+  }, [filters, resellerId]);
 
   return (
     <div className="bg-white p-4 rounded shadow">
-      <h2 className="font-bold mb-2">Orders</h2>
+      <h2 className="font-semibold mb-3">Orders</h2>
 
-      <ResellerFilters filters={filters} setFilters={setFilters} />
+      <ResellerAdminFilters filters={filters} setFilters={setFilters} />
 
-      <table className="w-full text-sm">
-        <thead>
-          <tr>
-            <th>Service</th>
-            <th>ID</th>
-            <th>Status</th>
-            <th>Charge</th>
-            <th>Date</th>
-            <th>Link</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {orders.map((o) => (
-            <tr key={o._id} className="border-t">
-              <td>{o.service}</td>
-              <td>{o.providerServiceId}</td>
-              <td>{o.status}</td>
-              <td>${o.charge}</td>
-              <td>{new Date(o.createdAt).toLocaleString()}</td>
-              <td className="truncate max-w-[150px]">{o.link}</td>
+      {loading ? (
+        <p className="text-gray-500">Loading orders...</p>
+      ) : !orders.length ? (
+        <p className="text-gray-500">No orders found</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Order ID</th>
+              <th>Status</th>
+              <th>Charge</th>
+              <th>Date</th>
+              <th>Link</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {orders.map((o) => (
+              <tr key={o._id} className="border-t">
+                <td>{o.service}</td>
+                <td>{o.orderId}</td>
+                <td>{o.status}</td>
+                <td>${formatMoney(o.charge)}</td>
+                <td>{new Date(o.createdAt).toLocaleString()}</td>
+                <td className="truncate max-w-[150px]">{o.link}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
