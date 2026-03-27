@@ -1,7 +1,7 @@
 //src/pages/reseller/ResellerAdminLayout.jsx
 import Sidebar from "../../components/Sidebar";
 
-const ResellerLayout = ({ children }) => {
+const ResellerAdminLayout = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
