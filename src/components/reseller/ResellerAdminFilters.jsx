@@ -1,5 +1,5 @@
 //src/components/reseller/ResellerAdminFilters.jsx
-const ResellerFilters = ({ filters, setFilters }) => {
+const ResellerAdminFilters = ({ filters, setFilters }) => {
   return (
     <div className="flex gap-2 mb-3">
       <input
