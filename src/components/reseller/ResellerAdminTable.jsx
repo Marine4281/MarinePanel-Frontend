@@ -2,6 +2,8 @@
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 
+const formatMoney = (v) => Number(v || 0).toFixed(4);
+
 const ResellerAdminTable = ({ resellers, refresh }) => {
   const navigate = useNavigate();
 
@@ -15,7 +17,7 @@ const ResellerAdminTable = ({ resellers, refresh }) => {
   };
 
   if (!resellers.length) {
-    return <p>No resellers found</p>;
+    return <p className="text-gray-500">No resellers found</p>;
   }
 
   return (
@@ -23,14 +25,14 @@ const ResellerAdminTable = ({ resellers, refresh }) => {
       <table className="w-full text-sm">
         <thead className="bg-gray-100">
           <tr>
-            <th className="p-2 text-left">Email</th>
-            <th className="p-2 text-left">Phone</th>
-            <th className="p-2 text-left">Wallet</th>
-            <th className="p-2 text-left">Users</th>
-            <th className="p-2 text-left">Orders</th>
-            <th className="p-2 text-left">Date</th>
-            <th className="p-2 text-left">Status</th>
-            <th className="p-2 text-left">Action</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Wallet</th>
+            <th>Users</th>
+            <th>Orders</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th></th>
           </tr>
         </thead>
 
@@ -39,12 +41,17 @@ const ResellerAdminTable = ({ resellers, refresh }) => {
             <tr key={r._id} className="border-t">
               <td className="p-2">{r.email}</td>
               <td className="p-2">{r.phone || "-"}</td>
-              <td className="p-2">${r.resellerWallet || 0}</td>
+
+              <td className="p-2 font-medium">
+                ${formatMoney(r.resellerWallet ?? r.wallet?.balance)}
+              </td>
+
               <td className="p-2">{r.usersCount}</td>
               <td className="p-2">{r.ordersCount}</td>
               <td className="p-2">
                 {new Date(r.createdAt).toLocaleDateString()}
               </td>
+
               <td className="p-2">
                 {r.isSuspended ? "Suspended" : "Active"}
               </td>
