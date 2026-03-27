@@ -1,8 +1,7 @@
 //src/components/reseller/ResellerAdminTable.jsx
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
-
-const formatMoney = (v) => Number(v || 0).toFixed(4);
+import toast from "react-hot-toast";
 
 const ResellerAdminTable = ({ resellers, refresh }) => {
   const navigate = useNavigate();
@@ -10,15 +9,14 @@ const ResellerAdminTable = ({ resellers, refresh }) => {
   const toggleStatus = async (id) => {
     try {
       await API.put(`/admin/resellers/${id}/toggle-status`);
+      toast.success("Updated");
       refresh();
     } catch {
-      alert("Failed to update status");
+      toast.error("Failed");
     }
   };
 
-  if (!resellers.length) {
-    return <p className="text-gray-500">No resellers found</p>;
-  }
+  if (!resellers.length) return <p>No resellers</p>;
 
   return (
     <div className="overflow-x-auto bg-white shadow rounded-lg">
@@ -27,7 +25,6 @@ const ResellerAdminTable = ({ resellers, refresh }) => {
           <tr>
             <th>Email</th>
             <th>Phone</th>
-            <th>Wallet</th>
             <th>Users</th>
             <th>Orders</th>
             <th>Date</th>
@@ -39,24 +36,18 @@ const ResellerAdminTable = ({ resellers, refresh }) => {
         <tbody>
           {resellers.map((r) => (
             <tr key={r._id} className="border-t">
-              <td className="p-2">{r.email}</td>
-              <td className="p-2">{r.phone || "-"}</td>
-
-              <td className="p-2 font-medium">
-                ${formatMoney(r.resellerWallet ?? r.wallet?.balance)}
+              <td>{r.email}</td>
+              <td>{r.phone || "-"}</td>
+              <td>{r.usersCount}</td>
+              <td>{r.ordersCount}</td>
+              <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+              <td>
+                <span className={r.isSuspended ? "text-red-500" : "text-green-600"}>
+                  {r.isSuspended ? "Suspended" : "Active"}
+                </span>
               </td>
 
-              <td className="p-2">{r.usersCount}</td>
-              <td className="p-2">{r.ordersCount}</td>
-              <td className="p-2">
-                {new Date(r.createdAt).toLocaleDateString()}
-              </td>
-
-              <td className="p-2">
-                {r.isSuspended ? "Suspended" : "Active"}
-              </td>
-
-              <td className="p-2 flex gap-2">
+              <td className="flex gap-2">
                 <button
                   onClick={() => navigate(`/admin/resellers/${r._id}`)}
                   className="bg-blue-500 text-white px-2 py-1 rounded"
@@ -66,7 +57,7 @@ const ResellerAdminTable = ({ resellers, refresh }) => {
 
                 <button
                   onClick={() => toggleStatus(r._id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
+                  className="bg-gray-700 text-white px-2 py-1 rounded"
                 >
                   Toggle
                 </button>
