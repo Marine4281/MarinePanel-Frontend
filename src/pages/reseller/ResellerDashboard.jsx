@@ -16,17 +16,34 @@ import {
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-/* ================= Skeleton Components ================= */
+/* ================= Helpers ================= */
+
+const formatAmount = (val) => Number(val || 0).toFixed(5);
+
+const getStatusStyle = (status) => {
+  switch (status?.toLowerCase()) {
+    case "completed":
+      return "bg-green-100 text-green-600";
+    case "pending":
+      return "bg-yellow-100 text-yellow-600";
+    case "failed":
+      return "bg-red-100 text-red-600";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+};
+
+/* ================= Skeleton ================= */
 
 const CardSkeleton = () => (
-  <div className="bg-white rounded-lg p-5 shadow animate-pulse">
+  <div className="bg-white rounded-xl p-5 shadow animate-pulse">
     <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
     <div className="h-6 bg-gray-300 rounded w-1/3"></div>
   </div>
 );
 
 const TableSkeleton = () => (
-  <div className="bg-white p-4 rounded shadow animate-pulse">
+  <div className="bg-white p-4 rounded-xl shadow animate-pulse">
     <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
     {[...Array(5)].map((_, i) => (
       <div key={i} className="h-3 bg-gray-100 rounded mb-2"></div>
@@ -152,27 +169,28 @@ export default function ResellerDashboard() {
 
           {/* LINK */}
           {!loading && dashboardData?.domain && (
-            <div className="bg-white p-4 rounded shadow mb-6">
-              <h2 className="font-bold text-orange-500 mb-2">Your Reseller Link</h2>
-              <div className="flex justify-between bg-gray-100 p-3 rounded">
-                <span>https://{dashboardData.domain}</span>
-                <button onClick={copyLink}><FiCopy /></button>
+            <div className="bg-white p-5 rounded-xl shadow mb-6">
+              <h2 className="font-semibold text-gray-700 mb-2">Your Reseller Link</h2>
+              <div className="flex justify-between items-center bg-gray-100 p-3 rounded-lg">
+                <span className="text-sm">https://{dashboardData.domain}</span>
+                <button onClick={copyLink} className="text-orange-500 hover:scale-110 transition">
+                  <FiCopy />
+                </button>
               </div>
             </div>
           )}
 
           {/* STATS */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-
             {loading ? (
               [...Array(5)].map((_, i) => <CardSkeleton key={i} />)
             ) : (
               <>
                 <Stat title="Users" value={dashboardData?.users} icon={<FiUsers />} />
                 <Stat title="Orders" value={dashboardData?.orders} icon={<FiShoppingCart />} />
-                <Stat title="Revenue" value={`$${dashboardData?.totalRevenue || 0}`} icon={<FiCreditCard />} />
-                <Stat title="Earnings" value={`$${dashboardData?.earnings || 0}`} icon={<FiDollarSign />} />
-                <Stat title="Wallet" value={`$${dashboardData?.wallet || 0}`} icon={<FiCreditCard />} />
+                <Stat title="Revenue" value={`$${formatAmount(dashboardData?.totalRevenue)}`} icon={<FiCreditCard />} />
+                <Stat title="Earnings" value={`$${formatAmount(dashboardData?.earnings)}`} icon={<FiDollarSign />} />
+                <Stat title="Wallet" value={`$${formatAmount(dashboardData?.wallet)}`} icon={<FiCreditCard />} />
               </>
             )}
           </div>
@@ -193,41 +211,46 @@ export default function ResellerDashboard() {
   );
 }
 
-/* ================= Reusable Components ================= */
+/* ================= Components ================= */
 
 const Stat = ({ title, value, icon }) => (
-  <div className="bg-white p-5 rounded shadow border-l-4 border-orange-500 flex justify-between">
+  <div className="bg-white p-5 rounded-xl shadow-md flex justify-between items-center hover:shadow-lg transition">
     <div>
       <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-xl font-bold text-orange-500">{value}</p>
+      <p className="text-xl font-bold text-gray-800">{value}</p>
     </div>
     <div className="text-2xl text-orange-500">{icon}</div>
   </div>
 );
 
 const Table = ({ title, data, type }) => (
-  <div className="bg-white p-4 rounded shadow mb-6 overflow-x-auto">
-    <h2 className="font-bold text-orange-500 mb-4">{title}</h2>
+  <div className="bg-white p-5 rounded-xl shadow-md mb-6 overflow-x-auto">
+
+    <div className="flex justify-between mb-4">
+      <h2 className="font-semibold text-gray-800">{title}</h2>
+      <span className="text-sm text-gray-500">{data.length} items</span>
+    </div>
 
     {data.length === 0 ? (
-      <p className="text-gray-500">No data</p>
+      <p className="text-gray-500 text-center py-6">No data</p>
     ) : (
-      <table className="w-full">
-        <thead>
-          <tr className="bg-gray-50">
+      <table className="w-full text-sm">
+
+        <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+          <tr>
             {type === "users" ? (
               <>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Date</th>
+                <th className="px-4 py-3 text-left">Name</th>
+                <th className="px-4 py-3 text-left">Email</th>
+                <th className="px-4 py-3 text-left">Date</th>
               </>
             ) : (
               <>
-                <th>ID</th>
-                <th>Amount</th>
-                <th>Commission</th>
-                <th>Status</th>
-                <th>Date</th>
+                <th className="px-4 py-3 text-left">ID</th>
+                <th className="px-4 py-3 text-left">Amount</th>
+                <th className="px-4 py-3 text-left">Commission</th>
+                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left">Date</th>
               </>
             )}
           </tr>
@@ -235,25 +258,38 @@ const Table = ({ title, data, type }) => (
 
         <tbody>
           {data.map((item) => (
-            <tr key={item._id} className="border-b">
+            <tr key={item._id} className="border-t hover:bg-gray-50 transition">
+
               {type === "users" ? (
                 <>
-                  <td>{item.name}</td>
-                  <td>{item.email}</td>
-                  <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 font-medium">{item.name}</td>
+                  <td className="px-4 py-3 text-gray-600">{item.email}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </td>
                 </>
               ) : (
                 <>
-                  <td>{item._id.slice(-6)}</td>
-                  <td>${item.charge}</td>
-                  <td>${item.resellerCommission || 0}</td>
-                  <td>{item.status}</td>
-                  <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 font-medium">#{item._id.slice(-6)}</td>
+                  <td className="px-4 py-3">${formatAmount(item.charge)}</td>
+                  <td className="px-4 py-3 text-orange-500 font-semibold">
+                    ${formatAmount(item.resellerCommission)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusStyle(item.status)}`}>
+                      {item.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </td>
                 </>
               )}
+
             </tr>
           ))}
         </tbody>
+
       </table>
     )}
   </div>
