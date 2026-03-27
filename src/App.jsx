@@ -302,7 +302,7 @@ function AppRoutes() {
             path="/admin/resellers" 
             element={
               <ProtectedRoute adminOnly>
-                 <ResellersList />
+                 <ResellersAdminList />
               </ProtectedRoute>
             } 
            />
@@ -310,7 +310,7 @@ function AppRoutes() {
         <Route 
            path="/admin/resellers/:id" 
            element={<ProtectedRoute adminOnly>
-              <ResellerDetails />
+              <ResellerAdminDetails />
            </ProtectedRoute>
           } 
          />
