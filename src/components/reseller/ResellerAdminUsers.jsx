@@ -1,5 +1,5 @@
 //src/components/reseller/ResellerAdminUsers.jsx
-const ResellerUsers = ({ users }) => {
+const ResellerAdminUsers = ({ users }) => {
   return (
     <div className="bg-white p-4 rounded shadow">
       <h2 className="font-bold mb-2">Users</h2>
