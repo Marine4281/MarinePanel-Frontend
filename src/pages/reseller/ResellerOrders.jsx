@@ -201,7 +201,7 @@ export default function ResellerOrders() {
                           </td>
 
                           <td className="px-4 py-3">
-                            {formatAmount(o.amount)}
+                            {formatAmount(o.charge)}
                           </td>
 
                           <td className="px-4 py-3 text-orange-500 font-semibold">
