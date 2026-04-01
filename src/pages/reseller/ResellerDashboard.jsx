@@ -188,7 +188,7 @@ export default function ResellerDashboard() {
               <>
                 <Stat title="Users" value={dashboardData?.users} icon={<FiUsers />} />
                 <Stat title="Orders" value={dashboardData?.orders} icon={<FiShoppingCart />} />
-                <Stat title="Revenue" value={`$${formatAmount(dashboardData?.totalRevenue)}`} icon={<FiCreditCard />} />
+                <Stat title="Revenue" value={`$${formatAmount(dashboardData?.revenue)}`} icon={<FiCreditCard />} />
                 <Stat title="Earnings" value={`$${formatAmount(dashboardData?.earnings)}`} icon={<FiDollarSign />} />
                 <Stat title="Wallet" value={`$${formatAmount(dashboardData?.wallet)}`} icon={<FiCreditCard />} />
               </>
