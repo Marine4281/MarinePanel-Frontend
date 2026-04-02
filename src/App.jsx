@@ -310,21 +310,13 @@ function AppRoutes() {
          
         <Route 
            path="/admin/logs" 
-           element={<ProtectedRoute adminOnly>
+           element={
+              <ProtectedRoute adminOnly>
               <AdminLogs />
            </ProtectedRoute>
           } 
          />
-         <Route
-          path="/admin"
-          element={
-            <ProtectedRoute adminOnly>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-      
-
+         
       </Routes>
     </>
   );
