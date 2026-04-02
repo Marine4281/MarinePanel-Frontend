@@ -17,7 +17,7 @@ const AdminUserDetails = () => {
   // Fetch user + transactions
   const fetchUser = async () => {
     try {
-      const res = await API.get(`/admin/users/${id}`);
+      const res = await API.get(`/users/${id}`);
       setUser(res.data.user);
       setTransactions(
         (res.data.transactions || []).sort(
