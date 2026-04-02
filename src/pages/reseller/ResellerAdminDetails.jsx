@@ -35,6 +35,8 @@ const ResellerAdminDetails = () => {
 
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          
+          {/* Title */}
           <div>
             <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
               Reseller Details
@@ -44,18 +46,40 @@ const ResellerAdminDetails = () => {
             </p>
           </div>
 
+          {/* Reseller Info Card */}
           {!loading && data?.reseller && (
-            <div className="bg-white shadow-sm border rounded-xl px-4 py-3 flex items-center gap-3">
+            <div className="bg-white shadow-sm border rounded-xl px-4 py-3 flex items-center gap-4 min-w-[260px]">
+
+              {/* Avatar */}
               <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                {data.reseller.name?.charAt(0)?.toUpperCase()}
+                {data.reseller.name?.charAt(0)?.toUpperCase() || "R"}
               </div>
-              <div>
+
+              {/* Info */}
+              <div className="flex flex-col leading-tight">
                 <p className="text-sm font-medium text-gray-800">
-                  {data.reseller.name}
+                  {data.reseller.name || "Unnamed"}
                 </p>
                 <p className="text-xs text-gray-500">
                   {data.reseller.email}
                 </p>
+
+                {/* 🌍 Country + Flag */}
+                <div className="flex items-center gap-2 mt-1">
+                  {data.reseller.countryCode ? (
+                    <img
+                      src={`https://flagcdn.com/w20/${data.reseller.countryCode.toLowerCase()}.png`}
+                      alt={data.reseller.country}
+                      className="w-5 h-4 rounded-sm object-cover border"
+                    />
+                  ) : (
+                    <div className="w-5 h-4 bg-gray-200 rounded-sm" />
+                  )}
+
+                  <span className="text-xs text-gray-600">
+                    {data.reseller.country || "Unknown"}
+                  </span>
+                </div>
               </div>
             </div>
           )}
