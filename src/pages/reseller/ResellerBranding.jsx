@@ -139,7 +139,7 @@ export default function ResellerBranding() {
     try {
       setSwitchLoading(true);
       const res = await API.post(
-        "/branding/switch-domain",
+        "/reseller/switch-domain",
         { domainType, customDomain },
         { withCredentials: true }
       );
