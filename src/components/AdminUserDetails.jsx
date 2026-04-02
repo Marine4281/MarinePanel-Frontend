@@ -11,7 +11,6 @@ const AdminUserDetails = () => {
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
 
-  // 🆕 Orders state
   const [orders, setOrders] = useState([]);
   const [orderPage, setOrderPage] = useState(1);
   const [orderPages, setOrderPages] = useState(1);
@@ -22,9 +21,8 @@ const AdminUserDetails = () => {
   const [updatingBalance, setUpdatingBalance] = useState(false);
   const [promoting, setPromoting] = useState(false);
   const [blocking, setBlocking] = useState(false);
-  const [freezing, setFreezing] = useState(false); // 🆕
+  const [freezing, setFreezing] = useState(false);
 
-  // ✅ Fetch user + transactions
   const fetchUser = useCallback(async () => {
     setLoading(true);
     try {
@@ -41,14 +39,13 @@ const AdminUserDetails = () => {
       setTransactions(fetchedTransactions);
       setNewBalance(fetchedUser?.balance || 0);
     } catch (err) {
-      console.error("FETCH USER ERROR:", err.response?.data || err.message);
+      console.error(err);
       toast.error("Failed to fetch user");
     } finally {
       setLoading(false);
     }
   }, [id]);
 
-  // 🆕 Fetch orders (paginated)
   const fetchOrders = useCallback(
     async (page = 1) => {
       setOrdersLoading(true);
@@ -61,7 +58,7 @@ const AdminUserDetails = () => {
         setOrderPages(res.data.pages || 1);
         setOrderPage(res.data.page || 1);
       } catch (err) {
-        console.error("ORDERS ERROR:", err.response?.data || err.message);
+        console.error(err);
         toast.error("Failed to fetch orders");
       } finally {
         setOrdersLoading(false);
@@ -75,7 +72,6 @@ const AdminUserDetails = () => {
     fetchOrders(1);
   }, [fetchUser, fetchOrders]);
 
-  // ✅ Update balance
   const handleUpdateBalance = async () => {
     if (!user) return;
     setUpdatingBalance(true);
@@ -88,14 +84,12 @@ const AdminUserDetails = () => {
       toast.success("Balance updated");
       fetchUser();
     } catch (err) {
-      console.error("BALANCE ERROR:", err.response?.data || err.message);
       toast.error("Failed to update balance");
     } finally {
       setUpdatingBalance(false);
     }
   };
 
-  // ✅ Promote / Demote
   const handleToggleAdmin = async () => {
     if (!user) return;
     setPromoting(true);
@@ -103,21 +97,17 @@ const AdminUserDetails = () => {
     try {
       if (user.isAdmin) {
         await API.patch(`/admin/users/${id}/demote`);
-        toast.success("User demoted to normal user");
       } else {
         await API.patch(`/admin/users/${id}/promote`);
-        toast.success("User promoted to admin");
       }
       fetchUser();
-    } catch (err) {
-      console.error("ADMIN ERROR:", err.response?.data || err.message);
-      toast.error("Failed to update admin status");
+    } catch {
+      toast.error("Failed to update admin");
     } finally {
       setPromoting(false);
     }
   };
 
-  // ✅ Block / Unblock
   const handleToggleBlock = async () => {
     if (!user) return;
     setBlocking(true);
@@ -126,16 +116,13 @@ const AdminUserDetails = () => {
       const action = user.isBlocked ? "unblock" : "block";
       const res = await API.patch(`/admin/users/${id}/${action}`);
       setUser(res.data);
-      toast.success(user.isBlocked ? "User unblocked" : "User blocked");
-    } catch (err) {
-      console.error("BLOCK ERROR:", err.response?.data || err.message);
-      toast.error("Failed to update block status");
+    } catch {
+      toast.error("Failed to update block");
     } finally {
       setBlocking(false);
     }
   };
 
-  // 🆕 Freeze / Unfreeze
   const handleToggleFreeze = async () => {
     if (!user) return;
     setFreezing(true);
@@ -144,16 +131,13 @@ const AdminUserDetails = () => {
       const action = user.isFrozen ? "unfreeze" : "freeze";
       const res = await API.patch(`/admin/users/${id}/${action}`);
       setUser(res.data);
-      toast.success(user.isFrozen ? "User unfrozen" : "User frozen");
-    } catch (err) {
-      console.error("FREEZE ERROR:", err.response?.data || err.message);
-      toast.error("Failed to update freeze status");
+    } catch {
+      toast.error("Failed to update freeze");
     } finally {
       setFreezing(false);
     }
   };
 
-  // ✅ UI states
   if (loading) return <div className="p-6 text-center">Loading user...</div>;
   if (!user) return <div className="p-6 text-center">User not found</div>;
 
@@ -178,15 +162,15 @@ const AdminUserDetails = () => {
               <p><strong>Phone:</strong> {user.phone || "-"}</p>
 
               <p className="flex items-center gap-2">
-                <strong>Country:</strong>{" "}
+                <strong>Country:</strong>
                 {user.country ? (
                   <>
                     <img
                       src={`https://flagcdn.com/24x18/${user.country.toLowerCase().slice(0, 2)}.png`}
-                      alt={user.country}
-                      className="w-6 h-4 object-cover"
+                      alt=""
+                      className="w-6 h-4"
                     />
-                    <span>{user.country}</span>
+                    {user.country}
                   </>
                 ) : "-"}
               </p>
@@ -199,7 +183,16 @@ const AdminUserDetails = () => {
 
             <div>
               <p>
-                <strong>Balance:</strong> ${Number(user.balance || 0).toFixed(4)}
+                <strong>Balance:</strong> $
+                {Number(user.balance || 0).toFixed(4)}
+              </p>
+
+              {/* ✅ TOTAL ORDERS */}
+              <p className="mt-2">
+                <strong>Total Orders:</strong>{" "}
+                <span className="text-blue-600 font-semibold">
+                  {orders.length}
+                </span>
               </p>
 
               <div className="flex gap-2 mt-2">
@@ -212,7 +205,7 @@ const AdminUserDetails = () => {
                 <button
                   onClick={handleUpdateBalance}
                   disabled={updatingBalance}
-                  className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+                  className="px-4 py-2 bg-orange-500 text-white rounded"
                 >
                   {updatingBalance ? "Updating..." : "Save"}
                 </button>
@@ -221,81 +214,96 @@ const AdminUserDetails = () => {
               <div className="flex gap-2 mt-4 flex-wrap">
                 <button
                   onClick={handleToggleAdmin}
-                  disabled={promoting}
-                  className={`px-4 py-2 rounded text-white ${
-                    user.isAdmin
-                      ? "bg-red-500 hover:bg-red-600"
-                      : "bg-green-500 hover:bg-green-600"
-                  }`}
+                  className="px-4 py-2 rounded text-white bg-green-500"
                 >
-                  {promoting
-                    ? "Processing..."
-                    : user.isAdmin
-                    ? "Demote to User"
-                    : "Promote to Admin"}
+                  {user.isAdmin ? "Demote" : "Promote"}
                 </button>
 
                 <button
                   onClick={handleToggleBlock}
-                  disabled={blocking}
-                  className={`px-4 py-2 rounded text-white ${
-                    user.isBlocked
-                      ? "bg-green-500 hover:bg-green-600"
-                      : "bg-gray-500 hover:bg-gray-600"
-                  }`}
+                  className="px-4 py-2 rounded text-white bg-gray-500"
                 >
-                  {blocking
-                    ? "Processing..."
-                    : user.isBlocked
-                    ? "Unblock User"
-                    : "Block User"}
+                  {user.isBlocked ? "Unblock" : "Block"}
                 </button>
 
-                {/* 🆕 FREEZE BUTTON */}
                 <button
                   onClick={handleToggleFreeze}
-                  disabled={freezing}
-                  className="px-4 py-2 rounded text-white bg-purple-600 hover:bg-purple-700"
+                  className="px-4 py-2 rounded text-white bg-purple-600"
                 >
-                  {freezing
-                    ? "Processing..."
-                    : user.isFrozen
-                    ? "Unfreeze User"
-                    : "Freeze User"}
+                  {user.isFrozen ? "Unfreeze" : "Freeze"}
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 🆕 ORDERS */}
+        {/* ORDERS */}
         <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
-          <h3 className="text-xl font-bold mb-4">User Orders</h3>
+          <div className="flex justify-between mb-4">
+            <h3 className="text-xl font-bold">User Orders</h3>
+            <span className="text-sm text-gray-500">
+              Showing {orders.length} orders
+            </span>
+          </div>
 
           {ordersLoading ? (
-            <p className="text-gray-500">Loading orders...</p>
+            <p>Loading...</p>
           ) : orders.length ? (
             <>
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-100 text-gray-600 uppercase">
+              <table className="w-full text-sm border rounded-xl overflow-hidden">
+                <thead className="bg-gray-100 text-xs uppercase">
                   <tr>
-                    <th className="px-3 py-2">Service</th>
-                    <th className="px-3 py-2">Link</th>
-                    <th className="px-3 py-2">Quantity</th>
-                    <th className="px-3 py-2">Charge</th>
-                    <th className="px-3 py-2">Status</th>
+                    <th className="px-4 py-3">Service</th>
+                    <th className="px-4 py-3">Link</th>
+                    <th className="px-4 py-3">Qty</th>
+                    <th className="px-4 py-3">Charge</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Status</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {orders.map((o) => (
-                    <tr key={o._id} className="border-b hover:bg-gray-50">
-                      <td className="px-3 py-2">{o.service}</td>
-                      <td className="px-3 py-2 truncate max-w-[200px]">{o.link}</td>
-                      <td className="px-3 py-2">{o.quantity}</td>
-                      <td className="px-3 py-2">${Number(o.charge).toFixed(4)}</td>
-                      <td className="px-3 py-2">{o.status}</td>
-                    </tr>
-                  ))}
+                  {orders.map((o) => {
+                    const statusColor =
+                      o.status === "completed"
+                        ? "bg-green-100 text-green-700"
+                        : o.status === "pending"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700";
+
+                    return (
+                      <tr key={o._id} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-3">{o.service}</td>
+
+                        <td className="px-4 py-3 truncate max-w-[200px]">
+                          <a
+                            href={o.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {o.link}
+                          </a>
+                        </td>
+
+                        <td className="px-4 py-3">{o.quantity}</td>
+
+                        <td className="px-4 py-3 font-semibold">
+                          ${Number(o.charge).toFixed(4)}
+                        </td>
+
+                        <td className="px-4 py-3 text-xs text-gray-500">
+                          {new Date(o.createdAt).toLocaleString()}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs ${statusColor}`}>
+                            {o.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -303,7 +311,7 @@ const AdminUserDetails = () => {
                 <button
                   disabled={orderPage === 1}
                   onClick={() => fetchOrders(orderPage - 1)}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                  className="px-3 py-1 bg-gray-200 rounded"
                 >
                   Prev
                 </button>
@@ -313,14 +321,14 @@ const AdminUserDetails = () => {
                 <button
                   disabled={orderPage === orderPages}
                   onClick={() => fetchOrders(orderPage + 1)}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                  className="px-3 py-1 bg-gray-200 rounded"
                 >
                   Next
                 </button>
               </div>
             </>
           ) : (
-            <p className="text-gray-500">No orders found</p>
+            <p>No orders found</p>
           )}
         </div>
 
@@ -329,8 +337,8 @@ const AdminUserDetails = () => {
           <h3 className="text-xl font-bold mb-4">Transaction History</h3>
 
           {transactions.length ? (
-            <table className="w-full text-sm text-left rounded-lg overflow-hidden shadow">
-              <thead className="bg-gray-100 text-gray-600 uppercase">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 text-xs uppercase">
                 <tr>
                   <th className="px-3 py-2">Date</th>
                   <th className="px-3 py-2">Type</th>
@@ -339,14 +347,15 @@ const AdminUserDetails = () => {
                   <th className="px-3 py-2">Note</th>
                 </tr>
               </thead>
+
               <tbody>
                 {transactions.map((t, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
+                  <tr key={idx} className="border-b">
                     <td className="px-3 py-2">
                       {new Date(t.createdAt || t.date).toLocaleString()}
                     </td>
                     <td className="px-3 py-2">{t.type}</td>
-                    <td className={`px-3 py-2 font-semibold ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <td className={`px-3 py-2 ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
                       ${t.amount.toFixed(4)}
                     </td>
                     <td className="px-3 py-2">{t.status}</td>
@@ -356,7 +365,7 @@ const AdminUserDetails = () => {
               </tbody>
             </table>
           ) : (
-            <p className="text-gray-500">No transactions found</p>
+            <p>No transactions found</p>
           )}
         </div>
       </div>
