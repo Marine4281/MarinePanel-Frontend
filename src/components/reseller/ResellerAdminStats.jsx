@@ -2,13 +2,7 @@
 import { useState } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import {
-  FiDollarSign,
-  FiShoppingCart,
-  FiTrendingUp,
-  FiUsers,
-  FiGlobe,
-} from "react-icons/fi";
+import { FiDollarSign, FiShoppingCart, FiTrendingUp, FiUsers } from "react-icons/fi";
 
 const StatCard = ({ title, value, icon }) => {
   return (
@@ -51,7 +45,7 @@ const ResellerStats = ({ reseller, stats, refresh }) => {
     <div className="space-y-6">
 
       {/* STATS GRID */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatCard
           title="Wallet Balance"
           value={formatMoney(stats.wallet)}
@@ -76,13 +70,6 @@ const ResellerStats = ({ reseller, stats, refresh }) => {
           title="Free Orders"
           value={stats.freeOrders}
           icon={<FiUsers size={18} />}
-        />
-
-        {/* NEW COUNTRY CARD */}
-        <StatCard
-          title="Top Country"
-          value={stats.topCountry || "N/A"}
-          icon={<FiGlobe size={18} />}
         />
       </div>
 
