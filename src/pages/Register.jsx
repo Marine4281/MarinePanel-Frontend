@@ -12,7 +12,13 @@ const Register = () => {
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [country, setCountry] = useState("us"); // default US
+
+  // ✅ FIXED COUNTRY STRUCTURE
+  const [country, setCountry] = useState({
+    name: "United States",
+    code: "US",
+  });
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -32,20 +38,21 @@ const Register = () => {
 
     try {
       setLoading(true);
+
       const res = await API.post("/auth/register", {
         email,
         phone,
-        country,
+        country: country.name,        // ✅ full name
+        countryCode: country.code,    // ✅ ISO code
         password,
       });
 
       toast.success("Registration successful!");
-      login(res.data); // auto-login
-      navigate("/home"); // redirect
+      login(res.data);
+      navigate("/home");
     } catch (err) {
       console.error("Registration error:", err.response || err);
 
-      // Capture backend message if exists
       const message =
         err.response?.data?.message || err.message || "Registration failed";
       toast.error(message);
@@ -58,44 +65,53 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-2xl shadow-md w-full max-w-md"
+        className="bg-white p-6 rounded-2xl shadow-md w-full max-w-md space-y-4"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
+        <h2 className="text-2xl font-bold text-center">Register</h2>
 
         {/* Email */}
-        <div className="mb-4">
+        <div>
           <label className="block font-semibold mb-1">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 border rounded-xl"
+            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-orange-400 outline-none"
             placeholder="Enter your email"
           />
         </div>
 
-        {/* Phone */}
-        <div className="mb-4">
+        {/* Phone + Country (Searchable) */}
+        <div>
           <label className="block font-semibold mb-1">Phone</label>
+
           <PhoneInput
-            country={country}
+            country={country.code.toLowerCase()}
             value={phone}
+            enableSearch // ✅ SEARCH ENABLED
+            searchPlaceholder="Search country..."
             onChange={(phone, data) => {
               setPhone(phone);
-              setCountry(data.countryCode);
+
+              setCountry({
+                name: data.name, // "India"
+                code: data.countryCode.toUpperCase(), // "IN"
+              });
             }}
-            inputClass="w-full p-3 rounded-xl border"
+            inputClass="!w-full !p-3 !rounded-xl !border"
+            buttonClass="!border !rounded-l-xl"
+            dropdownClass="!rounded-xl"
           />
         </div>
 
         {/* Password */}
-        <div className="mb-4 relative">
+        <div className="relative">
           <label className="block font-semibold mb-1">Password</label>
           <input
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 border rounded-xl"
+            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-orange-400 outline-none"
             placeholder="Enter password"
           />
           <button
@@ -108,13 +124,13 @@ const Register = () => {
         </div>
 
         {/* Confirm Password */}
-        <div className="mb-4 relative">
+        <div className="relative">
           <label className="block font-semibold mb-1">Confirm Password</label>
           <input
             type={showConfirm ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-3 border rounded-xl"
+            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-orange-400 outline-none"
             placeholder="Confirm password"
           />
           <button
@@ -126,17 +142,21 @@ const Register = () => {
           </button>
         </div>
 
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className={`w-full bg-orange-500 text-white p-3 rounded-xl font-semibold transition-transform duration-150 ${
-            loading ? "opacity-50 cursor-not-allowed" : "hover:bg-orange-600 hover:scale-105"
+          className={`w-full bg-orange-500 text-white p-3 rounded-xl font-semibold transition ${
+            loading
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-orange-600 hover:scale-[1.02]"
           }`}
         >
           {loading ? "Registering..." : "Register"}
         </button>
 
-        <p className="mt-4 text-center text-gray-600 text-sm">
+        {/* Login */}
+        <p className="text-center text-gray-600 text-sm">
           Already have an account?{" "}
           <a href="/login" className="text-orange-600 font-semibold">
             Login
