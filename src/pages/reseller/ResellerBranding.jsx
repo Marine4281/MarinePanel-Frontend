@@ -262,7 +262,7 @@ export default function ResellerBranding() {
                 </label>
                 {domainType === "subdomain" && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Your subdomain will be:{" "}
+                    {" "}
                     <strong>
                       {reseller?.brandName?.toLowerCase()?.replace(/\s+/g, "")}.
                       {reseller?.platformDomain || "marinepanel.online"}
