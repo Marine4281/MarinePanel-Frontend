@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+// src/components/AdminUserDetails.jsx
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import toast from "react-hot-toast";
-import { io } from "socket.io-client";
 
 const AdminUserDetails = () => {
   const { id } = useParams();
@@ -14,13 +14,6 @@ const AdminUserDetails = () => {
   const [loading, setLoading] = useState(true);
   const [updatingBalance, setUpdatingBalance] = useState(false);
   const [promoting, setPromoting] = useState(false);
-
-  // ✅ Keep user in ref for socket stability
-  const userRef = useRef(null);
-
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
 
   // ✅ Fetch user + transactions
   const fetchUser = useCallback(async () => {
@@ -37,9 +30,9 @@ const AdminUserDetails = () => {
 
       setUser(fetchedUser);
       setTransactions(fetchedTransactions);
-      setNewBalance(fetchedUser.balance || 0);
+      setNewBalance(fetchedUser?.balance || 0);
     } catch (err) {
-      console.error(err);
+      console.error("FETCH USER ERROR:", err.response?.data || err.message);
       toast.error("Failed to fetch user");
     } finally {
       setLoading(false);
@@ -49,32 +42,6 @@ const AdminUserDetails = () => {
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
-
-  // ✅ Socket (RUN ONCE)
-  useEffect(() => {
-    const socket = io(import.meta.env.VITE_API_URL);
-
-    socket.on("wallet:update", ({ balance, transactions, userId }) => {
-      // Only update if this is the current user
-      if (userRef.current && userRef.current._id === userId) {
-        setUser((prev) => ({
-          ...prev,
-          balance,
-        }));
-
-        const sortedTxs = (transactions || []).sort(
-          (a, b) =>
-            new Date(b.createdAt || b.date) -
-            new Date(a.createdAt || a.date)
-        );
-
-        setTransactions(sortedTxs);
-        setNewBalance(balance);
-      }
-    });
-
-    return () => socket.disconnect();
-  }, []);
 
   // ✅ Update balance
   const handleUpdateBalance = async () => {
@@ -88,42 +55,46 @@ const AdminUserDetails = () => {
 
       const updatedBalance = res.data.wallet.balance;
 
-      setUser((prev) => ({ ...prev, balance: updatedBalance }));
+      setUser((prev) => ({
+        ...prev,
+        balance: updatedBalance,
+      }));
+
       setNewBalance(updatedBalance);
 
       toast.success("Balance updated");
     } catch (err) {
-      console.error(err);
+      console.error("BALANCE ERROR:", err.response?.data || err.message);
       toast.error("Failed to update balance");
     } finally {
       setUpdatingBalance(false);
     }
   };
 
-  // ✅ Promote / Demote admin (FIXED ROUTES)
+  // ✅ Promote / Demote admin (FIXED)
   const handleToggleAdmin = async () => {
     if (!user) return;
 
     setPromoting(true);
     try {
       if (user.isAdmin) {
-        await API.patch(`/admin/users/${id}/demote`);
+        await API.patch(`/users/${id}/demote`);
         setUser((prev) => ({ ...prev, isAdmin: false }));
         toast.success("User demoted to normal user");
       } else {
-        await API.patch(`/admin/users/${id}/promote`);
+        await API.patch(`/users/${id}/promote`);
         setUser((prev) => ({ ...prev, isAdmin: true }));
         toast.success("User promoted to admin");
       }
     } catch (err) {
-      console.error(err);
+      console.error("ADMIN ERROR:", err.response?.data || err.message);
       toast.error("Failed to update admin status");
     } finally {
       setPromoting(false);
     }
   };
 
-  // ✅ UI STATES
+  // ✅ UI states
   if (loading) {
     return <div className="p-6 text-center">Loading user...</div>;
   }
@@ -153,7 +124,7 @@ const AdminUserDetails = () => {
               <p><strong>Phone:</strong> {user.phone || "-"}</p>
 
               <p className="flex items-center gap-2">
-                <strong>Country:</strong>
+                <strong>Country:</strong>{" "}
                 {user.country ? (
                   <>
                     <img
