@@ -14,14 +14,15 @@ const AdminUserDetails = () => {
   const [loading, setLoading] = useState(true);
   const [updatingBalance, setUpdatingBalance] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   // ✅ Fetch user + transactions
   const fetchUser = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get(`/users/${id}`);
+      const res = await API.get(`/admin/users/${id}`);
 
-      const fetchedUser = res.data.user;
+      const fetchedUser = res.data.user || res.data; // backend may return user directly
       const fetchedTransactions = (res.data.transactions || []).sort(
         (a, b) =>
           new Date(b.createdAt || b.date) -
@@ -46,23 +47,15 @@ const AdminUserDetails = () => {
   // ✅ Update balance
   const handleUpdateBalance = async () => {
     if (!user) return;
-
     setUpdatingBalance(true);
+
     try {
-      const res = await API.put(`/admin/users/${id}/balance`, {
+      await API.put(`/admin/users/${id}/balance`, {
         balance: Number(newBalance),
       });
 
-      const updatedBalance = res.data.wallet.balance;
-
-      setUser((prev) => ({
-        ...prev,
-        balance: updatedBalance,
-      }));
-
-      setNewBalance(updatedBalance);
-
       toast.success("Balance updated");
+      fetchUser(); // refresh user & transactions
     } catch (err) {
       console.error("BALANCE ERROR:", err.response?.data || err.message);
       toast.error("Failed to update balance");
@@ -71,21 +64,20 @@ const AdminUserDetails = () => {
     }
   };
 
-  // ✅ Promote / Demote admin (FIXED)
+  // ✅ Promote / Demote admin
   const handleToggleAdmin = async () => {
     if (!user) return;
-
     setPromoting(true);
+
     try {
       if (user.isAdmin) {
-        await API.patch(`/users/${id}/demote`);
-        setUser((prev) => ({ ...prev, isAdmin: false }));
+        await API.patch(`/admin/users/${id}/demote`);
         toast.success("User demoted to normal user");
       } else {
-        await API.patch(`/users/${id}/promote`);
-        setUser((prev) => ({ ...prev, isAdmin: true }));
+        await API.patch(`/admin/users/${id}/promote`);
         toast.success("User promoted to admin");
       }
+      fetchUser(); // refresh user info
     } catch (err) {
       console.error("ADMIN ERROR:", err.response?.data || err.message);
       toast.error("Failed to update admin status");
@@ -94,14 +86,27 @@ const AdminUserDetails = () => {
     }
   };
 
-  // ✅ UI states
-  if (loading) {
-    return <div className="p-6 text-center">Loading user...</div>;
-  }
+  // ✅ Block / Unblock user
+  const handleToggleBlock = async () => {
+    if (!user) return;
+    setBlocking(true);
 
-  if (!user) {
-    return <div className="p-6 text-center">User not found</div>;
-  }
+    try {
+      const action = user.isBlocked ? "unblock" : "block";
+      const res = await API.patch(`/admin/users/${id}/${action}`);
+      setUser(res.data);
+      toast.success(user.isBlocked ? "User unblocked" : "User blocked");
+    } catch (err) {
+      console.error("BLOCK ERROR:", err.response?.data || err.message);
+      toast.error("Failed to update block status");
+    } finally {
+      setBlocking(false);
+    }
+  };
+
+  // ✅ UI states
+  if (loading) return <div className="p-6 text-center">Loading user...</div>;
+  if (!user) return <div className="p-6 text-center">User not found</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -128,17 +133,13 @@ const AdminUserDetails = () => {
                 {user.country ? (
                   <>
                     <img
-                      src={`https://flagcdn.com/24x18/${user.country
-                        .toLowerCase()
-                        .slice(0, 2)}.png`}
+                      src={`https://flagcdn.com/24x18/${user.country.toLowerCase().slice(0, 2)}.png`}
                       alt={user.country}
                       className="w-6 h-4 object-cover"
                     />
                     <span>{user.country}</span>
                   </>
-                ) : (
-                  "-"
-                )}
+                ) : "-"}
               </p>
 
               <p>
@@ -149,8 +150,7 @@ const AdminUserDetails = () => {
 
             <div>
               <p>
-                <strong>Balance:</strong> $
-                {Number(user.balance || 0).toFixed(4)}
+                <strong>Balance:</strong> ${Number(user.balance || 0).toFixed(4)}
               </p>
 
               <div className="flex gap-2 mt-2">
@@ -169,30 +169,42 @@ const AdminUserDetails = () => {
                 </button>
               </div>
 
-              <button
-                onClick={handleToggleAdmin}
-                disabled={promoting}
-                className={`mt-4 px-4 py-2 rounded text-white ${
-                  user.isAdmin
-                    ? "bg-red-500 hover:bg-red-600"
-                    : "bg-green-500 hover:bg-green-600"
-                }`}
-              >
-                {promoting
-                  ? "Processing..."
-                  : user.isAdmin
-                  ? "Demote to User"
-                  : "Promote to Admin"}
-              </button>
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={handleToggleAdmin}
+                  disabled={promoting}
+                  className={`px-4 py-2 rounded text-white ${
+                    user.isAdmin ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+                  }`}
+                >
+                  {promoting
+                    ? "Processing..."
+                    : user.isAdmin
+                    ? "Demote to User"
+                    : "Promote to Admin"}
+                </button>
+
+                <button
+                  onClick={handleToggleBlock}
+                  disabled={blocking}
+                  className={`px-4 py-2 rounded text-white ${
+                    user.isBlocked ? "bg-green-500 hover:bg-green-600" : "bg-gray-500 hover:bg-gray-600"
+                  }`}
+                >
+                  {blocking
+                    ? "Processing..."
+                    : user.isBlocked
+                    ? "Unblock User"
+                    : "Block User"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* TRANSACTIONS */}
         <div className="bg-white shadow-lg rounded-2xl p-6">
-          <h3 className="text-xl font-bold mb-4">
-            Transaction History
-          </h3>
+          <h3 className="text-xl font-bold mb-4">Transaction History</h3>
 
           {transactions.length ? (
             <table className="w-full text-sm text-left rounded-lg overflow-hidden shadow">
@@ -205,37 +217,22 @@ const AdminUserDetails = () => {
                   <th className="px-3 py-2">Note</th>
                 </tr>
               </thead>
-
               <tbody>
                 {transactions.map((t, idx) => (
                   <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="px-3 py-2">
-                      {new Date(
-                        t.createdAt || t.date
-                      ).toLocaleString()}
-                    </td>
+                    <td className="px-3 py-2">{new Date(t.createdAt || t.date).toLocaleString()}</td>
                     <td className="px-3 py-2">{t.type}</td>
-                    <td
-                      className={`px-3 py-2 font-semibold ${
-                        t.amount >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
+                    <td className={`px-3 py-2 font-semibold ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
                       ${t.amount.toFixed(4)}
                     </td>
                     <td className="px-3 py-2">{t.status}</td>
-                    <td className="px-3 py-2">
-                      {t.note || "-"}
-                    </td>
+                    <td className="px-3 py-2">{t.note || "-"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-gray-500">
-              No transactions found
-            </p>
+            <p className="text-gray-500">No transactions found</p>
           )}
         </div>
       </div>
