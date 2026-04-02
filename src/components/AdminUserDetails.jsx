@@ -1,12 +1,13 @@
-// src/components/AdminUserDetails.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import toast from "react-hot-toast";
+import { io } from "socket.io-client";
 
 const AdminUserDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [newBalance, setNewBalance] = useState("");
@@ -14,64 +15,122 @@ const AdminUserDetails = () => {
   const [updatingBalance, setUpdatingBalance] = useState(false);
   const [promoting, setPromoting] = useState(false);
 
-  // Fetch user + transactions
-  const fetchUser = async () => {
+  // ✅ Keep user in ref for socket stability
+  const userRef = useRef(null);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // ✅ Fetch user + transactions
+  const fetchUser = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await API.get(`/users/${id}`);
-      setUser(res.data.user);
-      setTransactions(
-        (res.data.transactions || []).sort(
-          (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
-        )
+
+      const fetchedUser = res.data.user;
+      const fetchedTransactions = (res.data.transactions || []).sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date) -
+          new Date(a.createdAt || a.date)
       );
-      setNewBalance(res.data.user.balance);
-      setLoading(false);
+
+      setUser(fetchedUser);
+      setTransactions(fetchedTransactions);
+      setNewBalance(fetchedUser.balance || 0);
     } catch (err) {
+      console.error(err);
       toast.error("Failed to fetch user");
+    } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchUser();
-  }, [id]);
+  }, [fetchUser]);
 
-  // Update balance
+  // ✅ Socket (RUN ONCE)
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_URL);
+
+    socket.on("wallet:update", ({ balance, transactions, userId }) => {
+      // Only update if this is the current user
+      if (userRef.current && userRef.current._id === userId) {
+        setUser((prev) => ({
+          ...prev,
+          balance,
+        }));
+
+        const sortedTxs = (transactions || []).sort(
+          (a, b) =>
+            new Date(b.createdAt || b.date) -
+            new Date(a.createdAt || a.date)
+        );
+
+        setTransactions(sortedTxs);
+        setNewBalance(balance);
+      }
+    });
+
+    return () => socket.disconnect();
+  }, []);
+
+  // ✅ Update balance
   const handleUpdateBalance = async () => {
     if (!user) return;
+
     setUpdatingBalance(true);
     try {
-      const res = await API.put(`/admin/users/${id}/balance`, { balance: Number(newBalance) });
-      setUser((prev) => ({ ...prev, balance: res.data.wallet.balance }));
+      const res = await API.put(`/admin/users/${id}/balance`, {
+        balance: Number(newBalance),
+      });
+
+      const updatedBalance = res.data.wallet.balance;
+
+      setUser((prev) => ({ ...prev, balance: updatedBalance }));
+      setNewBalance(updatedBalance);
+
       toast.success("Balance updated");
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to update balance");
+    } finally {
+      setUpdatingBalance(false);
     }
-    setUpdatingBalance(false);
   };
 
-  // Promote / Demote admin
+  // ✅ Promote / Demote admin (FIXED ROUTES)
   const handleToggleAdmin = async () => {
     if (!user) return;
+
     setPromoting(true);
     try {
       if (user.isAdmin) {
-        await API.patch(`/api/users/${id}/demote`);
+        await API.patch(`/admin/users/${id}/demote`);
         setUser((prev) => ({ ...prev, isAdmin: false }));
         toast.success("User demoted to normal user");
       } else {
-        await API.patch(`/api/users/${id}/promote`);
+        await API.patch(`/admin/users/${id}/promote`);
         setUser((prev) => ({ ...prev, isAdmin: true }));
         toast.success("User promoted to admin");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to update admin status");
+    } finally {
+      setPromoting(false);
     }
-    setPromoting(false);
   };
 
-  if (loading) return <div className="p-6 text-center">Loading...</div>;
-  if (!user) return <div className="p-6 text-center">User not found</div>;
+  // ✅ UI STATES
+  if (loading) {
+    return <div className="p-6 text-center">Loading user...</div>;
+  }
+
+  if (!user) {
+    return <div className="p-6 text-center">User not found</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -83,6 +142,7 @@ const AdminUserDetails = () => {
           Back
         </button>
 
+        {/* USER DETAILS */}
         <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
           <h2 className="text-2xl font-bold mb-4">User Details</h2>
 
@@ -91,8 +151,9 @@ const AdminUserDetails = () => {
               <p><strong>Name:</strong> {user.name || "-"}</p>
               <p><strong>Email:</strong> {user.email}</p>
               <p><strong>Phone:</strong> {user.phone || "-"}</p>
+
               <p className="flex items-center gap-2">
-                <strong>Country:</strong>{" "}
+                <strong>Country:</strong>
                 {user.country ? (
                   <>
                     <img
@@ -108,11 +169,19 @@ const AdminUserDetails = () => {
                   "-"
                 )}
               </p>
-              <p><strong>Joined:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
+
+              <p>
+                <strong>Joined:</strong>{" "}
+                {new Date(user.createdAt).toLocaleDateString()}
+              </p>
             </div>
 
             <div>
-              <p><strong>Balance:</strong> ${Number(user.balance || 0).toFixed(4)}</p>
+              <p>
+                <strong>Balance:</strong> $
+                {Number(user.balance || 0).toFixed(4)}
+              </p>
+
               <div className="flex gap-2 mt-2">
                 <input
                   type="number"
@@ -133,7 +202,9 @@ const AdminUserDetails = () => {
                 onClick={handleToggleAdmin}
                 disabled={promoting}
                 className={`mt-4 px-4 py-2 rounded text-white ${
-                  user.isAdmin ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+                  user.isAdmin
+                    ? "bg-red-500 hover:bg-red-600"
+                    : "bg-green-500 hover:bg-green-600"
                 }`}
               >
                 {promoting
@@ -146,8 +217,12 @@ const AdminUserDetails = () => {
           </div>
         </div>
 
+        {/* TRANSACTIONS */}
         <div className="bg-white shadow-lg rounded-2xl p-6">
-          <h3 className="text-xl font-bold mb-4">Transaction History</h3>
+          <h3 className="text-xl font-bold mb-4">
+            Transaction History
+          </h3>
+
           {transactions.length ? (
             <table className="w-full text-sm text-left rounded-lg overflow-hidden shadow">
               <thead className="bg-gray-100 text-gray-600 uppercase">
@@ -159,26 +234,37 @@ const AdminUserDetails = () => {
                   <th className="px-3 py-2">Note</th>
                 </tr>
               </thead>
+
               <tbody>
                 {transactions.map((t, idx) => (
                   <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="px-3 py-2">{new Date(t.createdAt || t.date).toLocaleString()}</td>
+                    <td className="px-3 py-2">
+                      {new Date(
+                        t.createdAt || t.date
+                      ).toLocaleString()}
+                    </td>
                     <td className="px-3 py-2">{t.type}</td>
                     <td
                       className={`px-3 py-2 font-semibold ${
-                        t.amount >= 0 ? "text-green-600" : "text-red-600"
+                        t.amount >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
                       }`}
                     >
                       ${t.amount.toFixed(4)}
                     </td>
                     <td className="px-3 py-2">{t.status}</td>
-                    <td className="px-3 py-2">{t.note || "-"}</td>
+                    <td className="px-3 py-2">
+                      {t.note || "-"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-gray-500">No transactions found</p>
+            <p className="text-gray-500">
+              No transactions found
+            </p>
           )}
         </div>
       </div>
