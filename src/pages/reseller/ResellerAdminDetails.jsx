@@ -57,9 +57,7 @@ const ResellerAdminDetails = () => {
 
               {/* Info */}
               <div className="flex flex-col leading-tight">
-                <p className="text-sm font-medium text-gray-800">
-                  {data.reseller.name || "Unnamed"}
-                </p>
+                
                 <p className="text-xs text-gray-500">
                   {data.reseller.email}
                 </p>
