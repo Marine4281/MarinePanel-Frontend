@@ -26,6 +26,7 @@ import AdminPaymentMethods from "./pages/AdminPaymentMethods";
 import AdminOrders from "./pages/AdminOrders";
 import AdminUserOrders from "./pages/AdminUserOrders";
 import AdminLogs from "./pages/AdminLogs";
+import AdminUserDetails from "./components/AdminUserDetails";
 
 import ProviderSync from "./pages/ProviderSync";
 
@@ -313,6 +314,15 @@ function AppRoutes() {
            element={
               <ProtectedRoute adminOnly>
               <AdminLogs />
+           </ProtectedRoute>
+          } 
+         />
+
+         <Route 
+           path=""/admin/users/:id"" 
+           element={
+              <ProtectedRoute adminOnly>
+              <AdminUserDetails />
            </ProtectedRoute>
           } 
          />
