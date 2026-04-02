@@ -21,15 +21,17 @@ export default function ResellerBranding() {
   const [logo, setLogo] = useState("");
   const [themeColor, setThemeColor] = useState("#16a34a");
 
-  // ✅ SUPPORT STATE
+  // SUPPORT STATE
   const [supportWhatsapp, setSupportWhatsapp] = useState("");
   const [supportTelegram, setSupportTelegram] = useState("");
-  const [supportWhatsappChannel, setSupportWhatsappChannel] =
-    useState("");
+  const [supportWhatsappChannel, setSupportWhatsappChannel] = useState("");
 
-  /*
-  APPLY EXISTING THEME
-  */
+  // DOMAIN SWITCH STATE
+  const [domainType, setDomainType] = useState("subdomain");
+  const [customDomain, setCustomDomain] = useState("");
+  const [switchLoading, setSwitchLoading] = useState(false);
+
+  // APPLY EXISTING THEME
   useEffect(() => {
     if (reseller?.themeColor) {
       document.documentElement.style.setProperty(
@@ -39,26 +41,22 @@ export default function ResellerBranding() {
     }
   }, [reseller]);
 
-  /*
-  FETCH BRANDING + SUPPORT
-  */
+  // FETCH BRANDING + SUPPORT
   useEffect(() => {
     const fetchBranding = async () => {
       try {
-        const res = await API.get("/branding/dashboard", {
-          withCredentials: true,
-        });
-
+        const res = await API.get("/branding/dashboard", { withCredentials: true });
         const data = res.data;
 
-        // ✅ FIX: KEEP CONSISTENT STRUCTURE
+        // KEEP RESLLER CONTEXT CONSISTENT
         setReseller((prev) => ({
           ...prev,
           brandName: data.brandName,
           logo: data.logo,
           themeColor: data.themeColor,
           domain: data.domain,
-
+          domainType: data.domainType || "subdomain",
+          platformDomain: data.platformDomain || "marinepanel.online",
           support: {
             whatsapp: data.supportWhatsapp || "",
             telegram: data.supportTelegram || "",
@@ -66,22 +64,21 @@ export default function ResellerBranding() {
           },
         }));
 
-        // Branding state
+        // BRANDING STATE
         setBrandName(data.brandName);
         setLogo(data.logo);
         setThemeColor(data.themeColor);
 
-        // ✅ SUPPORT STATE
+        // SUPPORT STATE
         setSupportWhatsapp(data.supportWhatsapp || "");
         setSupportTelegram(data.supportTelegram || "");
-        setSupportWhatsappChannel(
-          data.supportWhatsappChannel || ""
-        );
+        setSupportWhatsappChannel(data.supportWhatsappChannel || "");
 
-        document.documentElement.style.setProperty(
-          "--theme-color",
-          data.themeColor
-        );
+        // DOMAIN STATE
+        setDomainType(data.domainType || "subdomain");
+        setCustomDomain(data.domainType === "custom" ? data.domain : "");
+
+        document.documentElement.style.setProperty("--theme-color", data.themeColor);
         document.title = data.brandName;
       } catch (err) {
         console.error("Failed to load branding:", err);
@@ -94,45 +91,30 @@ export default function ResellerBranding() {
     fetchBranding();
   }, [setReseller]);
 
-  /*
-  LIVE THEME
-  */
+  // LIVE THEME
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--theme-color",
-      themeColor
-    );
+    document.documentElement.style.setProperty("--theme-color", themeColor);
   }, [themeColor]);
 
-  /*
-  SAVE BRANDING + SUPPORT
-  */
+  // SAVE BRANDING + SUPPORT
   const saveBranding = async () => {
     try {
       setSaving(true);
-
       const payload = {
         brandName,
         logo,
         themeColor,
-
-        // ✅ SEND SUPPORT
         supportWhatsapp,
         supportTelegram,
         supportWhatsappChannel,
       };
+      await API.patch("/branding", payload, { withCredentials: true });
 
-      await API.patch("/branding", payload, {
-        withCredentials: true,
-      });
-
-      // ✅ FIX: KEEP STRUCTURE CONSISTENT
       setReseller((prev) => ({
         ...prev,
         brandName,
         logo,
         themeColor,
-
         support: {
           whatsapp: supportWhatsapp || "",
           telegram: supportTelegram || "",
@@ -140,10 +122,7 @@ export default function ResellerBranding() {
         },
       }));
 
-      document.documentElement.style.setProperty(
-        "--theme-color",
-        themeColor
-      );
+      document.documentElement.style.setProperty("--theme-color", themeColor);
       document.title = brandName;
 
       toast.success("Branding updated successfully");
@@ -152,6 +131,32 @@ export default function ResellerBranding() {
       toast.error("Failed to save branding");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // SWITCH DOMAIN HANDLER
+  const switchDomain = async () => {
+    try {
+      setSwitchLoading(true);
+      const res = await API.post(
+        "/reseller/switch-domain",
+        { domainType, customDomain },
+        { withCredentials: true }
+      );
+
+      toast.success(res.data.message);
+      setReseller((prev) => ({
+        ...prev,
+        domain: res.data.domain,
+        domainType: res.data.domainType,
+      }));
+
+      if (domainType === "custom") setCustomDomain(res.data.domain);
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to switch domain");
+    } finally {
+      setSwitchLoading(false);
     }
   };
 
@@ -178,18 +183,12 @@ export default function ResellerBranding() {
           >
             <FiArrowLeft /> Back
           </button>
-
           <Link to="/reseller/dashboard">Dashboard</Link>
           <Link to="/reseller/users">Users</Link>
           <Link to="/reseller/orders">Orders</Link>
-
-          <Link
-            to="/reseller/branding"
-            className="text-orange-500 font-semibold"
-          >
+          <Link to="/reseller/branding" className="text-orange-500 font-semibold">
             Branding
           </Link>
-
           <button
             onClick={logout}
             className="flex items-center gap-2 text-red-500 mt-6"
@@ -207,23 +206,13 @@ export default function ResellerBranding() {
             className="flex items-center gap-4 mb-6 p-4 rounded"
             style={{ backgroundColor: themeColor }}
           >
-            {logo && (
-              <img
-                src={logo}
-                alt="Logo"
-                className="h-12 w-12 object-contain"
-              />
-            )}
-            <h2 className="text-white text-lg font-bold">
-              {brandName || "Reseller"}
-            </h2>
+            {logo && <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />}
+            <h2 className="text-white text-lg font-bold">{brandName || "Reseller"}</h2>
           </div>
 
           {/* Brand Name */}
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Brand Name
-            </label>
+            <label className="block text-sm font-medium mb-1">Brand Name</label>
             <input
               type="text"
               value={brandName}
@@ -234,25 +223,19 @@ export default function ResellerBranding() {
 
           {/* Logo */}
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">
-              Logo URL
-            </label>
+            <label className="block text-sm font-medium mb-1">Logo URL</label>
             <input
               type="text"
               value={logo}
               onChange={(e) => setLogo(e.target.value)}
               className="w-full border rounded p-2"
             />
-            {logo && (
-              <img src={logo} alt="Logo Preview" className="h-12 mt-2" />
-            )}
+            {logo && <img src={logo} alt="Logo Preview" className="h-12 mt-2" />}
           </div>
 
           {/* Theme */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-1">
-              Theme Color
-            </label>
+            <label className="block text-sm font-medium mb-1">Theme Color</label>
             <input
               type="color"
               value={themeColor}
@@ -261,20 +244,77 @@ export default function ResellerBranding() {
             />
           </div>
 
+          {/* DOMAIN SWITCH */}
+          <div className="mb-6 border-t pt-6">
+            <h3 className="text-md font-semibold mb-4">Domain Settings</h3>
+
+            <div className="grid gap-4">
+              <div>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    value="subdomain"
+                    checked={domainType === "subdomain"}
+                    onChange={() => setDomainType("subdomain")}
+                    className="form-radio"
+                  />
+                  <span>Use subdomain</span>
+                </label>
+                {domainType === "subdomain" && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Your subdomain will be:{" "}
+                    <strong>
+                      {reseller?.brandName?.toLowerCase()?.replace(/\s+/g, "")}.
+                      {reseller?.platformDomain || "marinepanel.online"}
+                    </strong>
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="radio"
+                    value="custom"
+                    checked={domainType === "custom"}
+                    onChange={() => setDomainType("custom")}
+                    className="form-radio"
+                  />
+                  <span>Use custom domain</span>
+                </label>
+                {domainType === "custom" && (
+                  <input
+                    type="text"
+                    placeholder="Enter your custom domain (example.com)"
+                    value={customDomain}
+                    onChange={(e) => setCustomDomain(e.target.value)}
+                    className="border p-3 rounded-lg w-full mt-2"
+                  />
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={switchDomain}
+              disabled={switchLoading}
+              className={`mt-3 px-4 py-2 rounded text-white ${
+                switchLoading ? "bg-gray-400 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"
+              }`}
+            >
+              {switchLoading ? "Switching..." : "Switch Domain"}
+            </button>
+          </div>
+
           {/* SUPPORT SECTION */}
           <div className="mt-8 border-t pt-6">
-            <h3 className="text-md font-semibold mb-4">
-              Support Configuration
-            </h3>
+            <h3 className="text-md font-semibold mb-4">Support Configuration</h3>
 
             <div className="grid gap-4">
               <input
                 type="text"
                 placeholder="WhatsApp (number or wa.me link)"
                 value={supportWhatsapp}
-                onChange={(e) =>
-                  setSupportWhatsapp(e.target.value)
-                }
+                onChange={(e) => setSupportWhatsapp(e.target.value)}
                 className="border p-3 rounded-lg"
               />
 
@@ -282,9 +322,7 @@ export default function ResellerBranding() {
                 type="text"
                 placeholder="Telegram (@username or link)"
                 value={supportTelegram}
-                onChange={(e) =>
-                  setSupportTelegram(e.target.value)
-                }
+                onChange={(e) => setSupportTelegram(e.target.value)}
                 className="border p-3 rounded-lg"
               />
 
@@ -292,9 +330,7 @@ export default function ResellerBranding() {
                 type="text"
                 placeholder="WhatsApp Channel / Group link"
                 value={supportWhatsappChannel}
-                onChange={(e) =>
-                  setSupportWhatsappChannel(e.target.value)
-                }
+                onChange={(e) => setSupportWhatsappChannel(e.target.value)}
                 className="border p-3 rounded-lg"
               />
             </div>
@@ -308,9 +344,7 @@ export default function ResellerBranding() {
             onClick={saveBranding}
             disabled={saving}
             className={`mt-6 px-4 py-2 rounded text-white ${
-              saving
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-orange-500 hover:bg-orange-600"
+              saving ? "bg-gray-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"
             }`}
           >
             {saving ? "Saving..." : "Save Branding"}
@@ -319,4 +353,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-            }
+              }
