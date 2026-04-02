@@ -309,7 +309,7 @@ function AppRoutes() {
            />
          
         <Route 
-           path="/admin/logs/:id" 
+           path="/admin/logs" 
            element={<ProtectedRoute adminOnly>
               <AdminLogs />
            </ProtectedRoute>
