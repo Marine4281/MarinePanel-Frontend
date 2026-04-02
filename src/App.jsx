@@ -319,7 +319,7 @@ function AppRoutes() {
          />
 
          <Route 
-           path=""/admin/users/:id"" 
+           path="/admin/users/:id" 
            element={
               <ProtectedRoute adminOnly>
               <AdminUserDetails />
