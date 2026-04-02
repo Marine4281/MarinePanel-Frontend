@@ -19,7 +19,7 @@ const ResellerAdminDetails = () => {
       const res = await API.get(`/admin/resellers/${id}`);
       setData(res.data.data);
     } catch (err) {
-      console.error("Failed to fetch reseller details", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -29,106 +29,86 @@ const ResellerAdminDetails = () => {
     fetchDetails();
   }, [id]);
 
-  if (loading) {
-    return (
-      <ResellerLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="animate-pulse text-gray-500 text-lg">
-            Loading reseller details...
-          </div>
-        </div>
-      </ResellerLayout>
-    );
-  }
-
-  if (!data) {
-    return (
-      <ResellerLayout>
-        <div className="text-center text-red-500 mt-10">
-          Failed to load reseller data
-        </div>
-      </ResellerLayout>
-    );
-  }
-
-  const { reseller } = data;
-
   return (
     <ResellerLayout>
-      <div className="space-y-6">
-        
-        {/* 🔹 Header / Identity Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          
-          {/* Left */}
+      <div className="p-4 md:p-6 lg:p-8 space-y-6">
+
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
-              {reseller?.brandName || "Reseller Panel"}
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">
+              Reseller Details
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {reseller?.email}
+            <p className="text-sm text-gray-500">
+              Manage reseller performance, users, and orders
             </p>
+          </div>
 
-            <div className="flex gap-2 mt-3 flex-wrap">
-              <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-600">
-                ID: {reseller?._id}
-              </span>
-
-              {reseller?.isActive ? (
-                <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-600">
-                  Active
-                </span>
-              ) : (
-                <span className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-600">
-                  Suspended
-                </span>
-              )}
+          {!loading && data?.reseller && (
+            <div className="bg-white shadow-sm border rounded-xl px-4 py-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                {data.reseller.name?.charAt(0)?.toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-800">
+                  {data.reseller.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {data.reseller.email}
+                </p>
+              </div>
             </div>
-          </div>
-
-          {/* Right Actions (future ready) */}
-          <div className="flex gap-3">
-            <button className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm">
-              Refresh
-            </button>
-            <button className="px-4 py-2 rounded-xl bg-black text-white text-sm hover:opacity-90">
-              Manage
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* 🔹 Stats Section */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 border">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Overview
-          </h2>
-          <ResellerStats
-            reseller={data.reseller}
-            stats={data.stats}
-            refresh={fetchDetails}
-          />
-        </div>
-
-        {/* 🔹 Users Section */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Users
-            </h2>
+        {/* LOADING STATE */}
+        {loading && (
+          <div className="space-y-4 animate-pulse">
+            <div className="h-24 bg-gray-200 rounded-xl"></div>
+            <div className="h-64 bg-gray-200 rounded-xl"></div>
+            <div className="h-64 bg-gray-200 rounded-xl"></div>
           </div>
-          <ResellerUsers resellerId={id} />
-        </div>
+        )}
 
-        {/* 🔹 Orders Section */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 border">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Orders
-            </h2>
-          </div>
-          <ResellerOrders resellerId={id} />
-        </div>
+        {/* CONTENT */}
+        {!loading && data && (
+          <>
+            {/* STATS */}
+            <div className="bg-white rounded-2xl shadow-sm border p-4 md:p-6">
+              <ResellerStats
+                reseller={data.reseller}
+                stats={data.stats}
+                refresh={fetchDetails}
+              />
+            </div>
 
+            {/* USERS */}
+            <div className="bg-white rounded-2xl shadow-sm border p-4 md:p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Users
+                </h2>
+                <p className="text-xs text-gray-500">
+                  All users under this reseller
+                </p>
+              </div>
+              <ResellerUsers resellerId={id} />
+            </div>
+
+            {/* ORDERS */}
+            <div className="bg-white rounded-2xl shadow-sm border p-4 md:p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Orders
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Transactions & activity
+                </p>
+              </div>
+              <ResellerOrders resellerId={id} />
+            </div>
+          </>
+        )}
       </div>
     </ResellerLayout>
   );
