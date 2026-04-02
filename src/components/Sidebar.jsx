@@ -1,3 +1,4 @@
+//src/components/Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -17,6 +18,10 @@ const links = [
   { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
 
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
+
+  // 🔥 ✅ ADD THIS (Staff Actions Page)
+  { name: "Staff Actions", icon: "fa-solid fa-shield-halved", path: "/admin/logs" },
+
   { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
   { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
 ];
