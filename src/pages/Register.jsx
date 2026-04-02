@@ -13,11 +13,14 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  // ✅ FIXED COUNTRY STRUCTURE
+  // ✅ Country for backend
   const [country, setCountry] = useState({
     name: "United States",
     code: "US",
   });
+
+  // ✅ Separate state for PhoneInput UI
+  const [phoneCountry, setPhoneCountry] = useState("us");
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,8 +45,8 @@ const Register = () => {
       const res = await API.post("/auth/register", {
         email,
         phone,
-        country: country.name,        // ✅ full name
-        countryCode: country.code,    // ✅ ISO code
+        country: country.name,
+        countryCode: country.code,
         password,
       });
 
@@ -81,26 +84,28 @@ const Register = () => {
           />
         </div>
 
-        {/* Phone + Country (Searchable) */}
+        {/* Phone */}
         <div>
           <label className="block font-semibold mb-1">Phone</label>
 
           <PhoneInput
-            country={country.code.toLowerCase()}
+            country={phoneCountry}
             value={phone}
-            enableSearch // ✅ SEARCH ENABLED
+            enableSearch
             searchPlaceholder="Search country..."
             onChange={(phone, data) => {
               setPhone(phone);
+              setPhoneCountry(data.countryCode);
 
               setCountry({
-                name: data.name, // "India"
-                code: data.countryCode.toUpperCase(), // "IN"
+                name: data.name,
+                code: data.countryCode.toUpperCase(),
               });
             }}
-            inputClass="!w-full !p-3 !rounded-xl !border"
-            buttonClass="!border !rounded-l-xl"
-            dropdownClass="!rounded-xl"
+            containerClass="w-full"
+            inputClass="!w-full !pl-14 !pr-3 !py-3 !rounded-xl !border focus:!ring-2 focus:!ring-orange-400"
+            buttonClass="!border !rounded-l-xl !px-2 !bg-white"
+            dropdownClass="!rounded-xl !shadow-lg"
           />
         </div>
 
