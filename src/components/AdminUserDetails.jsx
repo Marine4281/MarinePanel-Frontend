@@ -1,4 +1,3 @@
-// src/components/AdminUserDetails.jsx
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axios";
@@ -68,26 +67,24 @@ const AdminUserDetails = () => {
     [id]
   );
 
-  // ======================= AUTO REFRESH (NO SOCKET) =======================
+  // ======================= INITIAL LOAD =======================
   useEffect(() => {
     fetchUser();
     fetchOrders(1);
-
-    const interval = setInterval(() => {
-      fetchUser(); // refresh lastSeen
-    }, 30000); // every 30 sec
-
-    return () => clearInterval(interval);
   }, [fetchUser, fetchOrders]);
 
   // ======================= ACTIONS =======================
   const handleUpdateBalance = async () => {
     if (!user) return;
+
+    const value = Number(newBalance);
+    if (isNaN(value)) return toast.error("Invalid amount");
+
     setUpdatingBalance(true);
 
     try {
       await API.put(`/admin/users/${id}/balance`, {
-        balance: Number(newBalance),
+        balance: value,
       });
 
       toast.success("Balance updated");
@@ -147,6 +144,13 @@ const AdminUserDetails = () => {
     }
   };
 
+  // ======================= MANUAL REFRESH =======================
+  const handleRefresh = () => {
+    setLoading(true);
+    fetchUser();
+    fetchOrders(orderPage);
+  };
+
   // ======================= UI STATES =======================
   if (loading) return <div className="p-6 text-center">Loading user...</div>;
   if (!user) return <div className="p-6 text-center">User not found</div>;
@@ -156,18 +160,28 @@ const AdminUserDetails = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <div className="flex-1 p-6 max-w-5xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-        >
-          Back
-        </button>
+        {/* HEADER ACTIONS */}
+        <div className="flex justify-between mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Back
+          </button>
+
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Refresh
+          </button>
+        </div>
 
         {/* USER DETAILS */}
         <div className="bg-white shadow-lg rounded-2xl p-6 mb-6">
           <h2 className="text-2xl font-bold mb-4">User Details</h2>
 
-          {/* ✅ ONLINE STATUS */}
+          {/* ONLINE STATUS */}
           <div className="flex items-center gap-2 mb-4">
             <span
               className={`w-3 h-3 rounded-full ${
@@ -187,10 +201,12 @@ const AdminUserDetails = () => {
 
               <p className="flex items-center gap-2">
                 <strong>Country:</strong>
-                {user.country ? (
+                {user.country && user.countryCode ? (
                   <>
                     <img
-                      src={`https://flagcdn.com/24x18/${user.countryCode.toLowerCase().slice(0, 2)}.png`}
+                      src={`https://flagcdn.com/24x18/${user.countryCode
+                        .toLowerCase()
+                        .slice(0, 2)}.png`}
                       alt=""
                       className="w-6 h-4"
                     />
@@ -214,7 +230,7 @@ const AdminUserDetails = () => {
               <p className="mt-2">
                 <strong>Total Orders:</strong>{" "}
                 <span className="text-blue-600 font-semibold">
-                  {orders.length}
+                  {user.totalOrders || orders.length}
                 </span>
               </p>
 
@@ -237,6 +253,7 @@ const AdminUserDetails = () => {
               <div className="flex gap-2 mt-4 flex-wrap">
                 <button
                   onClick={handleToggleAdmin}
+                  disabled={promoting}
                   className="px-4 py-2 rounded text-white bg-green-500"
                 >
                   {user.isAdmin ? "Demote" : "Promote"}
@@ -244,6 +261,7 @@ const AdminUserDetails = () => {
 
                 <button
                   onClick={handleToggleBlock}
+                  disabled={blocking}
                   className="px-4 py-2 rounded text-white bg-gray-500"
                 >
                   {user.isBlocked ? "Unblock" : "Block"}
@@ -251,6 +269,7 @@ const AdminUserDetails = () => {
 
                 <button
                   onClick={handleToggleFreeze}
+                  disabled={freezing}
                   className="px-4 py-2 rounded text-white bg-purple-600"
                 >
                   {user.isFrozen ? "Unfreeze" : "Freeze"}
