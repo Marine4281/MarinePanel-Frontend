@@ -14,10 +14,10 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  // ✅ Country for backend
+  // ✅ Country for backend (ALWAYS lowercase ISO2)
   const [country, setCountry] = useState({
     name: "United States",
-    code: "US",
+    code: "us", // ✅ FIXED (was "US")
   });
 
   // ✅ PhoneInput UI country (must always be lowercase ISO2)
@@ -47,7 +47,7 @@ const Register = () => {
         email,
         phone,
         country: country.name,
-        countryCode: country.code,
+        countryCode: country.code, // ✅ already lowercase
         password,
       });
 
@@ -94,21 +94,23 @@ const Register = () => {
             value={phone}
             enableSearch
             searchPlaceholder="Search country..."
-            disableCountryGuess={true} // 🔥 prevents US/Canada mixups
+            disableCountryGuess={true}
             countryCodeEditable={false}
             preferredCountries={["ke", "us", "gb"]}
             onChange={(value, data) => {
               setPhone(value);
 
-              // ✅ Always safe ISO2
-              const iso2 = data?.countryCode || "us";
+              // ✅ Always safe ISO2 (force lowercase + trim)
+              const iso2 = (data?.countryCode || "us")
+                .toLowerCase()
+                .trim();
 
               setPhoneCountry(iso2);
 
-              // ✅ Sync backend country correctly
+              // ✅ Sync backend country correctly (FIXED)
               setCountry({
                 name: data?.name || "",
-                code: iso2.toUpperCase(),
+                code: iso2, // ✅ FIXED (removed toUpperCase)
               });
             }}
             containerClass="w-full"
