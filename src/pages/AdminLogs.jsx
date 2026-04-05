@@ -10,7 +10,7 @@ const AdminLogs = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // ✅ Professional color mapping
+  // ✅ Professional color mapping for actions
   const actionColors = {
     DEMOTE_ADMIN: "bg-yellow-50 text-yellow-800",
     PROMOTE_ADMIN: "bg-green-50 text-green-800",
@@ -53,6 +53,14 @@ const AdminLogs = () => {
   }, []);
 
   const handleRefresh = () => fetchLogs(page);
+
+  const handlePrev = () => {
+    if (page > 1) fetchLogs(page - 1);
+  };
+
+  const handleNext = () => {
+    if (page < totalPages) fetchLogs(page + 1);
+  };
 
   return (
     <div className="flex h-screen">
@@ -107,7 +115,9 @@ const AdminLogs = () => {
                         <td className="p-3">
                           {log.admin?.name || log.admin?.email || "N/A"}
                         </td>
-                        <td className={`p-1 px-2 font-medium text-sm ${colorClass}`}>
+                        <td
+                          className={`p-1 px-2 font-medium text-sm ${colorClass} rounded-sm`}
+                        >
                           {log.action || "-"}
                         </td>
                         <td className="p-3">{log.targetType || "-"}</td>
@@ -124,8 +134,31 @@ const AdminLogs = () => {
               </tbody>
             </table>
 
-            <div className="p-3 text-gray-500">
-              Page {page} of {totalPages}
+            {/* Pagination controls */}
+            <div className="flex justify-between items-center p-3 text-gray-500">
+              <button
+                onClick={handlePrev}
+                disabled={page === 1}
+                className={`px-3 py-1 border border-gray-300 ${
+                  page === 1 ? "text-gray-400 cursor-not-allowed" : "hover:bg-gray-100"
+                }`}
+              >
+                Prev
+              </button>
+
+              <span>
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                onClick={handleNext}
+                disabled={page === totalPages}
+                className={`px-3 py-1 border border-gray-300 ${
+                  page === totalPages ? "text-gray-400 cursor-not-allowed" : "hover:bg-gray-100"
+                }`}
+              >
+                Next
+              </button>
             </div>
           </div>
         )}
