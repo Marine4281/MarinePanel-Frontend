@@ -13,23 +13,24 @@ const AdminLogs = () => {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setError("Unauthorized: Please login again");
-        setLoading(false);
-        return;
-      }
-
       const res = await axios.get("/api/admin-logs", {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true, // ✅ send cookie automatically
       });
 
       setLogs(res.data.logs || []);
     } catch (err) {
       console.error(err);
+
       if (err.response?.status === 401) {
-        setError("Session expired or unauthorized. Please login again.");
+        setError("Session expired. Redirecting to login...");
+
+        // ✅ clear any old storage just in case
+        localStorage.removeItem("token");
+
+        // ✅ redirect to login
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
       } else {
         setError("Failed to fetch admin logs");
       }
@@ -61,12 +62,16 @@ const AdminLogs = () => {
 
         {/* Loading */}
         {loading && (
-          <div className="text-center py-6 text-gray-500">Loading logs...</div>
+          <div className="text-center py-6 text-gray-500">
+            Loading logs...
+          </div>
         )}
 
         {/* Error */}
         {error && (
-          <div className="text-center py-4 text-red-500 font-medium">{error}</div>
+          <div className="text-center py-4 text-red-500 font-medium">
+            {error}
+          </div>
         )}
 
         {/* Logs Table */}
@@ -95,9 +100,15 @@ const AdminLogs = () => {
                       <td className="p-3">
                         {log.admin?.name || log.admin?.email || "N/A"}
                       </td>
-                      <td className="p-3 font-medium">{log.action || "-"}</td>
-                      <td className="p-3">{log.targetType || "-"}</td>
-                      <td className="p-3">{log.description || "-"}</td>
+                      <td className="p-3 font-medium">
+                        {log.action || "-"}
+                      </td>
+                      <td className="p-3">
+                        {log.targetType || "-"}
+                      </td>
+                      <td className="p-3">
+                        {log.description || "-"}
+                      </td>
                       <td className="p-3 text-gray-500">
                         {log.createdAt
                           ? new Date(log.createdAt).toLocaleString()
