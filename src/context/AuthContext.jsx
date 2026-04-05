@@ -7,11 +7,22 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
-// ✅ Normalize user data (FIXES FLAG ISSUE)
-const normalizeUser = (user) => ({
-  ...user,
-  countryCode: user?.countryCode?.toLowerCase() || "us",
-});
+// ✅ SAFE countryCode normalizer (BULLETPROOF)
+const normalizeCountryCode = (code) => {
+  if (!code || typeof code !== "string") return "us";
+
+  return code.trim().toLowerCase();
+};
+
+// ✅ Normalize full user object
+const normalizeUser = (user) => {
+  if (!user) return null;
+
+  return {
+    ...user,
+    countryCode: normalizeCountryCode(user.countryCode),
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
@@ -37,7 +48,9 @@ export const AuthProvider = ({ children }) => {
 
       // 🔄 Fetch fresh data from backend
       try {
-        const res = await API.get("/auth/profile", { withCredentials: true });
+        const res = await API.get("/auth/profile", {
+          withCredentials: true,
+        });
 
         if (res.data) {
           const normalized = normalizeUser(res.data);
@@ -47,7 +60,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.error("Failed to fetch current user:", err);
-        // ❌ Do NOT clear localStorage here
+        // ❌ Do NOT clear localStorage here (prevents logout flicker)
       } finally {
         setLoading(false);
       }
