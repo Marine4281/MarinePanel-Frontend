@@ -12,12 +12,11 @@ const AdminUsers = () => {
   const usersPerPage = 10;
   const navigate = useNavigate();
 
-  // Fetch users
   const fetchUsers = useCallback(async () => {
     try {
       const res = await API.get("/admin/users");
       setUsers(res.data);
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch users");
     }
   }, []);
@@ -26,7 +25,6 @@ const AdminUsers = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Filter users
   const filteredUsers = users.filter(
     (u) =>
       u.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -34,7 +32,6 @@ const AdminUsers = () => {
       (u.name && u.name.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // Pagination
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
@@ -77,13 +74,13 @@ const AdminUsers = () => {
                   <td className="px-4 py-3">{user.name || "-"}</td>
                   <td className="px-4 py-3">{user.email}</td>
                   <td className="px-4 py-3">{user.phone || "-"}</td>
+
+                  {/* ✅ FIXED */}
                   <td className="px-4 py-3 flex items-center gap-2">
-                    {user.country ? (
+                    {user.countryCode ? (
                       <>
                         <img
-                          src={`https://flagcdn.com/24x18/${user.country
-                            .toLowerCase()
-                            .slice(0, 2)}.png`}
+                          src={`https://flagcdn.com/24x18/${user.countryCode.toLowerCase()}.png`}
                           alt={user.country}
                           className="w-6 h-4 object-cover"
                         />
@@ -93,8 +90,13 @@ const AdminUsers = () => {
                       "-"
                     )}
                   </td>
-                  <td className="px-4 py-3">${Number(user.balance || 0).toFixed(4)}</td>
-                  <td className="px-4 py-3">{new Date(user.createdAt).toLocaleDateString()}</td>
+
+                  <td className="px-4 py-3">
+                    ${Number(user.balance || 0).toFixed(4)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => navigate(`/admin/users/${user._id}`)}
@@ -109,7 +111,6 @@ const AdminUsers = () => {
           </table>
         </div>
 
-        {/* Pagination */}
         <div className="flex justify-center mt-4 gap-2">
           {Array.from({ length: totalPages }, (_, i) => (
             <button
