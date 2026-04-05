@@ -1,3 +1,4 @@
+// src/pages/Register.jsx
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +20,7 @@ const Register = () => {
     code: "US",
   });
 
-  // ✅ Separate state for PhoneInput UI
+  // ✅ PhoneInput UI country (must always be lowercase ISO2)
   const [phoneCountry, setPhoneCountry] = useState("us");
 
   const [password, setPassword] = useState("");
@@ -93,13 +94,21 @@ const Register = () => {
             value={phone}
             enableSearch
             searchPlaceholder="Search country..."
-            onChange={(phone, data) => {
-              setPhone(phone);
-              setPhoneCountry(data.countryCode);
+            disableCountryGuess={true} // 🔥 prevents US/Canada mixups
+            countryCodeEditable={false}
+            preferredCountries={["ke", "us", "gb"]}
+            onChange={(value, data) => {
+              setPhone(value);
 
+              // ✅ Always safe ISO2
+              const iso2 = data?.countryCode || "us";
+
+              setPhoneCountry(iso2);
+
+              // ✅ Sync backend country correctly
               setCountry({
-                name: data.name,
-                code: data.countryCode.toUpperCase(),
+                name: data?.name || "",
+                code: iso2.toUpperCase(),
               });
             }}
             containerClass="w-full"
