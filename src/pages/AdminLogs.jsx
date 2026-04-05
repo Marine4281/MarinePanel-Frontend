@@ -1,6 +1,6 @@
 // pages/AdminLogs.jsx
 import React, { useEffect, useState } from "react";
-import API from "../api/axios"; // ✅ centralized axios with withCredentials
+import API from "../api/axios"; // centralized axios with withCredentials
 import Sidebar from "../components/Sidebar";
 
 const AdminLogs = () => {
@@ -9,6 +9,15 @@ const AdminLogs = () => {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // ✅ Action → Tailwind color mapping
+  const actionColors = {
+    demote: "bg-yellow-100 text-yellow-800",
+    promote: "bg-green-100 text-green-800",
+    "update balance": "bg-blue-100 text-blue-800",
+    freeze: "bg-indigo-100 text-indigo-800",
+    block: "bg-red-100 text-red-800",
+  };
 
   const fetchLogs = async (pageNumber = 1) => {
     try {
@@ -43,10 +52,8 @@ const AdminLogs = () => {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main content */}
       <div className="flex-1 p-6 bg-gray-50 overflow-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Staff Actions</h2>
@@ -58,21 +65,14 @@ const AdminLogs = () => {
           </button>
         </div>
 
-        {/* Loading */}
         {loading && (
-          <div className="text-center py-6 text-gray-500">
-            Loading logs...
-          </div>
+          <div className="text-center py-6 text-gray-500">Loading logs...</div>
         )}
 
-        {/* Error */}
         {error && (
-          <div className="text-center py-4 text-red-500 font-medium">
-            {error}
-          </div>
+          <div className="text-center py-4 text-red-500 font-medium">{error}</div>
         )}
 
-        {/* Logs Table */}
         {!loading && !error && (
           <div className="overflow-x-auto bg-white shadow rounded-lg">
             <table className="w-full text-sm border-collapse">
@@ -93,22 +93,29 @@ const AdminLogs = () => {
                     </td>
                   </tr>
                 ) : (
-                  logs.map((log) => (
-                    <tr key={log._id} className="border-t hover:bg-gray-50">
-                      <td className="p-3">{log.admin?.name || log.admin?.email || "N/A"}</td>
-                      <td className="p-3 font-medium">{log.action || "-"}</td>
-                      <td className="p-3">{log.targetType || "-"}</td>
-                      <td className="p-3">{log.description || "-"}</td>
-                      <td className="p-3 text-gray-500">
-                        {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
-                      </td>
-                    </tr>
-                  ))
+                  logs.map((log) => {
+                    const colorClass =
+                      actionColors[log.action?.toLowerCase()] ||
+                      "bg-gray-100 text-gray-800";
+
+                    return (
+                      <tr key={log._id} className="border-t hover:bg-gray-50">
+                        <td className="p-3">{log.admin?.name || log.admin?.email || "N/A"}</td>
+                        <td className={`p-3 font-medium rounded-full px-2 text-sm ${colorClass}`}>
+                          {log.action || "-"}
+                        </td>
+                        <td className="p-3">{log.targetType || "-"}</td>
+                        <td className="p-3">{log.description || "-"}</td>
+                        <td className="p-3 text-gray-500">
+                          {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
 
-            {/* Pagination info */}
             <div className="p-3 text-gray-500">
               Page {page} of {totalPages}
             </div>
