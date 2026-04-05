@@ -1,6 +1,6 @@
 // pages/AdminLogs.jsx
 import React, { useEffect, useState } from "react";
-import API from "../api/axios"; // centralized axios with withCredentials
+import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 
 const AdminLogs = () => {
@@ -10,13 +10,13 @@ const AdminLogs = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // ✅ Action → Tailwind color mapping
+  // ✅ Map log actions to colors
   const actionColors = {
-    demote: "bg-yellow-100 text-yellow-800",
-    promote: "bg-green-100 text-green-800",
-    "update balance": "bg-blue-100 text-blue-800",
-    freeze: "bg-indigo-100 text-indigo-800",
-    block: "bg-red-100 text-red-800",
+    DEMOTE_ADMIN: "bg-yellow-100 text-yellow-800",
+    PROMOTE_ADMIN: "bg-green-100 text-green-800",
+    UPDATE_BALANCE: "bg-blue-100 text-blue-800",
+    FREEZE_USER: "bg-indigo-100 text-indigo-800",
+    BLOCK_USER: "bg-red-100 text-red-800",
   };
 
   const fetchLogs = async (pageNumber = 1) => {
@@ -95,19 +95,25 @@ const AdminLogs = () => {
                 ) : (
                   logs.map((log) => {
                     const colorClass =
-                      actionColors[log.action?.toLowerCase()] ||
+                      actionColors[log.action?.toUpperCase()] ||
                       "bg-gray-100 text-gray-800";
 
                     return (
                       <tr key={log._id} className="border-t hover:bg-gray-50">
-                        <td className="p-3">{log.admin?.name || log.admin?.email || "N/A"}</td>
-                        <td className={`p-3 font-medium rounded-full px-2 text-sm ${colorClass}`}>
+                        <td className="p-3">
+                          {log.admin?.name || log.admin?.email || "N/A"}
+                        </td>
+                        <td
+                          className={`p-2 font-medium rounded-full text-sm w-max ${colorClass}`}
+                        >
                           {log.action || "-"}
                         </td>
                         <td className="p-3">{log.targetType || "-"}</td>
                         <td className="p-3">{log.description || "-"}</td>
                         <td className="p-3 text-gray-500">
-                          {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
+                          {log.createdAt
+                            ? new Date(log.createdAt).toLocaleString()
+                            : "-"}
                         </td>
                       </tr>
                     );
