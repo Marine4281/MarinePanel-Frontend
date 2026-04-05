@@ -1,33 +1,29 @@
 // pages/AdminLogs.jsx
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../api/axios"; // ✅ centralized axios with withCredentials
 import Sidebar from "../components/Sidebar";
 
 const AdminLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchLogs = async () => {
+  const fetchLogs = async (pageNumber = 1) => {
     try {
       setLoading(true);
       setError("");
 
-      const res = await axios.get("/api/admin-logs", {
-        withCredentials: true, // ✅ send cookie automatically
-      });
-
+      const res = await API.get(`/admin-logs?page=${pageNumber}&limit=50`);
       setLogs(res.data.logs || []);
+      setPage(res.data.page || 1);
+      setTotalPages(res.data.pages || 1);
     } catch (err) {
       console.error(err);
-
       if (err.response?.status === 401) {
         setError("Session expired. Redirecting to login...");
-
-        // ✅ clear any old storage just in case
         localStorage.removeItem("token");
-
-        // ✅ redirect to login
         setTimeout(() => {
           window.location.href = "/login";
         }, 1500);
@@ -43,6 +39,8 @@ const AdminLogs = () => {
     fetchLogs();
   }, []);
 
+  const handleRefresh = () => fetchLogs(page);
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -53,7 +51,7 @@ const AdminLogs = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Staff Actions</h2>
           <button
-            onClick={fetchLogs}
+            onClick={handleRefresh}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
             Refresh
@@ -97,28 +95,23 @@ const AdminLogs = () => {
                 ) : (
                   logs.map((log) => (
                     <tr key={log._id} className="border-t hover:bg-gray-50">
-                      <td className="p-3">
-                        {log.admin?.name || log.admin?.email || "N/A"}
-                      </td>
-                      <td className="p-3 font-medium">
-                        {log.action || "-"}
-                      </td>
-                      <td className="p-3">
-                        {log.targetType || "-"}
-                      </td>
-                      <td className="p-3">
-                        {log.description || "-"}
-                      </td>
+                      <td className="p-3">{log.admin?.name || log.admin?.email || "N/A"}</td>
+                      <td className="p-3 font-medium">{log.action || "-"}</td>
+                      <td className="p-3">{log.targetType || "-"}</td>
+                      <td className="p-3">{log.description || "-"}</td>
                       <td className="p-3 text-gray-500">
-                        {log.createdAt
-                          ? new Date(log.createdAt).toLocaleString()
-                          : "-"}
+                        {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+
+            {/* Pagination info */}
+            <div className="p-3 text-gray-500">
+              Page {page} of {totalPages}
+            </div>
           </div>
         )}
       </div>
