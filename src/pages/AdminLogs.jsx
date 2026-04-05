@@ -10,13 +10,17 @@ const AdminLogs = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // ✅ Map log actions to colors
+  // ✅ Professional color mapping
   const actionColors = {
-    DEMOTE_ADMIN: "bg-yellow-100 text-yellow-800",
-    PROMOTE_ADMIN: "bg-green-100 text-green-800",
-    UPDATE_BALANCE: "bg-blue-100 text-blue-800",
-    FREEZE_USER: "bg-indigo-100 text-indigo-800",
-    BLOCK_USER: "bg-red-100 text-red-800",
+    DEMOTE_ADMIN: "bg-yellow-50 text-yellow-800",
+    PROMOTE_ADMIN: "bg-green-50 text-green-800",
+    UPDATE_BALANCE: "bg-blue-50 text-blue-800",
+    FREEZE_USER: "bg-indigo-50 text-indigo-800",
+    BLOCK_USER: "bg-red-50 text-red-800",
+    VIEW_PROFILE: "bg-gray-50 text-gray-700",
+    VIEW_USER: "bg-gray-50 text-gray-700",
+    VIEW_ADMIN_LOGS: "bg-gray-50 text-gray-700",
+    ADMIN_LOGIN: "bg-gray-50 text-gray-700",
   };
 
   const fetchLogs = async (pageNumber = 1) => {
@@ -96,16 +100,14 @@ const AdminLogs = () => {
                   logs.map((log) => {
                     const colorClass =
                       actionColors[log.action?.toUpperCase()] ||
-                      "bg-gray-100 text-gray-800";
+                      "bg-gray-50 text-gray-700";
 
                     return (
                       <tr key={log._id} className="border-t hover:bg-gray-50">
                         <td className="p-3">
                           {log.admin?.name || log.admin?.email || "N/A"}
                         </td>
-                        <td
-                          className={`p-2 font-medium rounded-full text-sm w-max ${colorClass}`}
-                        >
+                        <td className={`p-1 px-2 font-medium text-sm ${colorClass}`}>
                           {log.action || "-"}
                         </td>
                         <td className="p-3">{log.targetType || "-"}</td>
