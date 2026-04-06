@@ -1,4 +1,4 @@
-//src/pages/ProviderSync.jsx
+// src/pages/ProviderSync.jsx
 import { useState, useEffect } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
@@ -50,17 +50,15 @@ export default function ProviderServices() {
     try {
       setLoading(true);
 
+      // Only send provider name; backend fetches apiUrl & apiKey
       const { data } = await API.post("/provider/services", {
-        providerProfileId: selectedProvider._id,
-        apiUrl: selectedProvider.apiUrl,
-        apiKey: selectedProvider.apiKey,
+        provider: selectedProvider.name,
       });
 
       setServices(data);
-
       toast.success(`Fetched ${data.length} services`);
-
     } catch (error) {
+      console.error("Fetch Services Error:", error);
       toast.error("Failed to fetch services");
     } finally {
       setLoading(false);
@@ -83,8 +81,8 @@ export default function ProviderServices() {
       setShowModal(false);
       setNewProvider({ name: "", apiUrl: "", apiKey: "" });
       loadProviders();
-
-    } catch {
+    } catch (error) {
+      console.error("Save Provider Error:", error);
       toast.error("Failed to save provider");
     }
   };
@@ -110,7 +108,6 @@ export default function ProviderServices() {
 
         {/* ================= PROVIDER SELECT ================= */}
         <div className="bg-white shadow rounded-lg p-6 mb-6 flex flex-wrap gap-4 items-center">
-
           <select
             value={selectedProviderId}
             onChange={(e) => setSelectedProviderId(e.target.value)}
@@ -186,7 +183,6 @@ export default function ProviderServices() {
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl w-[400px]">
-
             <h2 className="text-xl font-bold mb-4">Add Provider</h2>
 
             <input
@@ -231,10 +227,9 @@ export default function ProviderServices() {
                 Save
               </button>
             </div>
-
           </div>
         </div>
       )}
     </div>
   );
-                                }
+}
