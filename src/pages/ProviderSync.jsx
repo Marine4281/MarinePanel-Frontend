@@ -6,18 +6,23 @@ import ProviderServiceTable from "../components/ProviderServiceTable";
 import toast from "react-hot-toast";
 
 export default function ProviderServices() {
-  const [apiUrl, setApiUrl] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [provider, setProvider] = useState("");
-  const [services, setServices] = useState([]);
+  const [selectedProviderId, setSelectedProviderId] = useState("");
   const [providers, setProviders] = useState([]);
+  const [services, setServices] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  /* ------------------------------
-  Load saved provider profiles
-  ------------------------------ */
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [newProvider, setNewProvider] = useState({
+    name: "",
+    apiUrl: "",
+    apiKey: "",
+  });
 
+  /* ==============================
+  LOAD PROVIDERS
+  ============================== */
   const loadProviders = async () => {
     try {
       const { data } = await API.get("/provider/profiles");
@@ -31,13 +36,19 @@ export default function ProviderServices() {
     loadProviders();
   }, []);
 
-  /* ------------------------------
-  Fetch services (UPDATED)
-  ------------------------------ */
+  /* ==============================
+  SELECT PROVIDER
+  ============================== */
+  const selectedProvider = providers.find(
+    (p) => p._id === selectedProviderId
+  );
 
+  /* ==============================
+  FETCH SERVICES
+  ============================== */
   const fetchServices = async () => {
-    if (!provider) {
-      toast.error("Select or enter provider");
+    if (!selectedProvider) {
+      toast.error("Please select a provider");
       return;
     }
 
@@ -45,14 +56,14 @@ export default function ProviderServices() {
       setLoading(true);
 
       const { data } = await API.post("/provider/services", {
-        provider,
-        // apiUrl & apiKey now optional (backend auto-loads)
-        apiUrl,
-        apiKey,
+        providerProfileId: selectedProvider._id,
+        apiUrl: selectedProvider.apiUrl,
+        apiKey: selectedProvider.apiKey,
       });
 
       setServices(data);
       toast.success("Services fetched successfully");
+
     } catch (error) {
       toast.error("Failed to fetch services");
     } finally {
@@ -60,46 +71,33 @@ export default function ProviderServices() {
     }
   };
 
-  /* ------------------------------
-  Save provider (UPDATED)
-  ------------------------------ */
-
+  /* ==============================
+  SAVE NEW PROVIDER
+  ============================== */
   const saveProvider = async () => {
-    if (!provider || !apiUrl || !apiKey) {
+    const { name, apiUrl, apiKey } = newProvider;
+
+    if (!name || !apiUrl || !apiKey) {
       toast.error("All fields required");
       return;
     }
 
     try {
-      await API.post("/provider/profiles", {
-        name: provider,
-        apiUrl,
-        apiKey,
-      });
+      await API.post("/provider/profiles", newProvider);
 
       toast.success("Provider saved");
+      setShowModal(false);
+      setNewProvider({ name: "", apiUrl: "", apiKey: "" });
       loadProviders();
+
     } catch (error) {
       toast.error("Failed to save provider");
     }
   };
 
-  /* ------------------------------
-  Select provider (AUTO-FILL)
-  ------------------------------ */
-
-  const selectProvider = (p) => {
-    setProvider(p.name);
-    setApiUrl(p.apiUrl || "");
-    setApiKey(p.apiKey || "");
-
-    toast.success(`Loaded ${p.name}`);
-  };
-
-  /* ------------------------------
-  Search filter
-  ------------------------------ */
-
+  /* ==============================
+  SEARCH FILTER
+  ============================== */
   const filteredServices = services.filter((s) => {
     const q = search.toLowerCase();
 
@@ -118,33 +116,29 @@ export default function ProviderServices() {
       <div className="flex-1 p-6">
         <h1 className="text-2xl font-bold mb-6">Provider Services</h1>
 
-        {/* Provider Inputs */}
+        {/* ================= PROVIDER SELECT ================= */}
 
-        <div className="bg-white shadow rounded-lg p-6 mb-6 grid grid-cols-5 gap-4">
+        <div className="bg-white shadow rounded-lg p-6 mb-6 flex gap-4 items-center">
 
-          <input
-            type="text"
-            placeholder="Provider Name"
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            className="border p-2 rounded"
-          />
+          <select
+            value={selectedProviderId}
+            onChange={(e) => setSelectedProviderId(e.target.value)}
+            className="border p-2 rounded w-64"
+          >
+            <option value="">Select Provider</option>
+            {providers.map((p) => (
+              <option key={p._id} value={p._id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
 
-          <input
-            type="text"
-            placeholder="API URL"
-            value={apiUrl}
-            onChange={(e) => setApiUrl(e.target.value)}
-            className="border p-2 rounded"
-          />
-
-          <input
-            type="text"
-            placeholder="API Key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="border p-2 rounded"
-          />
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-purple-600 text-white px-4 py-2 rounded"
+          >
+            + Add Provider
+          </button>
 
           <button
             onClick={fetchServices}
@@ -153,57 +147,83 @@ export default function ProviderServices() {
             {loading ? "Fetching..." : "Fetch Services"}
           </button>
 
-          <button
-            onClick={saveProvider}
-            className="bg-purple-600 text-white px-4 py-2 rounded"
-          >
-            Save Provider
-          </button>
-
         </div>
 
-        {/* Saved Providers */}
-
-        {providers.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-4 mb-6">
-            <h2 className="font-semibold mb-3">Saved Providers</h2>
-
-            <div className="flex flex-wrap gap-2">
-              {providers.map((p) => (
-                <button
-                  key={p.name}
-                  onClick={() => selectProvider(p)}
-                  className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Search */}
+        {/* ================= SEARCH ================= */}
 
         <div className="mb-4">
           <input
             type="text"
-            placeholder="Search services (name, category, rate, id)"
+            placeholder="Search services..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border p-2 rounded w-full"
           />
         </div>
 
-        {/* Services Table */}
+        {/* ================= TABLE ================= */}
 
         <ProviderServiceTable
           services={filteredServices}
-          provider={provider}
-          apiUrl={apiUrl}
-          apiKey={apiKey}
+          providerProfileId={selectedProviderId}
         />
 
       </div>
+
+      {/* ================= ADD PROVIDER MODAL ================= */}
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-[400px]">
+
+            <h2 className="text-xl font-bold mb-4">Add Provider</h2>
+
+            <input
+              placeholder="Provider Name"
+              value={newProvider.name}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, name: e.target.value })
+              }
+              className="border p-2 rounded w-full mb-3"
+            />
+
+            <input
+              placeholder="API URL"
+              value={newProvider.apiUrl}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, apiUrl: e.target.value })
+              }
+              className="border p-2 rounded w-full mb-3"
+            />
+
+            <input
+              placeholder="API Key"
+              value={newProvider.apiKey}
+              onChange={(e) =>
+                setNewProvider({ ...newProvider, apiKey: e.target.value })
+              }
+              className="border p-2 rounded w-full mb-4"
+            />
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="bg-gray-300 px-4 py-2 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={saveProvider}
+                className="bg-green-600 text-white px-4 py-2 rounded"
+              >
+                Save
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
-        }
+              }
