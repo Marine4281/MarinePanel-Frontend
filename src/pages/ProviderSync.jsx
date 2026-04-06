@@ -20,15 +20,14 @@ export default function ProviderServices() {
     apiKey: "",
   });
 
-  /* ==============================
-  LOAD PROVIDERS
-  ============================== */
+  /* ================= LOAD PROVIDERS ================= */
   const loadProviders = async () => {
     try {
       const { data } = await API.get("/provider/profiles");
       setProviders(data);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to load providers");
     }
   };
 
@@ -36,16 +35,12 @@ export default function ProviderServices() {
     loadProviders();
   }, []);
 
-  /* ==============================
-  SELECT PROVIDER
-  ============================== */
+  /* ================= SELECTED PROVIDER ================= */
   const selectedProvider = providers.find(
     (p) => p._id === selectedProviderId
   );
 
-  /* ==============================
-  FETCH SERVICES
-  ============================== */
+  /* ================= FETCH SERVICES ================= */
   const fetchServices = async () => {
     if (!selectedProvider) {
       toast.error("Please select a provider");
@@ -62,7 +57,8 @@ export default function ProviderServices() {
       });
 
       setServices(data);
-      toast.success("Services fetched successfully");
+
+      toast.success(`Fetched ${data.length} services`);
 
     } catch (error) {
       toast.error("Failed to fetch services");
@@ -71,9 +67,7 @@ export default function ProviderServices() {
     }
   };
 
-  /* ==============================
-  SAVE NEW PROVIDER
-  ============================== */
+  /* ================= SAVE PROVIDER ================= */
   const saveProvider = async () => {
     const { name, apiUrl, apiKey } = newProvider;
 
@@ -85,19 +79,17 @@ export default function ProviderServices() {
     try {
       await API.post("/provider/profiles", newProvider);
 
-      toast.success("Provider saved");
+      toast.success("Provider saved successfully");
       setShowModal(false);
       setNewProvider({ name: "", apiUrl: "", apiKey: "" });
       loadProviders();
 
-    } catch (error) {
+    } catch {
       toast.error("Failed to save provider");
     }
   };
 
-  /* ==============================
-  SEARCH FILTER
-  ============================== */
+  /* ================= SEARCH ================= */
   const filteredServices = services.filter((s) => {
     const q = search.toLowerCase();
 
@@ -113,12 +105,11 @@ export default function ProviderServices() {
     <div className="flex">
       <Sidebar />
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 relative">
         <h1 className="text-2xl font-bold mb-6">Provider Services</h1>
 
         {/* ================= PROVIDER SELECT ================= */}
-
-        <div className="bg-white shadow rounded-lg p-6 mb-6 flex gap-4 items-center">
+        <div className="bg-white shadow rounded-lg p-6 mb-6 flex flex-wrap gap-4 items-center">
 
           <select
             value={selectedProviderId}
@@ -142,15 +133,26 @@ export default function ProviderServices() {
 
           <button
             onClick={fetchServices}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            disabled={loading}
+            className={`px-4 py-2 rounded text-white ${
+              loading ? "bg-blue-300" : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            {loading ? "Fetching..." : "Fetch Services"}
+            {loading ? "Fetching services..." : "Fetch Services"}
           </button>
 
+          {/* ✅ Selected provider info */}
+          {selectedProvider && (
+            <div className="text-sm text-gray-600 ml-2">
+              <span className="font-medium">{selectedProvider.name}</span>
+              <span className="block text-xs">
+                API: {selectedProvider.apiUrl}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ================= SEARCH ================= */}
-
         <div className="mb-4">
           <input
             type="text"
@@ -162,16 +164,25 @@ export default function ProviderServices() {
         </div>
 
         {/* ================= TABLE ================= */}
-
         <ProviderServiceTable
           services={filteredServices}
           providerProfileId={selectedProviderId}
         />
 
+        {/* ================= LOADING OVERLAY ================= */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-40">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-700 font-medium">
+                Fetching services from provider...
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ================= ADD PROVIDER MODAL ================= */}
-
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl w-[400px]">
@@ -226,4 +237,4 @@ export default function ProviderServices() {
       )}
     </div>
   );
-              }
+                           }
