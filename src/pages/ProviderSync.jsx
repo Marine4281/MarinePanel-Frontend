@@ -161,6 +161,7 @@ export default function ProviderServices() {
     filteredGrouped[cat].push(s);
   });
 
+  /* ================= RENDER ================= */
   return (
     <div className="flex">
       <Sidebar />
@@ -240,39 +241,56 @@ export default function ProviderServices() {
                   <tr className="bg-gray-100">
                     <th className="p-2 border">Service Name</th>
                     <th className="p-2 border">Rate</th>
+                    <th className="p-2 border">Min Order</th>
+                    <th className="p-2 border">Max Order</th>
                     <th className="p-2 border">Status</th>
                     <th className="p-2 border">Description</th>
                     <th className="p-2 border">Select</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {services.map((s) => (
-                    <tr key={s.service} className="text-sm">
-                      <td className="p-2 border">{s.name}</td>
-                      <td className="p-2 border">{s.rate}</td>
-                      <td className="p-2 border">
-                        {s.imported ? "Imported" : s.deleted ? "Deleted" : "New"}
-                      </td>
-                      <td className="p-2 border">
-                        <button
-                          onClick={() => alert(s.description)}
-                          className="text-blue-600 underline text-xs"
-                        >
-                          View
-                        </button>
-                      </td>
-                      <td className="p-2 border text-center">
-                        <input
-                          type="checkbox"
-                          checked={!!selectedServices[s.service]}
-                          onChange={() => toggleService(s.service)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
+                  {services.map((s) => {
+                    const rateChanged = s.imported && s.oldRate && s.oldRate !== s.rate;
+                    return (
+                      <tr key={s.service} className="text-sm">
+                        <td className="p-2 border">{s.name}</td>
+                        <td className={`p-2 border ${rateChanged ? "bg-yellow-100" : ""}`}>
+                          {s.rate} {rateChanged && `(was ${s.oldRate})`}
+                        </td>
+                        <td className="p-2 border">{s.minOrder ?? "-"}</td>
+                        <td className="p-2 border">{s.maxOrder ?? "-"}</td>
+                        <td className="p-2 border">
+                          {s.imported ? "Imported" : s.deleted ? "Deleted" : "New"}
+                        </td>
+                        <td className="p-2 border">
+                          <button
+                            onClick={() => alert(s.description)}
+                            className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-200"
+                          >
+                            View
+                          </button>
+                        </td>
+                        <td className="p-2 border text-center">
+                          <input
+                            type="checkbox"
+                            checked={!!selectedServices[s.service]}
+                            onChange={() => toggleService(s.service)}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
+
+            {/* Import category button */}
+            <button
+              onClick={() => importCategory(category)}
+              className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+            >
+              Import Category
+            </button>
           </div>
         ))}
 
@@ -289,9 +307,7 @@ export default function ProviderServices() {
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-40">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm text-gray-700 font-medium">
-                Processing...
-              </p>
+              <p className="text-sm text-gray-700 font-medium">Processing...</p>
             </div>
           </div>
         )}
@@ -350,4 +366,25 @@ export default function ProviderServices() {
       )}
     </div>
   );
-        }
+
+  /* ================= IMPORT CATEGORY ================= */
+  async function importCategory(category) {
+    const servicesToImport = groupedServices[category] || [];
+    if (servicesToImport.length === 0) return;
+
+    try {
+      setLoading(true);
+      await API.post("/provider/import-category", {
+        services: servicesToImport,
+        provider: selectedProvider.name,
+      });
+      toast.success(`Imported ${servicesToImport.length} services from ${category}`);
+      fetchServices();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to import category services");
+    } finally {
+      setLoading(false);
+    }
+  }
+    }
