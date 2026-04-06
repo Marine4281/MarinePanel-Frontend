@@ -1,281 +1,185 @@
+//src/components/ProviderServiceTable.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
-export default function ProviderServiceTable({
-  services: fetchedServices = [],
-  provider,
-}) {
-  const [services, setServices] = useState([]);
-  const [selected, setSelected] = useState([]);
+const ProviderServiceTable = ({ services, providerProfileId }) => {
+  const [existingServices, setExistingServices] = useState([]);
+  const [loadingImport, setLoadingImport] = useState(null);
 
-  const loadSavedServices = async () => {
+  /* =========================================
+  LOAD EXISTING SERVICES (FROM YOUR SYSTEM)
+  ========================================= */
+  const loadExistingServices = async () => {
     try {
-      const { data } = await API.get("/provider/services/saved");
-      setServices(data);
+      const { data } = await API.get("/admin/services");
+      setExistingServices(data);
     } catch (error) {
       console.error(error);
     }
   };
 
   useEffect(() => {
-    loadSavedServices();
+    loadExistingServices();
   }, []);
 
-  useEffect(() => {
-    if (fetchedServices.length > 0) {
-      setServices(fetchedServices);
-    }
-  }, [fetchedServices]);
+  /* =========================================
+  CHECK IF SERVICE ALREADY IMPORTED
+  ========================================= */
+  const findExisting = (providerServiceId) => {
+    return existingServices.find(
+      (s) =>
+        s.providerServiceId === String(providerServiceId) &&
+        s.providerProfileId?._id === providerProfileId
+    );
+  };
 
-  const toggleService = async (id) => {
+  /* =========================================
+  IMPORT SERVICE
+  ========================================= */
+  const importService = async (service) => {
     try {
-      await API.patch(`/provider/services/${id}/toggle`);
-      toast.success("Service status updated");
-      loadSavedServices();
-    } catch {
-      toast.error("Failed to update service");
-    }
-  };
+      setLoadingImport(service.service);
 
-  const deleteService = async (id) => {
-    if (!window.confirm("Delete this service?")) return;
-
-    try {
-      await API.delete(`/provider/services/${id}`);
-      toast.success("Service deleted");
-      loadSavedServices();
-    } catch {
-      toast.error("Delete failed");
-    }
-  };
-
-  /* -------------------------
-     Selection Logic
-  ------------------------- */
-
-  const getId = (service) =>
-    service.service || service.providerServiceId;
-
-  const toggleSelect = (service) => {
-    const id = getId(service);
-
-    const exists = selected.find((s) => getId(s) === id);
-
-    if (exists) {
-      setSelected(selected.filter((s) => getId(s) !== id));
-    } else {
-      setSelected([...selected, service]);
-    }
-  };
-
-  const selectCategory = (items) => {
-    const newSelected = [...selected];
-
-    items.forEach((item) => {
-      const id = getId(item);
-
-      if (!newSelected.find((s) => getId(s) === id)) {
-        newSelected.push(item);
-      }
-    });
-
-    setSelected(newSelected);
-  };
-
-  /* -------------------------
-     Import Selected
-  ------------------------- */
-
-  const importSelected = async () => {
-    if (selected.length === 0) {
-      toast.error("No services selected");
-      return;
-    }
-
-    try {
-      await API.post("/provider/import-selected", {
-        provider,
-        services: selected.map((s) => ({
-          service: getId(s),
-          name: s.name,
-          category: s.category,
-          rate: Number(s.rate),
-          min: Number(s.min),
-          max: Number(s.max),
-        })),
+      await API.post("/admin/services/import", {
+        name: service.name,
+        category: service.category,
+        rate: service.rate,
+        min: service.min,
+        max: service.max,
+        providerServiceId: service.service,
+        providerProfileId,
+        platform: service.platform || "General",
       });
 
-      toast.success("Selected services imported");
+      toast.success("Imported successfully");
+      loadExistingServices();
 
-      setSelected([]);
-
-      loadSavedServices();
-    } catch {
-      toast.error("Import failed");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Import failed");
+    } finally {
+      setLoadingImport(null);
     }
   };
 
-  /* -------------------------
-     Import Category
-  ------------------------- */
-
-  const importCategory = async (category, items) => {
+  /* =========================================
+  UPDATE RATE
+  ========================================= */
+  const updateRate = async (existing, newRate) => {
     try {
-      await API.post("/provider/import-category", {
-        provider,
-        category,
-        services: items.map((s) => ({
-          service: getId(s),
-          name: s.name,
-          category: s.category,
-          rate: Number(s.rate),
-          min: Number(s.min),
-          max: Number(s.max),
-        })),
+      await API.put(`/admin/services/${existing._id}`, {
+        rate: newRate,
       });
 
-      toast.success(`${category} imported`);
+      toast.success("Rate updated");
+      loadExistingServices();
 
-      loadSavedServices();
-    } catch {
-      toast.error("Category import failed");
+    } catch (error) {
+      toast.error("Failed to update rate");
     }
   };
-
-  const grouped = services.reduce((acc, service) => {
-    const category = service.category || "Other";
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(service);
-    return acc;
-  }, {});
 
   return (
-    <div className="bg-white shadow rounded-lg p-4">
+    <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-100 text-gray-600 text-xs uppercase">
+          <tr>
+            <th className="p-3 text-left">ID</th>
+            <th className="p-3 text-left">Service</th>
+            <th className="p-3 text-left">Category</th>
+            <th className="p-3 text-left">Rate</th>
+            <th className="p-3 text-left">Min</th>
+            <th className="p-3 text-left">Max</th>
+            <th className="p-3 text-left">Status</th>
+            <th className="p-3 text-left">Action</th>
+          </tr>
+        </thead>
 
-      {/* Import Selected Button */}
+        <tbody>
+          {services.map((s) => {
+            const existing = findExisting(s.service);
 
-      {selected.length > 0 && (
-        <div className="mb-4">
-          <button
-            onClick={importSelected}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Import Selected ({selected.length})
-          </button>
-        </div>
-      )}
+            const newRate = Number(s.rate);
+            const oldRate = existing?.lastSyncedRate || existing?.rate || 0;
 
-      {Object.keys(grouped).length === 0 && (
-        <p className="text-gray-500">No services found</p>
-      )}
+            const rateDiff = existing ? newRate - oldRate : 0;
 
-      {Object.entries(grouped).map(([category, items]) => (
-        <div key={category} className="mb-6">
+            return (
+              <tr key={s.service} className="border-t hover:bg-gray-50">
 
-          {/* Category Header */}
+                <td className="p-3">{s.service}</td>
 
-          <div className="flex justify-between items-center mb-2 border-b pb-1">
-            <h2 className="text-lg font-semibold">{category}</h2>
+                <td className="p-3">{s.name}</td>
 
-            <div className="flex gap-2">
+                <td className="p-3">{s.category}</td>
 
-              <button
-                onClick={() => selectCategory(items)}
-                className="bg-gray-200 px-3 py-1 rounded text-sm"
-              >
-                Select Category
-              </button>
+                {/* RATE */}
+                <td className="p-3 font-medium">
+                  ${newRate.toFixed(4)}
 
-              <button
-                onClick={() => importCategory(category, items)}
-                className="bg-green-600 text-white px-3 py-1 rounded text-sm"
-              >
-                Import Category
-              </button>
+                  {existing && rateDiff !== 0 && (
+                    <span
+                      className={`ml-2 text-xs font-bold ${
+                        rateDiff > 0 ? "text-red-500" : "text-green-600"
+                      }`}
+                    >
+                      {rateDiff > 0 ? "+" : ""}
+                      {rateDiff.toFixed(4)}
+                    </span>
+                  )}
+                </td>
 
-            </div>
-          </div>
+                <td className="p-3">{s.min}</td>
+                <td className="p-3">{s.max}</td>
 
-          <table className="w-full text-sm border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2"></th>
-                <th className="p-2 text-left">Service</th>
-                <th className="p-2">Rate</th>
-                <th className="p-2">Min</th>
-                <th className="p-2">Max</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Actions</th>
+                {/* STATUS */}
+                <td className="p-3">
+                  {existing ? (
+                    <span className="text-green-600 font-semibold">
+                      Imported
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">New</span>
+                  )}
+                </td>
+
+                {/* ACTION */}
+                <td className="p-3 flex gap-2">
+
+                  {!existing && (
+                    <button
+                      onClick={() => importService(s)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
+                    >
+                      {loadingImport === s.service
+                        ? "Importing..."
+                        : "Import"}
+                    </button>
+                  )}
+
+                  {existing && rateDiff !== 0 && (
+                    <button
+                      onClick={() => updateRate(existing, newRate)}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded text-xs"
+                    >
+                      Update Rate
+                    </button>
+                  )}
+
+                  {existing && rateDiff === 0 && (
+                    <span className="text-gray-400 text-xs">
+                      Up to date
+                    </span>
+                  )}
+
+                </td>
               </tr>
-            </thead>
-
-            <tbody>
-              {items.map((service) => {
-
-                const id = getId(service);
-
-                const checked = selected.find((s) => getId(s) === id);
-
-                return (
-                  <tr
-                    key={service._id || id}
-                    className="border-t"
-                  >
-
-                    {/* Checkbox */}
-
-                    <td className="text-center">
-                      <input
-                        type="checkbox"
-                        checked={!!checked}
-                        onChange={() => toggleSelect(service)}
-                      />
-                    </td>
-
-                    <td className="p-2">{service.name}</td>
-
-                    <td className="text-center">{service.rate}</td>
-
-                    <td className="text-center">{service.min}</td>
-
-                    <td className="text-center">{service.max}</td>
-
-                    <td className="text-center">
-                      {service._id ? (
-                        <button
-                          onClick={() => toggleService(service._id)}
-                          className={`px-3 py-1 rounded text-white ${
-                            service.status
-                              ? "bg-green-500"
-                              : "bg-gray-400"
-                          }`}
-                        >
-                          {service.status ? "Enabled" : "Disabled"}
-                        </button>
-                      ) : (
-                        <span className="text-gray-400">Not saved</span>
-                      )}
-                    </td>
-
-                    <td className="text-center">
-                      {service._id && (
-                        <button
-                          onClick={() => deleteService(service._id)}
-                          className="bg-red-500 text-white px-3 py-1 rounded"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </td>
-
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ))}
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
-    }
+};
+
+export default ProviderServiceTable;
