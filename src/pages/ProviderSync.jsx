@@ -13,19 +13,10 @@ export default function ProviderServices() {
   const [savedServices, setSavedServices] = useState([]);
 
   const [categories, setCategories] = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectAllCategories, setSelectAllCategories] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("");
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Modal
-  const [showModal, setShowModal] = useState(false);
-  const [newProvider, setNewProvider] = useState({
-    name: "",
-    apiUrl: "",
-    apiKey: "",
-  });
 
   /* ================= LOAD PROVIDERS ================= */
   const loadProviders = async () => {
@@ -41,22 +32,9 @@ export default function ProviderServices() {
     loadProviders();
   }, []);
 
-  /* ================= SELECTED PROVIDER ================= */
   const selectedProvider = providers.find(
     (p) => p._id === selectedProviderId
   );
-
-  /* ================= LOAD SAVED ================= */
-  const loadSaved = async (providerId) => {
-    try {
-      const { data } = await API.get("/provider/services/saved", {
-        params: { providerProfileId: providerId },
-      });
-      setSavedServices(data);
-    } catch {
-      toast.error("Failed to load saved services");
-    }
-  };
 
   /* ================= FETCH SERVICES ================= */
   const fetchServices = async () => {
@@ -79,7 +57,6 @@ export default function ProviderServices() {
 
       setSavedServices(saved);
 
-      // Map saved for fast lookup
       const savedMap = new Map();
       for (const s of saved) {
         savedMap.set(String(s.providerServiceId), s);
@@ -91,10 +68,15 @@ export default function ProviderServices() {
         return {
           ...s,
           category: s.category || "Uncategorized",
-          description: s.description || "",
           imported: !!existing,
           deleted: existing?.deleted || false,
         };
+      });
+
+      // 🔥 SORT: Imported first
+      normalized.sort((a, b) => {
+        if (a.imported === b.imported) return 0;
+        return a.imported ? -1 : 1;
       });
 
       setServices(normalized);
@@ -104,8 +86,7 @@ export default function ProviderServices() {
       ];
 
       setCategories(uniqueCategories);
-      setSelectedCategories(uniqueCategories);
-      setSelectAllCategories(true);
+      setActiveCategory(uniqueCategories[0] || "");
 
       toast.success(`Fetched ${fetched.length} services`);
     } catch {
@@ -115,34 +96,10 @@ export default function ProviderServices() {
     }
   };
 
-  /* ================= CATEGORY FILTER ================= */
-  const toggleCategory = (cat) => {
-    if (selectedCategories.includes(cat)) {
-      const updated = selectedCategories.filter((c) => c !== cat);
-      setSelectedCategories(updated);
-      setSelectAllCategories(false);
-    } else {
-      const updated = [...selectedCategories, cat];
-      setSelectedCategories(updated);
-      setSelectAllCategories(updated.length === categories.length);
-    }
-  };
-
-  const toggleAllCategories = () => {
-    if (selectAllCategories) {
-      setSelectedCategories([]);
-      setSelectAllCategories(false);
-    } else {
-      setSelectedCategories(categories);
-      setSelectAllCategories(true);
-    }
-  };
-
-  /* ================= FILTERED ================= */
+  /* ================= FILTER ================= */
   const filteredServices = useMemo(() => {
     return services.filter((s) => {
-      if (!selectAllCategories && !selectedCategories.includes(s.category))
-        return false;
+      if (activeCategory && s.category !== activeCategory) return false;
 
       if (search) {
         const q = search.toLowerCase();
@@ -150,8 +107,6 @@ export default function ProviderServices() {
         if (
           !(
             s.name?.toLowerCase().includes(q) ||
-            s.category?.toLowerCase().includes(q) ||
-            String(s.rate).includes(q) ||
             String(s.service).includes(q)
           )
         ) {
@@ -161,40 +116,19 @@ export default function ProviderServices() {
 
       return true;
     });
-  }, [services, search, selectedCategories, selectAllCategories]);
-
-  /* ================= SAVE PROVIDER ================= */
-  const saveProvider = async () => {
-    const { name, apiUrl, apiKey } = newProvider;
-
-    if (!name || !apiUrl || !apiKey) {
-      toast.error("All fields required");
-      return;
-    }
-
-    try {
-      await API.post("/provider/profiles", newProvider);
-
-      toast.success("Provider saved");
-      setShowModal(false);
-      setNewProvider({ name: "", apiUrl: "", apiKey: "" });
-      loadProviders();
-    } catch {
-      toast.error("Failed to save provider");
-    }
-  };
+  }, [services, search, activeCategory]);
 
   return (
     <div className="flex">
       <Sidebar />
 
-      <div className="flex-1 p-6 relative">
+      <div className="flex-1 p-6">
         <h1 className="text-2xl font-bold mb-6">
           Provider Sync Dashboard
         </h1>
 
-        {/* PROVIDER BAR */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6 flex flex-wrap gap-4 items-center">
+        {/* TOP BAR */}
+        <div className="bg-white shadow rounded-lg p-6 mb-6 flex gap-4 items-center">
           <select
             value={selectedProviderId}
             onChange={(e) => setSelectedProviderId(e.target.value)}
@@ -209,13 +143,6 @@ export default function ProviderServices() {
           </select>
 
           <button
-            onClick={() => setShowModal(true)}
-            className="bg-purple-600 text-white px-4 py-2 rounded"
-          >
-            + Add Provider
-          </button>
-
-          <button
             onClick={fetchServices}
             disabled={loading}
             className={`px-4 py-2 rounded text-white ${
@@ -226,105 +153,55 @@ export default function ProviderServices() {
           </button>
         </div>
 
-        {/* CATEGORY FILTER */}
-        {categories.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-4 mb-4">
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={toggleAllCategories}
-                className="px-3 py-1 bg-gray-200 rounded"
-              >
-                {selectAllCategories ? "Unselect All" : "Select All"}
-              </button>
+        {/* MAIN LAYOUT */}
+        <div className="flex gap-6">
+          {/* CATEGORY SIDEBAR */}
+          <div className="w-64 bg-white shadow rounded-lg p-4 h-fit">
+            <h3 className="font-semibold mb-3">Categories</h3>
 
+            <div className="space-y-2 max-h-[500px] overflow-auto">
               {categories.map((cat) => (
-                <label key={cat} className="text-sm flex gap-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes(cat)}
-                    onChange={() => toggleCategory(cat)}
-                  />
+                <div
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3 py-2 rounded cursor-pointer text-sm ${
+                    activeCategory === cat
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-100"
+                  }`}
+                >
                   {cat}
-                </label>
+                </div>
               ))}
             </div>
           </div>
-        )}
 
-        {/* SEARCH */}
-        <input
-          type="text"
-          placeholder="Search services..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border p-2 rounded w-full mb-4"
-        />
+          {/* RIGHT CONTENT */}
+          <div className="flex-1">
+            {/* SEARCH */}
+            <input
+              type="text"
+              placeholder="Search in category..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border p-2 rounded w-full mb-4"
+            />
 
-        {/* TABLE */}
-        <ProviderServiceTable
-          services={filteredServices}
-          providerProfileId={selectedProviderId}
-        />
+            {/* TABLE */}
+            <ProviderServiceTable
+              services={filteredServices}
+              providerProfileId={selectedProviderId}
+            />
+          </div>
+        </div>
 
-        {/* LOADING */}
+        {/* LOADER */}
         {loading && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+          <div className="fixed inset-0 bg-white/70 flex items-center justify-center">
             <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
       </div>
-
-      {/* MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl w-[400px]">
-            <h2 className="text-xl font-bold mb-4">Add Provider</h2>
-
-            <input
-              placeholder="Provider Name"
-              value={newProvider.name}
-              onChange={(e) =>
-                setNewProvider({ ...newProvider, name: e.target.value })
-              }
-              className="border p-2 rounded w-full mb-3"
-            />
-
-            <input
-              placeholder="API URL"
-              value={newProvider.apiUrl}
-              onChange={(e) =>
-                setNewProvider({ ...newProvider, apiUrl: e.target.value })
-              }
-              className="border p-2 rounded w-full mb-3"
-            />
-
-            <input
-              placeholder="API Key"
-              value={newProvider.apiKey}
-              onChange={(e) =>
-                setNewProvider({ ...newProvider, apiKey: e.target.value })
-              }
-              className="border p-2 rounded w-full mb-4"
-            />
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="bg-gray-300 px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={saveProvider}
-                className="bg-green-600 text-white px-4 py-2 rounded"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
-        }
+                   }
