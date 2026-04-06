@@ -1,330 +1,276 @@
-// src/pages/ProviderSync.jsx
-import { useState, useEffect, useMemo } from "react";
+// src/components/ProviderServiceTable.jsx
+import { useEffect, useState, useMemo } from "react";
 import API from "../api/axios";
-import Sidebar from "../components/Sidebar";
-import ProviderServiceTable from "../components/ProviderServiceTable";
 import toast from "react-hot-toast";
 
-export default function ProviderServices() {
-  const [selectedProviderId, setSelectedProviderId] = useState("");
-  const [providers, setProviders] = useState([]);
-
-  const [services, setServices] = useState([]);
+const ProviderServiceTable = ({ services, providerProfileId }) => {
   const [savedServices, setSavedServices] = useState([]);
+  const [expanded, setExpanded] = useState({});
+  const [selected, setSelected] = useState({});
+  const [loading, setLoading] = useState(null);
+  const [viewDescription, setViewDescription] = useState(null);
 
-  const [categories, setCategories] = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectAllCategories, setSelectAllCategories] = useState(true);
+  /* ================= LOAD SAVED ================= */
+  const loadSaved = async () => {
+    if (!providerProfileId) return;
 
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Modal
-  const [showModal, setShowModal] = useState(false);
-  const [newProvider, setNewProvider] = useState({
-    name: "",
-    apiUrl: "",
-    apiKey: "",
-  });
-
-  /* ================= LOAD PROVIDERS ================= */
-  const loadProviders = async () => {
     try {
-      const { data } = await API.get("/provider/profiles");
-      setProviders(data);
-    } catch {
-      toast.error("Failed to load providers");
-    }
+      const { data } = await API.get("/provider/services/saved", {
+        params: { providerProfileId },
+      });
+      setSavedServices(data);
+    } catch {}
   };
 
   useEffect(() => {
-    loadProviders();
-  }, []);
+    loadSaved();
+  }, [providerProfileId]);
 
-  /* ================= SELECTED PROVIDER ================= */
-  const selectedProvider = providers.find(
-    (p) => p._id === selectedProviderId
-  );
+  /* ================= MAP ================= */
+  const savedMap = useMemo(() => {
+    const map = new Map();
+    savedServices.forEach((s) =>
+      map.set(String(s.providerServiceId), s)
+    );
+    return map;
+  }, [savedServices]);
 
-  /* ================= LOAD SAVED ================= */
-  const loadSaved = async (providerId) => {
-    try {
-      const { data } = await API.get("/provider/services/saved", {
-        params: { providerProfileId: providerId },
-      });
-      setSavedServices(data);
-    } catch {
-      toast.error("Failed to load saved services");
-    }
-  };
+  /* ================= GROUP ================= */
+  const grouped = useMemo(() => {
+    const map = {};
 
-  /* ================= FETCH SERVICES ================= */
-  const fetchServices = async () => {
-    if (!selectedProvider) {
-      toast.error("Select provider");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const [{ data: fetched }, { data: saved }] = await Promise.all([
-        API.post("/provider/services", {
-          provider: selectedProvider.name,
-        }),
-        API.get("/provider/services/saved", {
-          params: { providerProfileId: selectedProviderId },
-        }),
-      ]);
-
-      setSavedServices(saved);
-
-      // Map saved for fast lookup
-      const savedMap = new Map();
-      for (const s of saved) {
-        savedMap.set(String(s.providerServiceId), s);
-      }
-
-      const normalized = fetched.map((s) => {
-        const existing = savedMap.get(String(s.service));
-
-        return {
-          ...s,
-          category: s.category || "Uncategorized",
-          description: s.description || "",
-          imported: !!existing,
-          deleted: existing?.deleted || false,
-        };
-      });
-
-      setServices(normalized);
-
-      const uniqueCategories = [
-        ...new Set(normalized.map((s) => s.category)),
-      ];
-
-      setCategories(uniqueCategories);
-      setSelectedCategories(uniqueCategories);
-      setSelectAllCategories(true);
-
-      toast.success(`Fetched ${fetched.length} services`);
-    } catch {
-      toast.error("Failed to fetch services");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ================= CATEGORY FILTER ================= */
-  const toggleCategory = (cat) => {
-    if (selectedCategories.includes(cat)) {
-      const updated = selectedCategories.filter((c) => c !== cat);
-      setSelectedCategories(updated);
-      setSelectAllCategories(false);
-    } else {
-      const updated = [...selectedCategories, cat];
-      setSelectedCategories(updated);
-      setSelectAllCategories(updated.length === categories.length);
-    }
-  };
-
-  const toggleAllCategories = () => {
-    if (selectAllCategories) {
-      setSelectedCategories([]);
-      setSelectAllCategories(false);
-    } else {
-      setSelectedCategories(categories);
-      setSelectAllCategories(true);
-    }
-  };
-
-  /* ================= FILTERED ================= */
-  const filteredServices = useMemo(() => {
-    return services.filter((s) => {
-      if (!selectAllCategories && !selectedCategories.includes(s.category))
-        return false;
-
-      if (search) {
-        const q = search.toLowerCase();
-
-        if (
-          !(
-            s.name?.toLowerCase().includes(q) ||
-            s.category?.toLowerCase().includes(q) ||
-            String(s.rate).includes(q) ||
-            String(s.service).includes(q)
-          )
-        ) {
-          return false;
-        }
-      }
-
-      return true;
+    services.forEach((s) => {
+      const cat = s.category || "Uncategorized";
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(s);
     });
-  }, [services, search, selectedCategories, selectAllCategories]);
 
-  /* ================= SAVE PROVIDER ================= */
-  const saveProvider = async () => {
-    const { name, apiUrl, apiKey } = newProvider;
+    return map;
+  }, [services]);
 
-    if (!name || !apiUrl || !apiKey) {
-      toast.error("All fields required");
-      return;
+  /* ================= INIT COLLAPSE ================= */
+  useEffect(() => {
+    const initial = {};
+    const keys = Object.keys(grouped);
+
+    keys.forEach((cat, i) => {
+      initial[cat] = i === 0; // only first open
+    });
+
+    setExpanded(initial);
+  }, [services]);
+
+  /* ================= ACTIONS ================= */
+  const toggleCategory = (cat) => {
+    setExpanded((p) => ({ ...p, [cat]: !p[cat] }));
+  };
+
+  const toggleService = (id) => {
+    setSelected((p) => ({ ...p, [id]: !p[id] }));
+  };
+
+  const importCategory = async (category) => {
+    try {
+      setLoading(category);
+
+      await API.post("/provider/import-category", {
+        providerProfileId,
+        category,
+      });
+
+      toast.success(`Imported ${category}`);
+      loadSaved();
+    } catch {
+      toast.error("Failed");
+    } finally {
+      setLoading(null);
     }
+  };
+
+  const importSelected = async () => {
+    const ids = Object.keys(selected).filter((k) => selected[k]);
+    if (!ids.length) return toast.error("Nothing selected");
 
     try {
-      await API.post("/provider/profiles", newProvider);
+      setLoading("bulk");
 
-      toast.success("Provider saved");
-      setShowModal(false);
-      setNewProvider({ name: "", apiUrl: "", apiKey: "" });
-      loadProviders();
+      await API.post("/provider/import-selected", {
+        providerProfileId,
+        serviceIds: ids,
+      });
+
+      toast.success("Imported selected");
+      loadSaved();
     } catch {
-      toast.error("Failed to save provider");
+      toast.error("Failed");
+    } finally {
+      setLoading(null);
     }
   };
 
   return (
-    <div className="flex">
-      <Sidebar />
-
-      <div className="flex-1 p-6 relative">
-        <h1 className="text-2xl font-bold mb-6">
-          Provider Sync Dashboard
-        </h1>
-
-        {/* PROVIDER BAR */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6 flex flex-wrap gap-4 items-center">
-          <select
-            value={selectedProviderId}
-            onChange={(e) => setSelectedProviderId(e.target.value)}
-            className="border p-2 rounded w-64"
-          >
-            <option value="">Select Provider</option>
-            {providers.map((p) => (
-              <option key={p._id} value={p._id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-purple-600 text-white px-4 py-2 rounded"
-          >
-            + Add Provider
-          </button>
-
-          <button
-            onClick={fetchServices}
-            disabled={loading}
-            className={`px-4 py-2 rounded text-white ${
-              loading ? "bg-blue-300" : "bg-blue-600"
-            }`}
-          >
-            {loading ? "Syncing..." : "Fetch & Sync"}
-          </button>
-        </div>
-
-        {/* CATEGORY FILTER */}
-        {categories.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-4 mb-4">
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={toggleAllCategories}
-                className="px-3 py-1 bg-gray-200 rounded"
-              >
-                {selectAllCategories ? "Unselect All" : "Select All"}
-              </button>
-
-              {categories.map((cat) => (
-                <label key={cat} className="text-sm flex gap-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes(cat)}
-                    onChange={() => toggleCategory(cat)}
-                  />
-                  {cat}
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* SEARCH */}
-        <input
-          type="text"
-          placeholder="Search services..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border p-2 rounded w-full mb-4"
-        />
-
-        {/* TABLE */}
-        <ProviderServiceTable
-          services={filteredServices}
-          providerProfileId={selectedProviderId}
-        />
-
-        {/* LOADING */}
-        {loading && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
+    <>
+      {/* BULK ACTION */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={importSelected}
+          className="bg-blue-600 text-white px-4 py-2 rounded text-sm shadow"
+        >
+          {loading === "bulk" ? "Importing..." : "Import Selected"}
+        </button>
       </div>
 
-      {/* MODAL */}
-      {showModal && (
+      {/* CATEGORY LIST */}
+      <div className="space-y-6">
+        {Object.entries(grouped).map(([category, list]) => {
+          return (
+            <div
+              key={category}
+              className="border rounded-2xl shadow-sm bg-white"
+            >
+              {/* HEADER */}
+              <div className="flex justify-between items-center px-5 py-4 border-b bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => toggleCategory(category)}
+                    className="text-lg font-semibold"
+                  >
+                    {expanded[category] ? "−" : "+"}
+                  </button>
+
+                  <h2 className="font-bold text-gray-800 text-base">
+                    {category}
+                  </h2>
+
+                  <span className="text-xs text-gray-500">
+                    ({list.length} services)
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => importCategory(category)}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-xs"
+                >
+                  {loading === category
+                    ? "Importing..."
+                    : "Import Category"}
+                </button>
+              </div>
+
+              {/* TABLE */}
+              {expanded[category] && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 text-gray-600 text-xs uppercase">
+                      <tr>
+                        <th className="p-3"></th>
+                        <th className="p-3 text-left">ID</th>
+                        <th className="p-3 text-left">Service</th>
+                        <th className="p-3 text-left">Rate</th>
+                        <th className="p-3 text-left">Min</th>
+                        <th className="p-3 text-left">Max</th>
+                        <th className="p-3 text-left">Status</th>
+                        <th className="p-3 text-left">Action</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {list.map((s) => {
+                        const saved = savedMap.get(
+                          String(s.service)
+                        );
+
+                        const status = saved
+                          ? saved.deleted
+                            ? "Deleted"
+                            : "Imported"
+                          : "New";
+
+                        return (
+                          <tr
+                            key={s.service}
+                            className="border-t hover:bg-gray-50"
+                          >
+                            <td className="p-3">
+                              <input
+                                type="checkbox"
+                                checked={!!selected[s.service]}
+                                onChange={() =>
+                                  toggleService(s.service)
+                                }
+                              />
+                            </td>
+
+                            <td className="p-3">{s.service}</td>
+                            <td className="p-3">{s.name}</td>
+                            <td className="p-3 font-medium">
+                              ${Number(s.rate).toFixed(4)}
+                            </td>
+                            <td className="p-3">{s.min}</td>
+                            <td className="p-3">{s.max}</td>
+
+                            <td className="p-3">
+                              <span
+                                className={`text-xs font-semibold ${
+                                  status === "Imported"
+                                    ? "text-green-600"
+                                    : status === "Deleted"
+                                    ? "text-red-500"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                {status}
+                              </span>
+                            </td>
+
+                            <td className="p-3 flex gap-2">
+                              {s.description && (
+                                <button
+                                  onClick={() =>
+                                    setViewDescription(s)
+                                  }
+                                  className="bg-gray-200 px-2 py-1 text-xs rounded"
+                                >
+                                  View
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* DESCRIPTION MODAL */}
+      {viewDescription && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl w-[400px]">
-            <h2 className="text-xl font-bold mb-4">Add Provider</h2>
+          <div className="bg-white p-6 rounded-xl w-[500px]">
+            <h2 className="font-bold mb-2">
+              {viewDescription.name}
+            </h2>
+            <p className="text-sm text-gray-700">
+              {viewDescription.description}
+            </p>
 
-            <input
-              placeholder="Provider Name"
-              value={newProvider.name}
-              onChange={(e) =>
-                setNewProvider({ ...newProvider, name: e.target.value })
-              }
-              className="border p-2 rounded w-full mb-3"
-            />
-
-            <input
-              placeholder="API URL"
-              value={newProvider.apiUrl}
-              onChange={(e) =>
-                setNewProvider({ ...newProvider, apiUrl: e.target.value })
-              }
-              className="border p-2 rounded w-full mb-3"
-            />
-
-            <input
-              placeholder="API Key"
-              value={newProvider.apiKey}
-              onChange={(e) =>
-                setNewProvider({ ...newProvider, apiKey: e.target.value })
-              }
-              className="border p-2 rounded w-full mb-4"
-            />
-
-            <div className="flex justify-end gap-2">
+            <div className="text-right mt-4">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => setViewDescription(null)}
                 className="bg-gray-300 px-4 py-2 rounded"
               >
-                Cancel
-              </button>
-
-              <button
-                onClick={saveProvider}
-                className="bg-green-600 text-white px-4 py-2 rounded"
-              >
-                Save
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
-          }
+};
+
+export default ProviderServiceTable;
