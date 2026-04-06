@@ -11,6 +11,7 @@ export default function ProviderServices() {
   const [groupedServices, setGroupedServices] = useState({});
   const [selectedCategories, setSelectedCategories] = useState({});
   const [selectedServices, setSelectedServices] = useState({});
+  const [expandedServices, setExpandedServices] = useState({});
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -61,9 +62,10 @@ export default function ProviderServices() {
       setServices(data);
       setGroupedServices(grouped);
 
-      // Reset selections
+      // Reset selections and expansion
       setSelectedCategories({});
       setSelectedServices({});
+      setExpandedServices({});
 
       toast.success(`Fetched ${data.length} services`);
     } catch (error) {
@@ -92,6 +94,14 @@ export default function ProviderServices() {
     setSelectedServices({
       ...selectedServices,
       [serviceId]: !selectedServices[serviceId],
+    });
+  };
+
+  /* ================= TOGGLE EXPAND DESCRIPTION ================= */
+  const toggleExpand = (serviceId) => {
+    setExpandedServices({
+      ...expandedServices,
+      [serviceId]: !expandedServices[serviceId],
     });
   };
 
@@ -145,7 +155,8 @@ export default function ProviderServices() {
     return (
       s.name?.toLowerCase().includes(q) ||
       s.category?.toLowerCase().includes(q) ||
-      String(s.rate).includes(q)
+      String(s.rate).includes(q) ||
+      s.service?.toLowerCase().includes(q)
     );
   });
 
@@ -227,25 +238,48 @@ export default function ProviderServices() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {services.map((s) => (
                 <div
                   key={s.service}
-                  className={`p-2 border rounded flex justify-between items-center ${
+                  className={`p-3 border rounded flex flex-col justify-between ${
                     selectedServices[s.service] ? "bg-green-100" : "bg-white"
                   }`}
                 >
-                  <div>
-                    <div className="font-medium">{s.name}</div>
-                    <div className="text-xs text-gray-600">
-                      Rate: {s.rate} | {s.imported ? "Imported" : "New"}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">{s.name}</div>
+                      <div className="text-xs text-gray-600">
+                        Rate: {s.rate} | Deduction: {s.rateDeduction || 0} | {s.imported ? "Imported" : "New"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ID: {s.serviceId}
+                      </div>
+                    </div>
+                    <div>
+                      <input
+                        type="checkbox"
+                        checked={!!selectedServices[s.service]}
+                        onChange={() => toggleService(s.service)}
+                      />
                     </div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={!!selectedServices[s.service]}
-                    onChange={() => toggleService(s.service)}
-                  />
+                  {/* Description Collapse */}
+                  {s.description && (
+                    <div className="mt-2">
+                      <button
+                        onClick={() => toggleExpand(s.service)}
+                        className="text-blue-600 text-xs underline"
+                      >
+                        {expandedServices[s.service] ? "Hide Details" : "View Details"}
+                      </button>
+                      {expandedServices[s.service] && (
+                        <div className="text-xs text-gray-700 mt-1">
+                          {s.description}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -265,9 +299,7 @@ export default function ProviderServices() {
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-40">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm text-gray-700 font-medium">
-                Processing...
-              </p>
+              <p className="text-sm text-gray-700 font-medium">Processing...</p>
             </div>
           </div>
         )}
