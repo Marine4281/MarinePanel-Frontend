@@ -5,118 +5,70 @@ import toast from "react-hot-toast";
 
 const ProviderServiceTable = ({ services, providerProfileId }) => {
   const [savedServices, setSavedServices] = useState([]);
+  const [expanded, setExpanded] = useState({});
+  const [selected, setSelected] = useState({});
   const [loading, setLoading] = useState(null);
-
-  const [expandedCategories, setExpandedCategories] = useState({});
-  const [selectedServices, setSelectedServices] = useState({});
   const [viewDescription, setViewDescription] = useState(null);
 
-  /* =========================================
-  LOAD SAVED SERVICES
-  ========================================= */
+  /* ================= LOAD SAVED ================= */
   const loadSaved = async () => {
+    if (!providerProfileId) return;
+
     try {
       const { data } = await API.get("/provider/services/saved", {
         params: { providerProfileId },
       });
       setSavedServices(data);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
   };
 
   useEffect(() => {
-    if (providerProfileId) loadSaved();
+    loadSaved();
   }, [providerProfileId]);
 
-  /* =========================================
-  MAP SAVED (O1 lookup)
-  ========================================= */
+  /* ================= MAP ================= */
   const savedMap = useMemo(() => {
     const map = new Map();
-    for (const s of savedServices) {
-      map.set(String(s.providerServiceId), s);
-    }
+    savedServices.forEach((s) =>
+      map.set(String(s.providerServiceId), s)
+    );
     return map;
   }, [savedServices]);
 
-  /* =========================================
-  GROUP BY CATEGORY
-  ========================================= */
+  /* ================= GROUP ================= */
   const grouped = useMemo(() => {
     const map = {};
 
-    for (const s of services) {
+    services.forEach((s) => {
       const cat = s.category || "Uncategorized";
       if (!map[cat]) map[cat] = [];
       map[cat].push(s);
-    }
+    });
 
     return map;
   }, [services]);
 
-  /* =========================================
-  TOGGLE CATEGORY
-  ========================================= */
+  /* ================= INIT COLLAPSE ================= */
+  useEffect(() => {
+    const initial = {};
+    const keys = Object.keys(grouped);
+
+    keys.forEach((cat, i) => {
+      initial[cat] = i === 0; // only first open
+    });
+
+    setExpanded(initial);
+  }, [services]);
+
+  /* ================= ACTIONS ================= */
   const toggleCategory = (cat) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [cat]: !prev[cat],
-    }));
+    setExpanded((p) => ({ ...p, [cat]: !p[cat] }));
   };
 
-  /* =========================================
-  SELECT SERVICE
-  ========================================= */
   const toggleService = (id) => {
-    setSelectedServices((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setSelected((p) => ({ ...p, [id]: !p[id] }));
   };
 
-  const toggleCategorySelection = (catServices) => {
-    const updated = { ...selectedServices };
-
-    const allSelected = catServices.every((s) => updated[s.service]);
-
-    for (const s of catServices) {
-      updated[s.service] = !allSelected;
-    }
-
-    setSelectedServices(updated);
-  };
-
-  /* =========================================
-  IMPORT SELECTED
-  ========================================= */
-  const importSelected = async () => {
-    const selected = Object.keys(selectedServices).filter(
-      (k) => selectedServices[k]
-    );
-
-    if (!selected.length) return toast.error("No services selected");
-
-    try {
-      setLoading("bulk");
-
-      await API.post("/provider/import-selected", {
-        providerProfileId,
-        serviceIds: selected,
-      });
-
-      toast.success("Imported selected services");
-      loadSaved();
-    } catch {
-      toast.error("Import failed");
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  /* =========================================
-  IMPORT CATEGORY
-  ========================================= */
   const importCategory = async (category) => {
     try {
       setLoading(category);
@@ -129,61 +81,70 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
       toast.success(`Imported ${category}`);
       loadSaved();
     } catch {
-      toast.error("Category import failed");
+      toast.error("Failed");
     } finally {
       setLoading(null);
     }
   };
 
-  /* =========================================
-  TOGGLE / DELETE
-  ========================================= */
-  const toggleStatus = async (id) => {
-    await API.patch(`/provider/services/${id}/toggle`);
-    loadSaved();
-  };
+  const importSelected = async () => {
+    const ids = Object.keys(selected).filter((k) => selected[k]);
+    if (!ids.length) return toast.error("Nothing selected");
 
-  const deleteService = async (id) => {
-    await API.delete(`/provider/services/${id}`);
-    loadSaved();
+    try {
+      setLoading("bulk");
+
+      await API.post("/provider/import-selected", {
+        providerProfileId,
+        serviceIds: ids,
+      });
+
+      toast.success("Imported selected");
+      loadSaved();
+    } catch {
+      toast.error("Failed");
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
     <>
       {/* BULK ACTION */}
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-end mb-4">
         <button
           onClick={importSelected}
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm"
+          className="bg-blue-600 text-white px-4 py-2 rounded text-sm shadow"
         >
           {loading === "bulk" ? "Importing..." : "Import Selected"}
         </button>
       </div>
 
-      {/* CATEGORY BLOCKS */}
-      <div className="space-y-4">
-        {Object.entries(grouped).map(([category, catServices]) => {
+      {/* CATEGORY LIST */}
+      <div className="space-y-6">
+        {Object.entries(grouped).map(([category, list]) => {
           return (
             <div
               key={category}
-              className="border rounded-xl overflow-hidden shadow-sm"
+              className="border rounded-2xl shadow-sm bg-white"
             >
-              {/* CATEGORY HEADER */}
-              <div className="bg-gray-100 p-4 flex justify-between items-center">
+              {/* HEADER */}
+              <div className="flex justify-between items-center px-5 py-4 border-b bg-gray-50">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => toggleCategory(category)}
-                    className="font-semibold"
+                    className="text-lg font-semibold"
                   >
-                    {expandedCategories[category] ? "▼" : "▶"} {category}
+                    {expanded[category] ? "−" : "+"}
                   </button>
 
-                  <button
-                    onClick={() => toggleCategorySelection(catServices)}
-                    className="text-xs bg-gray-200 px-2 py-1 rounded"
-                  >
-                    Select All
-                  </button>
+                  <h2 className="font-bold text-gray-800 text-base">
+                    {category}
+                  </h2>
+
+                  <span className="text-xs text-gray-500">
+                    ({list.length} services)
+                  </span>
                 </div>
 
                 <button
@@ -196,23 +157,25 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
                 </button>
               </div>
 
-              {/* SERVICES */}
-              {expandedCategories[category] && (
+              {/* TABLE */}
+              {expanded[category] && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                    <thead className="bg-gray-100 text-gray-600 text-xs uppercase">
                       <tr>
-                        <th className="p-2"></th>
-                        <th>ID</th>
-                        <th>Service</th>
-                        <th>Rate</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th className="p-3"></th>
+                        <th className="p-3 text-left">ID</th>
+                        <th className="p-3 text-left">Service</th>
+                        <th className="p-3 text-left">Rate</th>
+                        <th className="p-3 text-left">Min</th>
+                        <th className="p-3 text-left">Max</th>
+                        <th className="p-3 text-left">Status</th>
+                        <th className="p-3 text-left">Action</th>
                       </tr>
                     </thead>
 
                     <tbody>
-                      {catServices.map((s) => {
+                      {list.map((s) => {
                         const saved = savedMap.get(
                           String(s.service)
                         );
@@ -228,21 +191,25 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
                             key={s.service}
                             className="border-t hover:bg-gray-50"
                           >
-                            <td className="p-2">
+                            <td className="p-3">
                               <input
                                 type="checkbox"
-                                checked={!!selectedServices[s.service]}
+                                checked={!!selected[s.service]}
                                 onChange={() =>
                                   toggleService(s.service)
                                 }
                               />
                             </td>
 
-                            <td>{s.service}</td>
-                            <td>{s.name}</td>
-                            <td>${Number(s.rate).toFixed(4)}</td>
+                            <td className="p-3">{s.service}</td>
+                            <td className="p-3">{s.name}</td>
+                            <td className="p-3 font-medium">
+                              ${Number(s.rate).toFixed(4)}
+                            </td>
+                            <td className="p-3">{s.min}</td>
+                            <td className="p-3">{s.max}</td>
 
-                            <td>
+                            <td className="p-3">
                               <span
                                 className={`text-xs font-semibold ${
                                   status === "Imported"
@@ -256,38 +223,16 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
                               </span>
                             </td>
 
-                            <td className="flex gap-2 p-2 flex-wrap">
+                            <td className="p-3 flex gap-2">
                               {s.description && (
                                 <button
                                   onClick={() =>
                                     setViewDescription(s)
                                   }
-                                  className="text-xs bg-gray-200 px-2 py-1 rounded"
+                                  className="bg-gray-200 px-2 py-1 text-xs rounded"
                                 >
                                   View
                                 </button>
-                              )}
-
-                              {saved && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      toggleStatus(saved._id)
-                                    }
-                                    className="text-xs bg-yellow-500 text-white px-2 py-1 rounded"
-                                  >
-                                    Toggle
-                                  </button>
-
-                                  <button
-                                    onClick={() =>
-                                      deleteService(saved._id)
-                                    }
-                                    className="text-xs bg-red-500 text-white px-2 py-1 rounded"
-                                  >
-                                    Delete
-                                  </button>
-                                </>
                               )}
                             </td>
                           </tr>
