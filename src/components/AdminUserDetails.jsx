@@ -1,3 +1,4 @@
+// src/components/AdminUserDetails.jsx
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axios";
@@ -155,7 +156,8 @@ const AdminUserDetails = () => {
   if (loading) return <div className="p-6 text-center">Loading user...</div>;
   if (!user) return <div className="p-6 text-center">User not found</div>;
 
-  const isOnline = user.lastSeenFormatted === "Online";
+  // ✅ FIXED HERE
+  const isOnline = user.lastSeen === "Online";
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -189,7 +191,7 @@ const AdminUserDetails = () => {
               }`}
             />
             <span className="text-sm text-gray-600">
-              {user.lastSeenFormatted || "Offline"}
+              {user.lastSeen || "Offline"}
             </span>
           </div>
 
