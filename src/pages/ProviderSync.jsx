@@ -2,13 +2,15 @@
 import { useState, useEffect } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
-import ProviderServiceTable from "../components/ProviderServiceTable";
 import toast from "react-hot-toast";
 
 export default function ProviderServices() {
   const [selectedProviderId, setSelectedProviderId] = useState("");
   const [providers, setProviders] = useState([]);
   const [services, setServices] = useState([]);
+  const [groupedServices, setGroupedServices] = useState({});
+  const [selectedCategories, setSelectedCategories] = useState({});
+  const [selectedServices, setSelectedServices] = useState({});
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,9 +38,7 @@ export default function ProviderServices() {
   }, []);
 
   /* ================= SELECTED PROVIDER ================= */
-  const selectedProvider = providers.find(
-    (p) => p._id === selectedProviderId
-  );
+  const selectedProvider = providers.find((p) => p._id === selectedProviderId);
 
   /* ================= FETCH SERVICES ================= */
   const fetchServices = async () => {
@@ -50,12 +50,24 @@ export default function ProviderServices() {
     try {
       setLoading(true);
 
-      // Only send provider name; backend fetches apiUrl & apiKey
       const { data } = await API.post("/provider/services", {
         provider: selectedProvider.name,
       });
 
       setServices(data);
+
+      // Group by category
+      const grouped = {};
+      data.forEach((s) => {
+        const cat = s.category || "Other";
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(s);
+      });
+
+      setGroupedServices(grouped);
+      setSelectedCategories({});
+      setSelectedServices({});
+
       toast.success(`Fetched ${data.length} services`);
     } catch (error) {
       console.error("Fetch Services Error:", error);
@@ -87,16 +99,66 @@ export default function ProviderServices() {
     }
   };
 
+  /* ================= TOGGLE CATEGORY ================= */
+  const toggleCategory = (category) => {
+    const isSelected = selectedCategories[category];
+    const newSelectedCategories = { ...selectedCategories, [category]: !isSelected };
+    setSelectedCategories(newSelectedCategories);
+
+    const updatedServices = { ...selectedServices };
+    groupedServices[category].forEach((s) => {
+      updatedServices[s.service] = !isSelected;
+    });
+    setSelectedServices(updatedServices);
+  };
+
+  /* ================= TOGGLE SERVICE ================= */
+  const toggleService = (serviceId) => {
+    setSelectedServices({
+      ...selectedServices,
+      [serviceId]: !selectedServices[serviceId],
+    });
+  };
+
+  /* ================= IMPORT SELECTED ================= */
+  const importSelected = async () => {
+    const selected = services.filter((s) => selectedServices[s.service]);
+    if (selected.length === 0) {
+      toast.error("No services selected");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await API.post("/provider/import-selected", {
+        services: selected,
+        provider: selectedProvider.name,
+      });
+      toast.success(`Imported ${selected.length} services`);
+      fetchServices();
+    } catch (error) {
+      console.error("Import Error:", error);
+      toast.error("Failed to import services");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* ================= SEARCH ================= */
   const filteredServices = services.filter((s) => {
     const q = search.toLowerCase();
-
     return (
       s.name?.toLowerCase().includes(q) ||
       s.category?.toLowerCase().includes(q) ||
-      String(s.rate).includes(q) ||
-      String(s.service).includes(q)
+      String(s.rate).includes(q)
     );
+  });
+
+  const filteredGrouped = {};
+  filteredServices.forEach((s) => {
+    const cat = s.category || "Other";
+    if (!filteredGrouped[cat]) filteredGrouped[cat] = [];
+    filteredGrouped[cat].push(s);
   });
 
   return (
@@ -106,7 +168,7 @@ export default function ProviderServices() {
       <div className="flex-1 p-6 relative">
         <h1 className="text-2xl font-bold mb-6">Provider Services</h1>
 
-        {/* ================= PROVIDER SELECT ================= */}
+        {/* Provider Select */}
         <div className="bg-white shadow rounded-lg p-6 mb-6 flex flex-wrap gap-4 items-center">
           <select
             value={selectedProviderId}
@@ -138,7 +200,6 @@ export default function ProviderServices() {
             {loading ? "Fetching services..." : "Fetch Services"}
           </button>
 
-          {/* ✅ Selected provider info */}
           {selectedProvider && (
             <div className="text-sm text-gray-600 ml-2">
               <span className="font-medium">{selectedProvider.name}</span>
@@ -149,7 +210,7 @@ export default function ProviderServices() {
           )}
         </div>
 
-        {/* ================= SEARCH ================= */}
+        {/* Search */}
         <div className="mb-4">
           <input
             type="text"
@@ -160,26 +221,83 @@ export default function ProviderServices() {
           />
         </div>
 
-        {/* ================= TABLE ================= */}
-        <ProviderServiceTable
-          services={filteredServices}
-          providerProfileId={selectedProviderId}
-        />
+        {/* Services by Category */}
+        {Object.entries(filteredGrouped).map(([category, services]) => (
+          <div key={category} className="mb-6 bg-white p-4 rounded shadow">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold">{category}</h3>
+              <button
+                onClick={() => toggleCategory(category)}
+                className="bg-blue-600 text-white px-2 py-1 rounded text-sm"
+              >
+                {selectedCategories[category] ? "Unselect All" : "Select All"}
+              </button>
+            </div>
 
-        {/* ================= LOADING OVERLAY ================= */}
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-2 border">Service Name</th>
+                    <th className="p-2 border">Rate</th>
+                    <th className="p-2 border">Status</th>
+                    <th className="p-2 border">Description</th>
+                    <th className="p-2 border">Select</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((s) => (
+                    <tr key={s.service} className="text-sm">
+                      <td className="p-2 border">{s.name}</td>
+                      <td className="p-2 border">{s.rate}</td>
+                      <td className="p-2 border">
+                        {s.imported ? "Imported" : s.deleted ? "Deleted" : "New"}
+                      </td>
+                      <td className="p-2 border">
+                        <button
+                          onClick={() => alert(s.description)}
+                          className="text-blue-600 underline text-xs"
+                        >
+                          View
+                        </button>
+                      </td>
+                      <td className="p-2 border text-center">
+                        <input
+                          type="checkbox"
+                          checked={!!selectedServices[s.service]}
+                          onChange={() => toggleService(s.service)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
+
+        <button
+          onClick={importSelected}
+          className="bg-green-600 text-white px-4 py-2 rounded mt-4"
+          disabled={loading}
+        >
+          {loading ? "Importing..." : "Import Selected Services"}
+        </button>
+
+        {/* Loading Overlay */}
         {loading && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-40">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-sm text-gray-700 font-medium">
-                Fetching services from provider...
+                Processing...
               </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* ================= ADD PROVIDER MODAL ================= */}
+      {/* Add Provider Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl w-[400px]">
@@ -232,4 +350,4 @@ export default function ProviderServices() {
       )}
     </div>
   );
-}
+        }
