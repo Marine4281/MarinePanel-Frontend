@@ -3,252 +3,317 @@ import { useEffect, useState, useMemo } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
-const ProviderServiceTable = ({
-  services,
-  providerProfileId,
-  showDescription = false,
-}) => {
-  const [existingServices, setExistingServices] = useState([]);
-  const [loadingImport, setLoadingImport] = useState(null);
+const ProviderServiceTable = ({ services, providerProfileId }) => {
+  const [savedServices, setSavedServices] = useState([]);
+  const [loading, setLoading] = useState(null);
+
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [selectedServices, setSelectedServices] = useState({});
   const [viewDescription, setViewDescription] = useState(null);
 
   /* =========================================
-  LOAD EXISTING SERVICES
+  LOAD SAVED SERVICES
   ========================================= */
-  const loadExistingServices = async () => {
+  const loadSaved = async () => {
     try {
-      const { data } = await API.get("/admin/services");
-      setExistingServices(data);
-    } catch (error) {
-      console.error(error);
+      const { data } = await API.get("/provider/services/saved", {
+        params: { providerProfileId },
+      });
+      setSavedServices(data);
+    } catch (e) {
+      console.error(e);
     }
   };
 
   useEffect(() => {
-    loadExistingServices();
-  }, []);
+    if (providerProfileId) loadSaved();
+  }, [providerProfileId]);
 
   /* =========================================
-  OPTIMIZED LOOKUP MAP (O(1))
+  MAP SAVED (O1 lookup)
   ========================================= */
-  const existingMap = useMemo(() => {
+  const savedMap = useMemo(() => {
     const map = new Map();
+    for (const s of savedServices) {
+      map.set(String(s.providerServiceId), s);
+    }
+    return map;
+  }, [savedServices]);
 
-    for (const s of existingServices) {
-      if (!s.providerServiceId || !s.providerProfileId?._id) continue;
+  /* =========================================
+  GROUP BY CATEGORY
+  ========================================= */
+  const grouped = useMemo(() => {
+    const map = {};
 
-      const key = `${s.providerServiceId}_${s.providerProfileId._id}`;
-      map.set(key, s);
+    for (const s of services) {
+      const cat = s.category || "Uncategorized";
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(s);
     }
 
     return map;
-  }, [existingServices]);
+  }, [services]);
 
-  const findExisting = (providerServiceId) => {
-    return existingMap.get(
-      `${providerServiceId}_${providerProfileId}`
+  /* =========================================
+  TOGGLE CATEGORY
+  ========================================= */
+  const toggleCategory = (cat) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [cat]: !prev[cat],
+    }));
+  };
+
+  /* =========================================
+  SELECT SERVICE
+  ========================================= */
+  const toggleService = (id) => {
+    setSelectedServices((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const toggleCategorySelection = (catServices) => {
+    const updated = { ...selectedServices };
+
+    const allSelected = catServices.every((s) => updated[s.service]);
+
+    for (const s of catServices) {
+      updated[s.service] = !allSelected;
+    }
+
+    setSelectedServices(updated);
+  };
+
+  /* =========================================
+  IMPORT SELECTED
+  ========================================= */
+  const importSelected = async () => {
+    const selected = Object.keys(selectedServices).filter(
+      (k) => selectedServices[k]
     );
-  };
 
-  /* =========================================
-  IMPORT SERVICE
-  ========================================= */
-  const importService = async (service) => {
+    if (!selected.length) return toast.error("No services selected");
+
     try {
-      setLoadingImport(service.service);
+      setLoading("bulk");
 
-      await API.post("/admin/services/import", {
-        name: service.name,
-        category: service.category,
-        rate: service.rate,
-        min: service.min,
-        max: service.max,
-        providerServiceId: service.service,
+      await API.post("/provider/import-selected", {
         providerProfileId,
-        platform: service.platform || "General",
-        description: service.description || "",
+        serviceIds: selected,
       });
 
-      toast.success("Imported successfully");
-      loadExistingServices();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Import failed");
+      toast.success("Imported selected services");
+      loadSaved();
+    } catch {
+      toast.error("Import failed");
     } finally {
-      setLoadingImport(null);
+      setLoading(null);
     }
   };
 
   /* =========================================
-  UPDATE RATE
+  IMPORT CATEGORY
   ========================================= */
-  const updateRate = async (existing, newRate) => {
+  const importCategory = async (category) => {
     try {
-      await API.put(`/admin/services/${existing._id}`, {
-        rate: newRate,
+      setLoading(category);
+
+      await API.post("/provider/import-category", {
+        providerProfileId,
+        category,
       });
 
-      toast.success("Rate updated");
-      loadExistingServices();
+      toast.success(`Imported ${category}`);
+      loadSaved();
     } catch {
-      toast.error("Failed to update rate");
+      toast.error("Category import failed");
+    } finally {
+      setLoading(null);
     }
+  };
+
+  /* =========================================
+  TOGGLE / DELETE
+  ========================================= */
+  const toggleStatus = async (id) => {
+    await API.patch(`/provider/services/${id}/toggle`);
+    loadSaved();
+  };
+
+  const deleteService = async (id) => {
+    await API.delete(`/provider/services/${id}`);
+    loadSaved();
   };
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-gray-600 text-xs uppercase">
-            <tr>
-              <th className="p-3 text-left">ID</th>
-              <th className="p-3 text-left">Service</th>
-              <th className="p-3 text-left">Category</th>
-
-              {showDescription && (
-                <th className="p-3 text-left">Description</th>
-              )}
-
-              <th className="p-3 text-left">Rate</th>
-              <th className="p-3 text-left">Min</th>
-              <th className="p-3 text-left">Max</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {services.map((s) => {
-              const existing = findExisting(s.service);
-
-              const newRate = Number(s.rate || 0);
-              const oldRate =
-                existing?.lastSyncedRate ??
-                existing?.rate ??
-                0;
-
-              const rateDiff = existing ? newRate - oldRate : 0;
-
-              const isDeleted = s.deleted;
-              const isImported = !!existing;
-
-              return (
-                <tr
-                  key={s.service}
-                  className={`border-t hover:bg-gray-50 ${
-                    isDeleted ? "opacity-50 line-through" : ""
-                  }`}
-                >
-                  <td className="p-3">{s.service}</td>
-
-                  <td className="p-3 font-medium">{s.name}</td>
-
-                  <td className="p-3">{s.category}</td>
-
-                  {/* DESCRIPTION */}
-                  {showDescription && (
-                    <td className="p-3 text-xs text-gray-500">
-                      {s.description?.slice(0, 50)}
-                    </td>
-                  )}
-
-                  {/* RATE */}
-                  <td className="p-3 font-medium">
-                    ${newRate.toFixed(4)}
-
-                    {isImported && rateDiff !== 0 && (
-                      <span
-                        className={`ml-2 text-xs font-bold ${
-                          rateDiff > 0
-                            ? "text-red-500"
-                            : "text-green-600"
-                        }`}
-                      >
-                        {rateDiff > 0 ? "+" : ""}
-                        {rateDiff.toFixed(4)}
-                      </span>
-                    )}
-                  </td>
-
-                  <td className="p-3">{s.min}</td>
-                  <td className="p-3">{s.max}</td>
-
-                  {/* STATUS */}
-                  <td className="p-3">
-                    {isDeleted ? (
-                      <span className="text-red-500 font-semibold">
-                        Deleted
-                      </span>
-                    ) : isImported ? (
-                      <span className="text-green-600 font-semibold">
-                        Imported
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">New</span>
-                    )}
-                  </td>
-
-                  {/* ACTION */}
-                  <td className="p-3 flex gap-2 flex-wrap">
-
-                    {/* VIEW DESCRIPTION */}
-                    {s.description && (
-                      <button
-                        onClick={() => setViewDescription(s)}
-                        className="bg-gray-200 px-2 py-1 rounded text-xs"
-                      >
-                        View
-                      </button>
-                    )}
-
-                    {!isImported && !isDeleted && (
-                      <button
-                        onClick={() => importService(s)}
-                        disabled={loadingImport === s.service}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
-                      >
-                        {loadingImport === s.service
-                          ? "Importing..."
-                          : "Import"}
-                      </button>
-                    )}
-
-                    {isImported && rateDiff !== 0 && !isDeleted && (
-                      <button
-                        onClick={() =>
-                          updateRate(existing, newRate)
-                        }
-                        className="bg-yellow-500 text-white px-3 py-1 rounded text-xs"
-                      >
-                        Update Rate
-                      </button>
-                    )}
-
-                    {isImported && rateDiff === 0 && (
-                      <span className="text-gray-400 text-xs">
-                        Up to date
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* BULK ACTION */}
+      <div className="flex justify-between mb-4">
+        <button
+          onClick={importSelected}
+          className="bg-blue-600 text-white px-4 py-2 rounded text-sm"
+        >
+          {loading === "bulk" ? "Importing..." : "Import Selected"}
+        </button>
       </div>
 
-      {/* ================= DESCRIPTION MODAL ================= */}
+      {/* CATEGORY BLOCKS */}
+      <div className="space-y-4">
+        {Object.entries(grouped).map(([category, catServices]) => {
+          return (
+            <div
+              key={category}
+              className="border rounded-xl overflow-hidden shadow-sm"
+            >
+              {/* CATEGORY HEADER */}
+              <div className="bg-gray-100 p-4 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => toggleCategory(category)}
+                    className="font-semibold"
+                  >
+                    {expandedCategories[category] ? "▼" : "▶"} {category}
+                  </button>
+
+                  <button
+                    onClick={() => toggleCategorySelection(catServices)}
+                    className="text-xs bg-gray-200 px-2 py-1 rounded"
+                  >
+                    Select All
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => importCategory(category)}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-xs"
+                >
+                  {loading === category
+                    ? "Importing..."
+                    : "Import Category"}
+                </button>
+              </div>
+
+              {/* SERVICES */}
+              {expandedCategories[category] && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                      <tr>
+                        <th className="p-2"></th>
+                        <th>ID</th>
+                        <th>Service</th>
+                        <th>Rate</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {catServices.map((s) => {
+                        const saved = savedMap.get(
+                          String(s.service)
+                        );
+
+                        const status = saved
+                          ? saved.deleted
+                            ? "Deleted"
+                            : "Imported"
+                          : "New";
+
+                        return (
+                          <tr
+                            key={s.service}
+                            className="border-t hover:bg-gray-50"
+                          >
+                            <td className="p-2">
+                              <input
+                                type="checkbox"
+                                checked={!!selectedServices[s.service]}
+                                onChange={() =>
+                                  toggleService(s.service)
+                                }
+                              />
+                            </td>
+
+                            <td>{s.service}</td>
+                            <td>{s.name}</td>
+                            <td>${Number(s.rate).toFixed(4)}</td>
+
+                            <td>
+                              <span
+                                className={`text-xs font-semibold ${
+                                  status === "Imported"
+                                    ? "text-green-600"
+                                    : status === "Deleted"
+                                    ? "text-red-500"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                {status}
+                              </span>
+                            </td>
+
+                            <td className="flex gap-2 p-2 flex-wrap">
+                              {s.description && (
+                                <button
+                                  onClick={() =>
+                                    setViewDescription(s)
+                                  }
+                                  className="text-xs bg-gray-200 px-2 py-1 rounded"
+                                >
+                                  View
+                                </button>
+                              )}
+
+                              {saved && (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      toggleStatus(saved._id)
+                                    }
+                                    className="text-xs bg-yellow-500 text-white px-2 py-1 rounded"
+                                  >
+                                    Toggle
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      deleteService(saved._id)
+                                    }
+                                    className="text-xs bg-red-500 text-white px-2 py-1 rounded"
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* DESCRIPTION MODAL */}
       {viewDescription && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
           <div className="bg-white p-6 rounded-xl w-[500px]">
-            <h2 className="text-lg font-bold mb-3">
+            <h2 className="font-bold mb-2">
               {viewDescription.name}
             </h2>
-
-            <p className="text-sm text-gray-700 whitespace-pre-line">
-              {viewDescription.description || "No description"}
+            <p className="text-sm text-gray-700">
+              {viewDescription.description}
             </p>
 
-            <div className="flex justify-end mt-4">
+            <div className="text-right mt-4">
               <button
                 onClick={() => setViewDescription(null)}
                 className="bg-gray-300 px-4 py-2 rounded"
