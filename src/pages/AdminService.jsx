@@ -10,10 +10,8 @@ const initialForm = {
   platform: "",
   category: "",
   name: "",
-  provider: "",
-  providerApiUrl: "",
+  providerProfileId: "",
   providerServiceId: "",
-  providerApiKey: "",
   rate: "",
   min: "",
   max: "",
@@ -24,7 +22,7 @@ const initialForm = {
   isDefaultCategoryGlobal: false,
   isDefaultCategoryPlatform: false,
 
-  // ✅ FREE SERVICE FIELDS
+  // FREE
   isFree: false,
   freeQuantity: "",
   cooldownHours: "",
@@ -32,24 +30,36 @@ const initialForm = {
 
 const AdminService = () => {
   const [services, setServices] = useState([]);
+  const [providers, setProviders] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
   const [form, setForm] = useState(initialForm);
 
-  // ================= FETCH SERVICES =================
+  /* ================= FETCH SERVICES ================= */
   const fetchServices = async () => {
     try {
       const res = await API.get("/admin/services");
       setServices(res.data);
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch services");
+    }
+  };
+
+  /* ================= FETCH PROVIDERS ================= */
+  const fetchProviders = async () => {
+    try {
+      const res = await API.get("/provider/profiles");
+      setProviders(res.data);
+    } catch {
+      toast.error("Failed to fetch providers");
     }
   };
 
   useEffect(() => {
     fetchServices();
+    fetchProviders();
   }, []);
 
-  // ================= HANDLE INPUT =================
+  /* ================= HANDLE INPUT ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -59,7 +69,7 @@ const AdminService = () => {
     }));
   };
 
-  // ================= SUBMIT =================
+  /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -67,7 +77,7 @@ const AdminService = () => {
       !form.platform ||
       !form.category ||
       !form.name ||
-      !form.provider ||
+      !form.providerProfileId ||
       (!form.isFree && !form.rate)
     ) {
       return toast.error("Please fill all required fields");
@@ -75,13 +85,6 @@ const AdminService = () => {
 
     try {
       if (selectedService) {
-        // ❌ Prevent editing imported services
-        if (selectedService.isImported) {
-          return toast.error(
-            "Imported services cannot be edited. Re-sync from provider."
-          );
-        }
-
         await API.put(`/admin/services/${selectedService._id}`, form);
         toast.success("Service updated successfully");
       } else {
@@ -92,30 +95,26 @@ const AdminService = () => {
       setForm(initialForm);
       setSelectedService(null);
       fetchServices();
+
     } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to save service");
+      toast.error(err.response?.data?.message || "Failed to save service");
     }
   };
 
-  // ================= EDIT =================
+  /* ================= EDIT ================= */
   const handleEdit = (service) => {
-    // ❌ Block editing imported services
-    if (service.isImported) {
-      return toast.error(
-        "This is an imported service. Edit from provider sync instead."
-      );
-    }
-
     setSelectedService(service);
+
     setForm({
       ...initialForm,
       ...service,
+      providerProfileId: service.providerProfileId?._id || "",
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ================= DELETE =================
+  /* ================= DELETE ================= */
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this service?"))
       return;
@@ -129,7 +128,7 @@ const AdminService = () => {
     }
   };
 
-  // ================= TOGGLE STATUS =================
+  /* ================= TOGGLE STATUS ================= */
   const handleToggleStatus = async (id) => {
     try {
       await API.patch(`/admin/services/${id}/toggle`);
@@ -142,212 +141,128 @@ const AdminService = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <div className="w-34 h-full">
-        <Sidebar />
-      </div>
+      <Sidebar />
 
-      <div className="flex-1 ml-34 p-6">
+      <div className="flex-1 p-6">
         <h2 className="text-3xl font-bold mb-8">
           {selectedService ? "Edit Service" : "Add New Service"}
         </h2>
 
-        {/* ⚠️ WARNING FOR IMPORTED */}
-        {selectedService?.isImported && (
-          <div className="mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
-            ⚠️ This service is imported from a provider and cannot be edited here.
-          </div>
-        )}
-
+        {/* ================= FORM ================= */}
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl shadow-lg p-8 mb-10 space-y-6"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block font-medium mb-1">Platform *</label>
-              <input
-                name="platform"
-                value={form.platform}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
 
-            <div>
-              <label className="block font-medium mb-1">Category *</label>
-              <input
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Service Name *</label>
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Provider *</label>
-              <input
-                name="provider"
-                value={form.provider}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">
-                Provider API URL
-              </label>
-              <input
-                name="providerApiUrl"
-                value={form.providerApiUrl}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">
-                Provider API Key
-              </label>
-              <input
-                name="providerApiKey"
-                value={form.providerApiKey}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">
-                Rate per 1000 ($)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                name="rate"
-                value={form.rate}
-                onChange={handleChange}
-                disabled={form.isFree || selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Min Order</label>
-              <input
-                type="number"
-                name="min"
-                value={form.min}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Max Order</label>
-              <input
-                type="number"
-                name="max"
-                value={form.max}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">
-                Provider Service ID
-              </label>
-              <input
-                name="providerServiceId"
-                value={form.providerServiceId}
-                onChange={handleChange}
-                disabled={selectedService?.isImported}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block font-medium mb-1">Description</label>
-            <textarea
-              name="description"
-              value={form.description}
+            <input
+              name="platform"
+              placeholder="Platform"
+              value={form.platform}
               onChange={handleChange}
-              rows={3}
-              disabled={selectedService?.isImported}
-              className="w-full p-3 border rounded-lg"
+              className="p-3 border rounded-lg"
+              required
+            />
+
+            <input
+              name="category"
+              placeholder="Category"
+              value={form.category}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
+              required
+            />
+
+            <input
+              name="name"
+              placeholder="Service Name"
+              value={form.name}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
+              required
+            />
+
+            {/* ✅ PROVIDER DROPDOWN */}
+            <select
+              name="providerProfileId"
+              value={form.providerProfileId}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
+              required
+            >
+              <option value="">Select Provider</option>
+              {providers.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              name="providerServiceId"
+              placeholder="Provider Service ID"
+              value={form.providerServiceId}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
+            />
+
+            <input
+              type="number"
+              step="0.0001"
+              name="rate"
+              placeholder="Rate per 1000"
+              value={form.rate}
+              onChange={handleChange}
+              disabled={form.isFree}
+              className="p-3 border rounded-lg"
+            />
+
+            <input
+              type="number"
+              name="min"
+              placeholder="Min"
+              value={form.min}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
+            />
+
+            <input
+              type="number"
+              name="max"
+              placeholder="Max"
+              value={form.max}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
             />
           </div>
 
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={form.description}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg"
+          />
+
+          {/* FREE SERVICE */}
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
               name="isFree"
               checked={form.isFree}
               onChange={handleChange}
-              disabled={selectedService?.isImported}
             />
-            🎁 Enable Free Service
+            🎁 Free Service
           </label>
 
-          <FreeServiceFields
-            form={form}
-            handleChange={handleChange}
-            disabled={selectedService?.isImported}
-          />
+          <FreeServiceFields form={form} handleChange={handleChange} />
 
-          <div className="flex flex-wrap gap-6 pt-4">
-            {[
-              ["refillAllowed", "Refill Allowed"],
-              ["cancelAllowed", "Cancel Allowed"],
-              ["isDefault", "Default Service (per category)"],
-              ["isDefaultCategoryGlobal", "Default Category (Global)"],
-              ["isDefaultCategoryPlatform", "Default Category (Per Platform)"],
-            ].map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name={key}
-                  checked={form[key]}
-                  onChange={handleChange}
-                  disabled={selectedService?.isImported}
-                />
-                {label}
-              </label>
-            ))}
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
-          >
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg">
             {selectedService ? "Update Service" : "Add Service"}
           </button>
         </form>
 
+        {/* ================= TABLE ================= */}
         <AdminServiceTable
           services={services}
           onEdit={handleEdit}
