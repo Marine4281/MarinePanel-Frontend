@@ -1,6 +1,6 @@
 // src/components/AdminServiceTable.jsx
 import { useState, useMemo } from "react";
-import { FiCopy, FiX } from "react-icons/fi";
+import { FiCopy, FiX, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import toast from "react-hot-toast";
 import API from "../api/axios";
 
@@ -13,6 +13,7 @@ const AdminServiceTable = ({
   const [search, setSearch] = useState("");
   const [selectedDescription, setSelectedDescription] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [collapsed, setCollapsed] = useState({});
   const [updating, setUpdating] = useState(false);
 
   // ================= SEARCH =================
@@ -30,6 +31,28 @@ const AdminServiceTable = ({
       String(s.rate || "").includes(search)
     );
   }, [search, services]);
+
+  // ================= GROUPING =================
+  const groupedServices = useMemo(() => {
+    const groups = {};
+
+    filteredServices.forEach((s) => {
+      const key = `${s.platform}__${s.category}`;
+
+      if (!groups[key]) {
+        groups[key] = {
+          key,
+          platform: s.platform,
+          category: s.category,
+          services: [],
+        };
+      }
+
+      groups[key].services.push(s);
+    });
+
+    return Object.values(groups);
+  }, [filteredServices]);
 
   const copyToClipboard = (text) => {
     if (!text) return;
@@ -51,6 +74,19 @@ const AdminServiceTable = ({
       setSelectedIds([]);
     } else {
       setSelectedIds(filteredServices.map((s) => s._id));
+    }
+  };
+
+  // ✅ SELECT PER CATEGORY
+  const toggleCategorySelect = (group) => {
+    const ids = group.services.map((s) => s._id);
+
+    const allSelected = ids.every((id) => selectedIds.includes(id));
+
+    if (allSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+    } else {
+      setSelectedIds((prev) => [...new Set([...prev, ...ids])]);
     }
   };
 
@@ -154,79 +190,51 @@ const AdminServiceTable = ({
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
 
-      {/* ================= RATE BULK ================= */}
+      {/* RATE BULK */}
       {changedServices.length > 0 && (
-        <div className="mb-4 flex justify-between items-center bg-yellow-50 border border-yellow-300 p-3 rounded-lg">
-          <span className="text-sm font-medium">
-            {changedServices.length} services have updated rates
-          </span>
-
-          <button
-            onClick={acceptAll}
-            disabled={updating}
-            className="bg-green-600 text-white px-4 py-2 rounded text-sm"
-          >
+        <div className="mb-4 flex justify-between items-center bg-yellow-50 border p-3 rounded-lg">
+          <span>{changedServices.length} services have updated rates</span>
+          <button onClick={acceptAll} className="bg-green-600 text-white px-4 py-2 rounded">
             Accept All
           </button>
         </div>
       )}
 
-      {/* ================= BULK SELECT BAR ================= */}
+      {/* BULK BAR */}
       {selectedIds.length > 0 && (
-        <div className="mb-4 flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg">
-          <span className="text-sm font-medium">
-            {selectedIds.length} selected
-          </span>
-
+        <div className="mb-4 flex justify-between bg-blue-50 p-3 rounded-lg">
+          <span>{selectedIds.length} selected</span>
           <div className="flex gap-3">
-            <button
-              onClick={bulkHide}
-              disabled={updating}
-              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-            >
-              Hide
-            </button>
-
-            <button
-              onClick={bulkDelete}
-              disabled={updating}
-              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
-            >
-              Delete
-            </button>
+            <button onClick={bulkHide} className="bg-yellow-500 text-white px-3 py-1 rounded">Hide</button>
+            <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
           </div>
         </div>
       )}
 
-      {/* ================= SEARCH ================= */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search by Service ID, Provider ID, Category, Name or Rate..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/2 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-        />
-      </div>
+      {/* SEARCH */}
+      <input
+        type="text"
+        placeholder="Search..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-6 w-full md:w-1/2 p-3 border rounded-xl"
+      />
 
-      {/* ================= TABLE ================= */}
+      {/* TABLE */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-100 uppercase text-gray-600 text-xs">
+        <table className="w-full text-sm">
+
+          <thead className="bg-gray-100 text-xs uppercase">
             <tr>
               <th className="px-4 py-3">
                 <input
                   type="checkbox"
                   onChange={toggleSelectAll}
-                  checked={
-                    selectedIds.length === filteredServices.length &&
-                    filteredServices.length > 0
-                  }
+                  checked={selectedIds.length === filteredServices.length && filteredServices.length > 0}
                 />
               </th>
               <th className="px-4 py-3">System ID</th>
               <th className="px-4 py-3">Platform</th>
-              <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Service</th>
               <th className="px-4 py-3">Provider</th>
               <th className="px-4 py-3">Provider ID</th>
@@ -238,128 +246,118 @@ const AdminServiceTable = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y">
-            {filteredServices.map((s) => {
-              const diff = getRateDiff(s);
+          <tbody>
+            {groupedServices.map((group) => (
+              <>
+                {/* CATEGORY HEADER */}
+                <tr className="bg-blue-50">
+                  <td colSpan="11" className="px-4 py-3 font-semibold text-blue-800 flex justify-between items-center">
 
-              return (
-                <tr key={s._id} className="hover:bg-gray-50">
-
-                  {/* CHECKBOX */}
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(s._id)}
-                      onChange={() => toggleSelect(s._id)}
-                    />
-                  </td>
-
-                  {/* SYSTEM ID */}
-                  <td className="px-4 py-3 text-xs flex items-center gap-2 whitespace-nowrap">
-                    <span>{s.serviceId || s._id?.slice(-6)}</span>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(s.serviceId || s._id?.slice(-6))
-                      }
-                    >
-                      <FiCopy size={14} />
-                    </button>
-                  </td>
-
-                  <td className="px-4 py-3">{s.platform}</td>
-
-                  <td className="px-4 py-3">
-                    {s.category}
-                    {s.isDefaultCategoryGlobal && " (Global Default)"}
-                    {s.isDefaultCategoryPlatform && " (Platform Default)"}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {s.name} {s.isDefault && "(Service Default)"}
-                  </td>
-
-                  <td className="px-4 py-3">{s.provider}</td>
-
-                  <td className="px-4 py-3 flex items-center gap-2">
-                    {s.providerServiceId}
-                    <button
-                      onClick={() => copyToClipboard(s.providerServiceId)}
-                    >
-                      <FiCopy size={14} />
-                    </button>
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {s.isFree ? "FREE" : `$${s.rate}`}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {diff && (
-                      <span
-                        className={`font-bold ${
-                          diff.isIncrease ? "text-red-600" : "text-green-600"
-                        }`}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() =>
+                          setCollapsed((prev) => ({
+                            ...prev,
+                            [group.key]: !prev[group.key],
+                          }))
+                        }
                       >
-                        {diff.isIncrease ? "+" : ""}
-                        {diff.value}
+                        {collapsed[group.key] ? <FiChevronRight /> : <FiChevronDown />}
+                      </button>
+
+                      <span>
+                        {group.platform} → {group.category} ({group.services.length})
                       </span>
-                    )}
-                  </td>
+                    </div>
 
-                  <td className="px-4 py-3">
                     <button
-                      onClick={() => setSelectedDescription(s.description)}
-                      className="bg-gray-800 text-white px-3 py-1 rounded text-xs"
+                      onClick={() => toggleCategorySelect(group)}
+                      className="text-xs bg-gray-200 px-2 py-1 rounded"
                     >
-                      View
+                      Select All
                     </button>
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full text-white ${
-                        s.status ? "bg-green-500" : "bg-gray-500"
-                      }`}
-                    >
-                      {s.status ? "Visible" : "Hidden"}
-                    </span>
-                  </td>
-
-                  <td className="px-4 py-3 flex flex-wrap gap-2">
-
-                    {diff && (
-                      <>
-                        <button onClick={() => acceptRate(s._id)} className="bg-green-600 text-white px-2 py-1 rounded text-xs">
-                          Accept
-                        </button>
-
-                        <button onClick={() => declineRate(s._id)} className="bg-gray-500 text-white px-2 py-1 rounded text-xs">
-                          Decline
-                        </button>
-                      </>
-                    )}
-
-                    <button onClick={() => onEdit(s)} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">
-                      Edit
-                    </button>
-
-                    <button onClick={() => onToggleStatus(s._id)} className="bg-yellow-500 text-white px-2 py-1 rounded text-xs">
-                      Toggle
-                    </button>
-
-                    <button onClick={() => onDelete(s._id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">
-                      Delete
-                    </button>
-
                   </td>
                 </tr>
-              );
-            })}
+
+                {/* SERVICES */}
+                {!collapsed[group.key] &&
+                  group.services.map((s) => {
+                    const diff = getRateDiff(s);
+
+                    return (
+                      <tr key={s._id} className="border-t hover:bg-gray-50">
+
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(s._id)}
+                            onChange={() => toggleSelect(s._id)}
+                          />
+                        </td>
+
+                        <td className="px-4 py-3 flex gap-2">
+                          {s.serviceId || s._id?.slice(-6)}
+                          <FiCopy onClick={() => copyToClipboard(s.serviceId)} />
+                        </td>
+
+                        <td className="px-4 py-3">{s.platform}</td>
+
+                        <td className="px-4 py-3">
+                          {s.name} {s.isDefault && "(Default)"}
+                        </td>
+
+                        <td className="px-4 py-3">{s.provider}</td>
+
+                        <td className="px-4 py-3 flex gap-2">
+                          {s.providerServiceId}
+                          <FiCopy onClick={() => copyToClipboard(s.providerServiceId)} />
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {s.isFree ? "FREE" : `$${s.rate}`}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {diff && (
+                            <span className={diff.isIncrease ? "text-red-600" : "text-green-600"}>
+                              {diff.isIncrease ? "+" : ""}
+                              {diff.value}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <button onClick={() => setSelectedDescription(s.description)}>View</button>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          {s.status ? "Visible" : "Hidden"}
+                        </td>
+
+                        <td className="px-4 py-3 flex gap-2">
+
+                          {diff && (
+                            <>
+                              <button onClick={() => acceptRate(s._id)}>Accept</button>
+                              <button onClick={() => declineRate(s._id)}>Decline</button>
+                            </>
+                          )}
+
+                          <button onClick={() => onEdit(s)}>Edit</button>
+                          <button onClick={() => onToggleStatus(s._id)}>Toggle</button>
+                          <button onClick={() => onDelete(s._id)}>Delete</button>
+
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* ================= MODAL ================= */}
+      {/* MODAL */}
       {selectedDescription && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg w-[400px]">
