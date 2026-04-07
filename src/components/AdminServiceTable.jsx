@@ -31,16 +31,13 @@ const AdminServiceTable = ({
     );
   }, [search, services]);
 
-  // ================= GROUP BY CATEGORY =================
-  const groupedServices = useMemo(() => {
-    return Object.entries(
-      filteredServices.reduce((acc, service) => {
-        const category = service.category || "Uncategorized";
-        if (!acc[category]) acc[category] = [];
-        acc[category].push(service);
-        return acc;
-      }, {})
-    );
+  // ================= SORT BY CATEGORY (NO HEADER ROWS) =================
+  const sortedServices = useMemo(() => {
+    return [...filteredServices].sort((a, b) => {
+      const catA = a.category || "";
+      const catB = b.category || "";
+      return catA.localeCompare(catB);
+    });
   }, [filteredServices]);
 
   const copyToClipboard = (text) => {
@@ -164,9 +161,15 @@ const AdminServiceTable = ({
 
       {/* RATE BULK */}
       {changedServices.length > 0 && (
-        <div className="mb-4 flex justify-between items-center bg-yellow-50 border p-3 rounded-lg">
-          <span>{changedServices.length} services have updated rates</span>
-          <button onClick={acceptAll} className="bg-green-600 text-white px-4 py-2 rounded text-sm">
+        <div className="mb-4 flex justify-between items-center bg-yellow-50 border border-yellow-300 p-3 rounded-lg">
+          <span className="text-sm font-medium">
+            {changedServices.length} services have updated rates
+          </span>
+          <button
+            onClick={acceptAll}
+            disabled={updating}
+            className="bg-green-600 text-white px-4 py-2 rounded text-sm"
+          >
             Accept All
           </button>
         </div>
@@ -174,13 +177,25 @@ const AdminServiceTable = ({
 
       {/* BULK BAR */}
       {selectedIds.length > 0 && (
-        <div className="mb-4 flex justify-between bg-blue-50 border p-3 rounded-lg">
-          <span>{selectedIds.length} selected</span>
+        <div className="mb-4 flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg">
+          <span className="text-sm font-medium">
+            {selectedIds.length} selected
+          </span>
+
           <div className="flex gap-3">
-            <button onClick={bulkHide} className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">
+            <button
+              onClick={bulkHide}
+              disabled={updating}
+              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+            >
               Hide
             </button>
-            <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded text-sm">
+
+            <button
+              onClick={bulkDelete}
+              disabled={updating}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+            >
               Delete
             </button>
           </div>
@@ -191,10 +206,10 @@ const AdminServiceTable = ({
       <div className="mb-6">
         <input
           type="text"
-          placeholder="Search..."
+          placeholder="Search by Service ID, Provider ID, Category, Name or Rate..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/2 p-3 border rounded-xl"
+          className="w-full md:w-1/2 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
         />
       </div>
 
@@ -228,75 +243,135 @@ const AdminServiceTable = ({
           </thead>
 
           <tbody className="divide-y">
-            {groupedServices.map(([category, items]) => (
-              <>
-                {/* CATEGORY HEADER ROW */}
-                <tr key={category} className="bg-gray-200">
-                  <td colSpan="12" className="px-4 py-3 font-bold text-gray-700">
-                    📦 {category} ({items.length})
+            {sortedServices.map((s) => {
+              const diff = getRateDiff(s);
+
+              return (
+                <tr key={s._id} className="hover:bg-gray-50">
+
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(s._id)}
+                      onChange={() => toggleSelect(s._id)}
+                    />
+                  </td>
+
+                  <td className="px-4 py-3 text-xs flex items-center gap-2 whitespace-nowrap">
+                    <span>{s.serviceId || s._id?.slice(-6)}</span>
+                    <button
+                      onClick={() =>
+                        copyToClipboard(s.serviceId || s._id?.slice(-6))
+                      }
+                    >
+                      <FiCopy size={14} />
+                    </button>
+                  </td>
+
+                  <td className="px-4 py-3">{s.platform}</td>
+
+                  <td className="px-4 py-3">
+                    {s.category}
+                    {s.isDefaultCategoryGlobal && " (Global Default)"}
+                    {s.isDefaultCategoryPlatform && " (Platform Default)"}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {s.name} {s.isDefault && "(Service Default)"}
+                  </td>
+
+                  <td className="px-4 py-3">{s.provider}</td>
+
+                  <td className="px-4 py-3 flex items-center gap-2">
+                    {s.providerServiceId}
+                    <button
+                      onClick={() => copyToClipboard(s.providerServiceId)}
+                    >
+                      <FiCopy size={14} />
+                    </button>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {s.isFree ? "FREE" : `$${s.rate}`}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {diff && (
+                      <span
+                        className={`font-bold ${
+                          diff.isIncrease ? "text-red-600" : "text-green-600"
+                        }`}
+                      >
+                        {diff.isIncrease ? "+" : ""}
+                        {diff.value}
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setSelectedDescription(s.description)}
+                      className="bg-gray-800 text-white px-3 py-1 rounded text-xs"
+                    >
+                      View
+                    </button>
+                  </td>
+
+                  <td className="px-4 py-3">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full text-white ${
+                        s.status ? "bg-green-500" : "bg-gray-500"
+                      }`}
+                    >
+                      {s.status ? "Visible" : "Hidden"}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3 flex flex-wrap gap-2">
+
+                    {diff && (
+                      <>
+                        <button
+                          onClick={() => acceptRate(s._id)}
+                          className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Accept
+                        </button>
+
+                        <button
+                          onClick={() => declineRate(s._id)}
+                          className="bg-gray-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Decline
+                        </button>
+                      </>
+                    )}
+
+                    <button
+                      onClick={() => onEdit(s)}
+                      className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => onToggleStatus(s._id)}
+                      className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Toggle
+                    </button>
+
+                    <button
+                      onClick={() => onDelete(s._id)}
+                      className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                    >
+                      Delete
+                    </button>
+
                   </td>
                 </tr>
-
-                {/* SERVICES */}
-                {items.map((s) => {
-                  const diff = getRateDiff(s);
-
-                  return (
-                    <tr key={s._id} className="hover:bg-gray-50">
-
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(s._id)}
-                          onChange={() => toggleSelect(s._id)}
-                        />
-                      </td>
-
-                      <td className="px-4 py-3 text-xs flex items-center gap-2">
-                        {s.serviceId || s._id?.slice(-6)}
-                        <FiCopy onClick={() => copyToClipboard(s.serviceId)} />
-                      </td>
-
-                      <td className="px-4 py-3">{s.platform}</td>
-                      <td className="px-4 py-3">{s.category}</td>
-                      <td className="px-4 py-3">{s.name}</td>
-                      <td className="px-4 py-3">{s.provider}</td>
-
-                      <td className="px-4 py-3">
-                        {s.providerServiceId}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {s.isFree ? "FREE" : `$${s.rate}`}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {diff && (
-                          <span className={diff.isIncrease ? "text-red-500" : "text-green-500"}>
-                            {diff.value}
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <button onClick={() => setSelectedDescription(s.description)}>
-                          View
-                        </button>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {s.status ? "Visible" : "Hidden"}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <button onClick={() => onEdit(s)}>Edit</button>
-                        <button onClick={() => onDelete(s._id)}>Delete</button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
