@@ -12,6 +12,7 @@ const AdminServiceTable = ({
 }) => {
   const [search, setSearch] = useState("");
   const [selectedDescription, setSelectedDescription] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [updating, setUpdating] = useState(false);
 
   // ================= SEARCH =================
@@ -36,7 +37,65 @@ const AdminServiceTable = ({
     toast.success("Copied!");
   };
 
-  // ================= RATE CHANGE =================
+  // ================= SELECT LOGIC =================
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((i) => i !== id)
+        : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredServices.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredServices.map((s) => s._id));
+    }
+  };
+
+  // ================= BULK ACTIONS =================
+  const bulkHide = async () => {
+    try {
+      setUpdating(true);
+
+      await Promise.all(
+        selectedIds.map((id) =>
+          API.patch(`/admin/services/${id}/toggle`)
+        )
+      );
+
+      toast.success("Selected services hidden");
+      window.location.reload();
+    } catch {
+      toast.error("Bulk hide failed");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (!window.confirm("Delete selected services?")) return;
+
+    try {
+      setUpdating(true);
+
+      await Promise.all(
+        selectedIds.map((id) =>
+          API.delete(`/admin/services/${id}`)
+        )
+      );
+
+      toast.success("Selected services deleted");
+      window.location.reload();
+    } catch {
+      toast.error("Bulk delete failed");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // ================= RATE LOGIC =================
   const getRateDiff = (s) => {
     if (!s.newRate || s.newRate === s.rate) return null;
 
@@ -48,67 +107,33 @@ const AdminServiceTable = ({
     };
   };
 
-  // ================= API ACTIONS =================
-  const acceptRate = async (id) => {
-    try {
-      setUpdating(true);
-      await API.patch(`/admin/services/${id}/accept-rate`);
-      toast.success("Rate updated");
-      window.location.reload();
-    } catch {
-      toast.error("Failed to update rate");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const declineRate = async (id) => {
-    try {
-      setUpdating(true);
-      await API.patch(`/admin/services/${id}/decline-rate`);
-      toast.success("Rate change declined");
-      window.location.reload();
-    } catch {
-      toast.error("Failed to decline");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const acceptAll = async () => {
-    try {
-      setUpdating(true);
-      await API.patch(`/admin/services/accept-all-rates`);
-      toast.success("All rates updated");
-      window.location.reload();
-    } catch {
-      toast.error("Failed to update all");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const changedServices = services.filter(
-    (s) => s.newRate && s.newRate !== s.rate
-  );
-
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
 
-      {/* ================= BULK ACTION ================= */}
-      {changedServices.length > 0 && (
-        <div className="mb-4 flex justify-between items-center bg-yellow-50 border border-yellow-300 p-3 rounded-lg">
+      {/* ================= BULK BAR ================= */}
+      {selectedIds.length > 0 && (
+        <div className="mb-4 flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg">
           <span className="text-sm font-medium">
-            {changedServices.length} services have updated rates
+            {selectedIds.length} selected
           </span>
 
-          <button
-            onClick={acceptAll}
-            disabled={updating}
-            className="bg-green-600 text-white px-4 py-2 rounded text-sm"
-          >
-            Accept All
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={bulkHide}
+              disabled={updating}
+              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+            >
+              Hide
+            </button>
+
+            <button
+              onClick={bulkDelete}
+              disabled={updating}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       )}
 
@@ -116,116 +141,82 @@ const AdminServiceTable = ({
       <div className="mb-6">
         <input
           type="text"
-          placeholder="Search by Service ID, Provider ID, Category, Name or Rate..."
+          placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/2 p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+          className="w-full md:w-1/2 p-3 border rounded-xl"
         />
       </div>
 
       {/* ================= TABLE ================= */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="bg-gray-100 uppercase text-gray-600 text-xs">
+          <thead className="bg-gray-100 text-xs uppercase">
             <tr>
-              <th className="px-4 py-3">System ID</th>
-              <th className="px-4 py-3">Platform</th>
-              <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">
+                <input
+                  type="checkbox"
+                  onChange={toggleSelectAll}
+                  checked={
+                    selectedIds.length === filteredServices.length &&
+                    filteredServices.length > 0
+                  }
+                />
+              </th>
+              <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Service</th>
               <th className="px-4 py-3">Provider</th>
-              <th className="px-4 py-3">Provider ID</th>
               <th className="px-4 py-3">Rate</th>
               <th className="px-4 py-3">Change</th>
-              <th className="px-4 py-3">Description</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y">
+          <tbody>
             {filteredServices.map((s) => {
               const diff = getRateDiff(s);
 
               return (
-                <tr key={s._id} className="hover:bg-gray-50">
+                <tr key={s._id} className="border-t">
 
-                  {/* SYSTEM ID */}
-                  <td className="px-4 py-3 text-xs flex items-center gap-2 whitespace-nowrap">
-                    <span>{s.serviceId || s._id?.slice(-6)}</span>
-                    <button
-                      onClick={() =>
-                        copyToClipboard(s.serviceId || s._id?.slice(-6))
-                      }
-                      className="text-gray-500 hover:text-black"
-                    >
-                      <FiCopy size={14} />
-                    </button>
+                  {/* CHECKBOX */}
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(s._id)}
+                      onChange={() => toggleSelect(s._id)}
+                    />
                   </td>
 
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {s.platform}
+                  {/* ID */}
+                  <td className="px-4 py-3 flex items-center gap-2">
+                    {s.serviceId}
+                    <FiCopy
+                      className="cursor-pointer"
+                      onClick={() => copyToClipboard(s.serviceId)}
+                    />
                   </td>
 
-                  {/* CATEGORY */}
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {s.category}
-                    {s.isDefaultCategoryGlobal && " (Global Default)"}
-                    {s.isDefaultCategoryPlatform && " (Platform Default)"}
+                  <td className="px-4 py-3">{s.name}</td>
+
+                  <td className="px-4 py-3">
+                    {s.providerProfileId?.name || "—"}
                   </td>
 
-                  {/* SERVICE NAME */}
-                  <td className="px-4 py-3 max-w-[300px] break-words">
-                    {s.name
-                      ?.replace(/\n/g, " ")
-                      .replace(/\s+/g, " ")
-                      .trim()}{" "}
-                    {s.isDefault && "(Service Default)"}
-                  </td>
+                  <td className="px-4 py-3">${s.rate}</td>
 
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {s.provider}
-                  </td>
-
-                  {/* PROVIDER ID */}
-                  <td className="px-4 py-3 flex items-center gap-2 whitespace-nowrap">
-                    {s.providerServiceId}
-                    <button
-                      onClick={() => copyToClipboard(s.providerServiceId)}
-                      className="text-gray-500 hover:text-black"
-                    >
-                      <FiCopy size={14} />
-                    </button>
-                  </td>
-
-                  {/* RATE */}
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {s.isFree ? "FREE" : `$${s.rate}`}
-                  </td>
-
-                  {/* CHANGE */}
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3">
                     {diff && (
                       <span
                         className={`font-bold ${
-                          diff.isIncrease
-                            ? "text-red-600"
-                            : "text-green-600"
+                          diff.isIncrease ? "text-red-600" : "text-green-600"
                         }`}
                       >
                         {diff.isIncrease ? "+" : ""}
                         {diff.value}
                       </span>
                     )}
-                  </td>
-
-                  {/* DESCRIPTION */}
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => setSelectedDescription(s.description)}
-                      className="bg-gray-800 text-white px-3 py-1 rounded text-xs hover:bg-black"
-                    >
-                      View
-                    </button>
                   </td>
 
                   {/* STATUS */}
@@ -240,21 +231,23 @@ const AdminServiceTable = ({
                   </td>
 
                   {/* ACTIONS */}
-                  <td className="px-4 py-3 flex flex-wrap gap-2 whitespace-nowrap">
+                  <td className="px-4 py-3 flex gap-2">
 
                     {diff && (
                       <>
                         <button
-                          onClick={() => acceptRate(s._id)}
-                          disabled={updating}
+                          onClick={() =>
+                            API.patch(`/admin/services/${s._id}/accept-rate`)
+                          }
                           className="bg-green-600 text-white px-2 py-1 rounded text-xs"
                         >
                           Accept
                         </button>
 
                         <button
-                          onClick={() => declineRate(s._id)}
-                          disabled={updating}
+                          onClick={() =>
+                            API.patch(`/admin/services/${s._id}/decline-rate`)
+                          }
                           className="bg-gray-500 text-white px-2 py-1 rounded text-xs"
                         >
                           Decline
@@ -271,11 +264,9 @@ const AdminServiceTable = ({
 
                     <button
                       onClick={() => onToggleStatus(s._id)}
-                      className={`px-2 py-1 rounded text-xs text-white ${
-                        s.status ? "bg-yellow-500" : "bg-green-600"
-                      }`}
+                      className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
                     >
-                      {s.status ? "Hide" : "Show"}
+                      Toggle
                     </button>
 
                     <button
@@ -293,40 +284,18 @@ const AdminServiceTable = ({
         </table>
       </div>
 
-      {/* ================= DESCRIPTION MODAL ================= */}
-      {selectedDescription !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-2xl w-[550px] max-w-[95%] shadow-2xl relative">
-
-            <button
+      {/* ================= MODAL ================= */}
+      {selectedDescription && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg w-[400px]">
+            <FiX
+              className="cursor-pointer float-right"
               onClick={() => setSelectedDescription(null)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-black"
-            >
-              <FiX size={20} />
-            </button>
-
-            <h3 className="text-xl font-semibold mb-6 text-center">
-              Service Description
-            </h3>
-
-            <div className="bg-gray-50 p-4 rounded-lg text-sm whitespace-pre-line max-h-[300px] overflow-y-auto">
-              {selectedDescription || "No description provided"}
-            </div>
-
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={() => copyToClipboard(selectedDescription)}
-                className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg"
-              >
-                <FiCopy />
-                Copy
-              </button>
-            </div>
-
+            />
+            <p>{selectedDescription}</p>
           </div>
         </div>
       )}
-
     </div>
   );
 };
