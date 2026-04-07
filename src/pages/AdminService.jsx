@@ -1,4 +1,4 @@
-//src/pages/AdminService.jsx
+// src/pages/AdminService.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
@@ -10,19 +10,28 @@ const initialForm = {
   platform: "",
   category: "",
   name: "",
+
+  // ✅ Provider system
   providerProfileId: "",
   providerServiceId: "",
+
+  // ✅ RESTORED (important for debugging providers)
+  providerApiUrl: "",
+  providerApiKey: "",
+
   rate: "",
   min: "",
   max: "",
   description: "",
+
   refillAllowed: true,
   cancelAllowed: true,
+
   isDefault: false,
   isDefaultCategoryGlobal: false,
   isDefaultCategoryPlatform: false,
 
-  // FREE
+  // ✅ FREE SERVICE
   isFree: false,
   freeQuantity: "",
   cooldownHours: "",
@@ -34,7 +43,7 @@ const AdminService = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [form, setForm] = useState(initialForm);
 
-  /* ================= FETCH SERVICES ================= */
+  /* ================= FETCH ================= */
   const fetchServices = async () => {
     try {
       const res = await API.get("/admin/services");
@@ -44,7 +53,6 @@ const AdminService = () => {
     }
   };
 
-  /* ================= FETCH PROVIDERS ================= */
   const fetchProviders = async () => {
     try {
       const res = await API.get("/provider/profiles");
@@ -59,7 +67,7 @@ const AdminService = () => {
     fetchProviders();
   }, []);
 
-  /* ================= HANDLE INPUT ================= */
+  /* ================= INPUT ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -95,7 +103,6 @@ const AdminService = () => {
       setForm(initialForm);
       setSelectedService(null);
       fetchServices();
-
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save service");
     }
@@ -128,7 +135,7 @@ const AdminService = () => {
     }
   };
 
-  /* ================= TOGGLE STATUS ================= */
+  /* ================= TOGGLE ================= */
   const handleToggleStatus = async (id) => {
     try {
       await API.patch(`/admin/services/${id}/toggle`);
@@ -155,34 +162,37 @@ const AdminService = () => {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+            {/* PLATFORM */}
             <input
               name="platform"
-              placeholder="Platform"
+              placeholder="Platform *"
               value={form.platform}
               onChange={handleChange}
               className="p-3 border rounded-lg"
               required
             />
 
+            {/* CATEGORY */}
             <input
               name="category"
-              placeholder="Category"
+              placeholder="Category *"
               value={form.category}
               onChange={handleChange}
               className="p-3 border rounded-lg"
               required
             />
 
+            {/* NAME */}
             <input
               name="name"
-              placeholder="Service Name"
+              placeholder="Service Name *"
               value={form.name}
               onChange={handleChange}
               className="p-3 border rounded-lg"
               required
             />
 
-            {/* ✅ PROVIDER DROPDOWN */}
+            {/* PROVIDER */}
             <select
               name="providerProfileId"
               value={form.providerProfileId}
@@ -198,6 +208,7 @@ const AdminService = () => {
               ))}
             </select>
 
+            {/* PROVIDER SERVICE ID */}
             <input
               name="providerServiceId"
               placeholder="Provider Service ID"
@@ -206,6 +217,25 @@ const AdminService = () => {
               className="p-3 border rounded-lg"
             />
 
+            {/* ✅ RESTORED API URL */}
+            <input
+              name="providerApiUrl"
+              placeholder="Provider API URL"
+              value={form.providerApiUrl}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
+            />
+
+            {/* ✅ RESTORED API KEY */}
+            <input
+              name="providerApiKey"
+              placeholder="Provider API Key"
+              value={form.providerApiKey}
+              onChange={handleChange}
+              className="p-3 border rounded-lg"
+            />
+
+            {/* RATE */}
             <input
               type="number"
               step="0.0001"
@@ -236,6 +266,7 @@ const AdminService = () => {
             />
           </div>
 
+          {/* DESCRIPTION */}
           <textarea
             name="description"
             placeholder="Description"
@@ -244,7 +275,7 @@ const AdminService = () => {
             className="w-full p-3 border rounded-lg"
           />
 
-          {/* FREE SERVICE */}
+          {/* FREE */}
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -257,7 +288,62 @@ const AdminService = () => {
 
           <FreeServiceFields form={form} handleChange={handleChange} />
 
-          <button className="w-full bg-blue-600 text-white py-3 rounded-lg">
+          {/* FLAGS */}
+          <div className="flex flex-wrap gap-6 pt-4">
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="refillAllowed"
+                checked={form.refillAllowed}
+                onChange={handleChange}
+              />
+              Refill Allowed
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="cancelAllowed"
+                checked={form.cancelAllowed}
+                onChange={handleChange}
+              />
+              Cancel Allowed
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isDefault"
+                checked={form.isDefault}
+                onChange={handleChange}
+              />
+              Default Service
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isDefaultCategoryGlobal"
+                checked={form.isDefaultCategoryGlobal}
+                onChange={handleChange}
+              />
+              Global Default Category
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isDefaultCategoryPlatform"
+                checked={form.isDefaultCategoryPlatform}
+                onChange={handleChange}
+              />
+              Platform Default Category
+            </label>
+
+          </div>
+
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
             {selectedService ? "Update Service" : "Add Service"}
           </button>
         </form>
