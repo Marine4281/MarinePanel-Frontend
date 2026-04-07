@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 const ProviderServiceTable = ({ categories, providerProfile }) => {
   const [existingServices, setExistingServices] = useState([]);
   const [loadingImport, setLoadingImport] = useState(null);
-
   const [selectedServices, setSelectedServices] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -36,7 +35,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     return existingServices.find(
       (s) =>
         s.providerServiceId === String(providerServiceId) &&
-        s.providerProfileId === providerProfile?._id
+        s.provider === providerProfile?.name
     );
   };
 
@@ -89,21 +88,25 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      IMPORT SINGLE SERVICE
   ========================================= */
   const importService = async (service) => {
-    if (!providerProfile?._id) return toast.error("Provider required");
+    if (!providerProfile?.name) return toast.error("Provider required");
 
     try {
       setLoadingImport(service.service);
 
-      await API.post("/admin/services/import", {
-        name: service.name,
-        category: service.category,
-        rate: service.rate,
-        min: service.min,
-        max: service.max,
-        providerServiceId: service.service,
-        providerProfileId: providerProfile._id,
-        platform: service.platform || "General",
-        description: service.description || "",
+      await API.post("/provider/import-selected", {
+        services: [
+          {
+            name: service.name,
+            category: service.category,
+            rate: service.rate,
+            min: service.min,
+            max: service.max,
+            service: service.service,
+            platform: service.platform || "General",
+            description: service.description || "",
+          },
+        ],
+        provider: providerProfile.name, // ✅ use name
       });
 
       toast.success("Service imported");
@@ -120,7 +123,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      BULK IMPORT
   ========================================= */
   const importSelected = async () => {
-    if (!providerProfile?._id) return toast.error("Provider required");
+    if (!providerProfile?.name) return toast.error("Provider required");
     if (selectedServices.length === 0) return toast.error("No services selected");
 
     const servicesToImport = categories
@@ -130,7 +133,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     try {
       await API.post("/provider/import-selected", {
         services: servicesToImport,
-        providerProfileId: providerProfile._id,
+        provider: providerProfile.name, // ✅ use name
       });
 
       toast.success("Selected services imported");
@@ -146,10 +149,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      IMPORT CATEGORY
   ========================================= */
   const importCategory = async (category) => {
-    if (!providerProfile?._id) return toast.error("Provider required");
+    if (!providerProfile?.name) return toast.error("Provider required");
 
     const catObj = categories.find((c) => c.category === category);
-
     if (!catObj || catObj.services.length === 0) {
       return toast.error("No services found in this category");
     }
@@ -158,7 +160,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       await API.post("/provider/import-category", {
         category,
         services: catObj.services,
-        providerProfileId: providerProfile._id,
+        provider: providerProfile.name, // ✅ use name
       });
 
       toast.success("Category imported");
@@ -268,7 +270,6 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                       />
 
                       <span className="w-16">{s.service}</span>
-
                       <span className="flex-1">{s.name}</span>
 
                       <span className="text-sm">
