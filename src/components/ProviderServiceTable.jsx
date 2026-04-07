@@ -10,6 +10,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showDescription, setShowDescription] = useState(false);
+  const [updatingAll, setUpdatingAll] = useState(false);
 
   /* =========================================
      LOAD EXISTING SERVICES
@@ -37,6 +38,79 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         s.providerServiceId === String(providerServiceId) &&
         s.provider === providerProfile?.name
     );
+  };
+
+  /* =========================================
+     RATE CHANGES SUMMARY (🔥 NEW)
+  ========================================= */
+  const rateChanges = categories.flatMap((cat) =>
+    cat.services
+      .map((s) => {
+        const existing = findExisting(s.service);
+        if (!existing) return null;
+
+        const newRate = Number(s.rate);
+        const oldRate =
+          existing?.lastSyncedRate || existing?.rate || 0;
+
+        const diff = newRate - oldRate;
+
+        if (diff === 0) return null;
+
+        return {
+          id: s.service,
+          name: s.name,
+          category: cat.category,
+          oldRate,
+          newRate,
+          diff,
+          existing,
+        };
+      })
+      .filter(Boolean)
+  );
+
+  /* =========================================
+     UPDATE RATE
+  ========================================= */
+  const updateRate = async (existing, newRate) => {
+    try {
+      await API.put(`/admin/services/${existing._id}`, {
+        rate: newRate,
+        lastSyncedRate: newRate, // ✅ FIX
+      });
+      toast.success("Rate updated");
+      loadExistingServices();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update rate");
+    }
+  };
+
+  /* =========================================
+     UPDATE ALL RATES
+  ========================================= */
+  const updateAllRates = async () => {
+    if (rateChanges.length === 0) return;
+
+    try {
+      setUpdatingAll(true);
+
+      for (const r of rateChanges) {
+        await API.put(`/admin/services/${r.existing._id}`, {
+          rate: r.newRate,
+          lastSyncedRate: r.newRate,
+        });
+      }
+
+      toast.success("All rates updated");
+      loadExistingServices();
+    } catch (error) {
+      console.error(error);
+      toast.error("Bulk update failed");
+    } finally {
+      setUpdatingAll(false);
+    }
   };
 
   /* =========================================
@@ -106,7 +180,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             description: service.description || "",
           },
         ],
-        provider: providerProfile.name, // ✅ use name
+        provider: providerProfile.name,
       });
 
       toast.success("Service imported");
@@ -133,7 +207,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     try {
       await API.post("/provider/import-selected", {
         services: servicesToImport,
-        provider: providerProfile.name, // ✅ use name
+        provider: providerProfile.name,
       });
 
       toast.success("Selected services imported");
@@ -160,7 +234,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       await API.post("/provider/import-category", {
         category,
         services: catObj.services,
-        provider: providerProfile.name, // ✅ use name
+        provider: providerProfile.name,
       });
 
       toast.success("Category imported");
@@ -168,20 +242,6 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Category import failed");
-    }
-  };
-
-  /* =========================================
-     UPDATE RATE
-  ========================================= */
-  const updateRate = async (existing, newRate) => {
-    try {
-      await API.put(`/admin/services/${existing._id}`, { rate: newRate });
-      toast.success("Rate updated");
-      loadExistingServices();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to update rate");
     }
   };
 
@@ -214,10 +274,70 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         </button>
       </div>
 
+      {/* 🔥 RATE CHANGES SUMMARY */}
+      {rateChanges.length > 0 && (
+        <div className="mb-4 border rounded-lg p-4 bg-yellow-50">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="font-semibold text-yellow-800">
+              ⚠ Rate Changes ({rateChanges.length})
+            </h2>
+
+            <button
+              onClick={updateAllRates}
+              disabled={updatingAll}
+              className="bg-red-600 text-white px-3 py-1 rounded text-xs"
+            >
+              {updatingAll ? "Updating..." : "Update All"}
+            </button>
+          </div>
+
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {rateChanges.map((r) => (
+              <div
+                key={r.id}
+                className="flex justify-between items-center bg-white p-2 rounded border"
+              >
+                <div className="text-sm">
+                  <span className="font-medium">{r.id}</span> — {r.name}
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({r.category})
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gray-500">
+                    {r.oldRate.toFixed(4)}
+                  </span>
+                  <span>→</span>
+                  <span className="font-semibold">
+                    {r.newRate.toFixed(4)}
+                  </span>
+
+                  <span
+                    className={`text-xs ${
+                      r.diff > 0 ? "text-red-500" : "text-green-600"
+                    }`}
+                  >
+                    {r.diff > 0 ? "+" : ""}
+                    {r.diff.toFixed(4)}
+                  </span>
+
+                  <button
+                    onClick={() => updateRate(r.existing, r.newRate)}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                  >
+                    Update
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* CATEGORIES */}
       {categories.map((cat) => (
         <div key={cat.category} className="border rounded mb-4">
-          {/* CATEGORY HEADER */}
           <div className="flex items-center justify-between bg-gray-100 p-3">
             <div className="flex items-center gap-3">
               <input
@@ -246,21 +366,23 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             </button>
           </div>
 
-          {/* SERVICES */}
           {expandedCategories[cat.category] && (
             <div className="p-3 space-y-2">
               {cat.services.map((s) => {
                 const existing = findExisting(s.service);
 
                 const newRate = Number(s.rate);
-                const oldRate = existing?.lastSyncedRate || existing?.rate || 0;
+                const oldRate =
+                  existing?.lastSyncedRate || existing?.rate || 0;
                 const rateDiff = existing ? newRate - oldRate : 0;
                 const status = getStatus(existing);
 
                 return (
                   <div
                     key={s.service}
-                    className="border p-3 rounded flex flex-col gap-2"
+                    className={`border p-3 rounded flex flex-col gap-2 ${
+                      rateDiff !== 0 ? "bg-yellow-50 border-yellow-300" : ""
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <input
@@ -277,7 +399,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                         {existing && rateDiff !== 0 && (
                           <span
                             className={`ml-2 text-xs ${
-                              rateDiff > 0 ? "text-red-500" : "text-green-600"
+                              rateDiff > 0
+                                ? "text-red-500"
+                                : "text-green-600"
                             }`}
                           >
                             {rateDiff > 0 ? "+" : ""}
@@ -286,20 +410,10 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                         )}
                       </span>
 
-                      {/* STATUS */}
-                      <span
-                        className={`text-xs font-semibold ${
-                          status === "Imported"
-                            ? "text-green-600"
-                            : status === "Deleted"
-                            ? "text-red-500"
-                            : "text-gray-400"
-                        }`}
-                      >
+                      <span className="text-xs font-semibold">
                         {status}
                       </span>
 
-                      {/* ACTION */}
                       {!existing && (
                         <button
                           onClick={() => importService(s)}
@@ -323,13 +437,11 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                       )}
                     </div>
 
-                    {/* EXTRA INFO */}
                     <div className="text-xs text-gray-500 flex gap-4">
                       <span>Min: {s.min}</span>
                       <span>Max: {s.max}</span>
                     </div>
 
-                    {/* DESCRIPTION */}
                     {showDescription && (
                       <div className="text-xs text-gray-400">
                         {s.description || "No description"}
