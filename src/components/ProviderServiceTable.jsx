@@ -1,14 +1,19 @@
-//src/components/ProviderServiceTable.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
-const ProviderServiceTable = ({ services, providerProfileId }) => {
+const ProviderServiceTable = ({ categories, providerProfileId }) => {
   const [existingServices, setExistingServices] = useState([]);
   const [loadingImport, setLoadingImport] = useState(null);
 
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [showDescription, setShowDescription] = useState(false);
+
   /* =========================================
-  LOAD EXISTING SERVICES (FROM YOUR SYSTEM)
+     LOAD EXISTING SERVICES
   ========================================= */
   const loadExistingServices = async () => {
     try {
@@ -24,7 +29,7 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
   }, []);
 
   /* =========================================
-  CHECK IF SERVICE ALREADY IMPORTED
+     FIND EXISTING
   ========================================= */
   const findExisting = (providerServiceId) => {
     return existingServices.find(
@@ -35,7 +40,53 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
   };
 
   /* =========================================
-  IMPORT SERVICE
+     STATUS LABEL
+  ========================================= */
+  const getStatus = (existing) => {
+    if (existing?.deleted) return "Deleted";
+    if (existing) return "Imported";
+    return "New";
+  };
+
+  /* =========================================
+     TOGGLE CATEGORY
+  ========================================= */
+  const toggleCategory = (cat) => {
+    const isSelected = selectedCategories.includes(cat.category);
+
+    if (isSelected) {
+      setSelectedCategories((prev) =>
+        prev.filter((c) => c !== cat.category)
+      );
+
+      setSelectedServices((prev) =>
+        prev.filter(
+          (id) => !cat.services.some((s) => s.service === id)
+        )
+      );
+    } else {
+      setSelectedCategories((prev) => [...prev, cat.category]);
+
+      setSelectedServices((prev) => [
+        ...prev,
+        ...cat.services.map((s) => s.service),
+      ]);
+    }
+  };
+
+  /* =========================================
+     TOGGLE SERVICE
+  ========================================= */
+  const toggleService = (service) => {
+    setSelectedServices((prev) =>
+      prev.includes(service.service)
+        ? prev.filter((id) => id !== service.service)
+        : [...prev, service.service]
+    );
+  };
+
+  /* =========================================
+     IMPORT SINGLE
   ========================================= */
   const importService = async (service) => {
     try {
@@ -50,11 +101,11 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
         providerServiceId: service.service,
         providerProfileId,
         platform: service.platform || "General",
+        description: service.description || "",
       });
 
-      toast.success("Imported successfully");
+      toast.success("Imported");
       loadExistingServices();
-
     } catch (error) {
       toast.error(error.response?.data?.message || "Import failed");
     } finally {
@@ -63,7 +114,46 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
   };
 
   /* =========================================
-  UPDATE RATE
+     BULK IMPORT
+  ========================================= */
+  const importSelected = async () => {
+    if (selectedServices.length === 0) {
+      return toast.error("No services selected");
+    }
+
+    try {
+      await API.post("/provider/import-selected", {
+        services: selectedServices,
+        providerProfileId,
+      });
+
+      toast.success("Selected services imported");
+      setSelectedServices([]);
+      loadExistingServices();
+    } catch (error) {
+      toast.error("Bulk import failed");
+    }
+  };
+
+  /* =========================================
+     IMPORT CATEGORY
+  ========================================= */
+  const importCategory = async (category) => {
+    try {
+      await API.post("/provider/import-category", {
+        category,
+        providerProfileId,
+      });
+
+      toast.success("Category imported");
+      loadExistingServices();
+    } catch (error) {
+      toast.error("Category import failed");
+    }
+  };
+
+  /* =========================================
+     UPDATE RATE
   ========================================= */
   const updateRate = async (existing, newRate) => {
     try {
@@ -73,111 +163,183 @@ const ProviderServiceTable = ({ services, providerProfileId }) => {
 
       toast.success("Rate updated");
       loadExistingServices();
-
-    } catch (error) {
+    } catch {
       toast.error("Failed to update rate");
     }
   };
 
+  /* =========================================
+     TOGGLE CATEGORY EXPAND
+  ========================================= */
+  const toggleExpand = (category) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100 text-gray-600 text-xs uppercase">
-          <tr>
-            <th className="p-3 text-left">ID</th>
-            <th className="p-3 text-left">Service</th>
-            <th className="p-3 text-left">Category</th>
-            <th className="p-3 text-left">Rate</th>
-            <th className="p-3 text-left">Min</th>
-            <th className="p-3 text-left">Max</th>
-            <th className="p-3 text-left">Status</th>
-            <th className="p-3 text-left">Action</th>
-          </tr>
-        </thead>
+    <div className="bg-white rounded-xl shadow p-4">
 
-        <tbody>
-          {services.map((s) => {
-            const existing = findExisting(s.service);
+      {/* TOP ACTIONS */}
+      <div className="flex flex-wrap gap-3 mb-4">
+        <button
+          onClick={importSelected}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Import Selected ({selectedServices.length})
+        </button>
 
-            const newRate = Number(s.rate);
-            const oldRate = existing?.lastSyncedRate || existing?.rate || 0;
+        <button
+          onClick={() => setShowDescription(!showDescription)}
+          className="bg-gray-600 text-white px-4 py-2 rounded"
+        >
+          Toggle Description
+        </button>
+      </div>
 
-            const rateDiff = existing ? newRate - oldRate : 0;
+      {/* CATEGORIES */}
+      {categories.map((cat) => (
+        <div key={cat.category} className="border rounded mb-4">
 
-            return (
-              <tr key={s.service} className="border-t hover:bg-gray-50">
+          {/* CATEGORY HEADER */}
+          <div className="flex items-center justify-between bg-gray-100 p-3">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={selectedCategories.includes(cat.category)}
+                onChange={() => toggleCategory(cat)}
+              />
 
-                <td className="p-3">{s.service}</td>
+              <span
+                className="font-semibold cursor-pointer"
+                onClick={() => toggleExpand(cat.category)}
+              >
+                {cat.category}
+              </span>
 
-                <td className="p-3">{s.name}</td>
+              <span className="text-xs text-gray-500">
+                ({cat.services.length})
+              </span>
+            </div>
 
-                <td className="p-3">{s.category}</td>
+            <button
+              onClick={() => importCategory(cat.category)}
+              className="bg-green-600 text-white px-3 py-1 rounded text-xs"
+            >
+              Import Category
+            </button>
+          </div>
 
-                {/* RATE */}
-                <td className="p-3 font-medium">
-                  ${newRate.toFixed(4)}
+          {/* SERVICES */}
+          {expandedCategories[cat.category] && (
+            <div className="p-3 space-y-2">
+              {cat.services.map((s) => {
+                const existing = findExisting(s.service);
 
-                  {existing && rateDiff !== 0 && (
-                    <span
-                      className={`ml-2 text-xs font-bold ${
-                        rateDiff > 0 ? "text-red-500" : "text-green-600"
-                      }`}
-                    >
-                      {rateDiff > 0 ? "+" : ""}
-                      {rateDiff.toFixed(4)}
-                    </span>
-                  )}
-                </td>
+                const newRate = Number(s.rate);
+                const oldRate =
+                  existing?.lastSyncedRate || existing?.rate || 0;
 
-                <td className="p-3">{s.min}</td>
-                <td className="p-3">{s.max}</td>
+                const rateDiff = existing ? newRate - oldRate : 0;
 
-                {/* STATUS */}
-                <td className="p-3">
-                  {existing ? (
-                    <span className="text-green-600 font-semibold">
-                      Imported
-                    </span>
-                  ) : (
-                    <span className="text-gray-400">New</span>
-                  )}
-                </td>
+                const status = getStatus(existing);
 
-                {/* ACTION */}
-                <td className="p-3 flex gap-2">
+                return (
+                  <div
+                    key={s.service}
+                    className="border p-3 rounded flex flex-col gap-2"
+                  >
+                    <div className="flex items-center gap-3">
 
-                  {!existing && (
-                    <button
-                      onClick={() => importService(s)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
-                    >
-                      {loadingImport === s.service
-                        ? "Importing..."
-                        : "Import"}
-                    </button>
-                  )}
+                      <input
+                        type="checkbox"
+                        checked={selectedServices.includes(s.service)}
+                        onChange={() => toggleService(s)}
+                      />
 
-                  {existing && rateDiff !== 0 && (
-                    <button
-                      onClick={() => updateRate(existing, newRate)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded text-xs"
-                    >
-                      Update Rate
-                    </button>
-                  )}
+                      <span className="w-16">{s.service}</span>
 
-                  {existing && rateDiff === 0 && (
-                    <span className="text-gray-400 text-xs">
-                      Up to date
-                    </span>
-                  )}
+                      <span className="flex-1">{s.name}</span>
 
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                      <span className="text-sm">
+                        ${newRate.toFixed(4)}
+                        {existing && rateDiff !== 0 && (
+                          <span
+                            className={`ml-2 text-xs ${
+                              rateDiff > 0
+                                ? "text-red-500"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {rateDiff > 0 ? "+" : ""}
+                            {rateDiff.toFixed(4)}
+                          </span>
+                        )}
+                      </span>
+
+                      {/* STATUS */}
+                      <span
+                        className={`text-xs font-semibold ${
+                          status === "Imported"
+                            ? "text-green-600"
+                            : status === "Deleted"
+                            ? "text-red-500"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {status}
+                      </span>
+
+                      {/* ACTION */}
+                      {!existing && (
+                        <button
+                          onClick={() => importService(s)}
+                          className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                        >
+                          {loadingImport === s.service
+                            ? "..."
+                            : "Import"}
+                        </button>
+                      )}
+
+                      {existing && rateDiff !== 0 && (
+                        <button
+                          onClick={() =>
+                            updateRate(existing, newRate)
+                          }
+                          className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Update
+                        </button>
+                      )}
+
+                      {existing && rateDiff === 0 && (
+                        <span className="text-gray-400 text-xs">
+                          ✓
+                        </span>
+                      )}
+                    </div>
+
+                    {/* EXTRA INFO */}
+                    <div className="text-xs text-gray-500 flex gap-4">
+                      <span>Min: {s.min}</span>
+                      <span>Max: {s.max}</span>
+                    </div>
+
+                    {/* DESCRIPTION */}
+                    {showDescription && (
+                      <div className="text-xs text-gray-400">
+                        {s.description || "No description"}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
