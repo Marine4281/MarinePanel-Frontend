@@ -1,4 +1,4 @@
-//src/components/ProviderServiceTable.jsx
+// src/components/ProviderServiceTable.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
@@ -21,6 +21,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       setExistingServices(data);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to load existing services");
     }
   };
 
@@ -35,7 +36,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     return existingServices.find(
       (s) =>
         s.providerServiceId === String(providerServiceId) &&
-        s.provider === providerProfile?.name
+        s.providerProfileId === providerProfile?._id
     );
   };
 
@@ -66,7 +67,6 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       );
     } else {
       setSelectedCategories((prev) => [...prev, cat.category]);
-
       setSelectedServices((prev) => [
         ...prev,
         ...cat.services.map((s) => s.service),
@@ -86,26 +86,30 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   };
 
   /* =========================================
-     IMPORT SINGLE
+     IMPORT SINGLE SERVICE
   ========================================= */
   const importService = async (service) => {
-    if (!providerProfile?.name) return toast.error("Provider required");
+    if (!providerProfile?._id) return toast.error("Provider required");
 
     try {
       setLoadingImport(service.service);
 
-      await API.post("/provider/import-selected", {
-        services: [
-          {
-            ...service,
-          },
-        ],
-        provider: providerProfile.name,
+      await API.post("/admin/services/import", {
+        name: service.name,
+        category: service.category,
+        rate: service.rate,
+        min: service.min,
+        max: service.max,
+        providerServiceId: service.service,
+        providerProfileId: providerProfile._id,
+        platform: service.platform || "General",
+        description: service.description || "",
       });
 
-      toast.success("Imported");
+      toast.success("Service imported");
       loadExistingServices();
     } catch (error) {
+      console.error(error);
       toast.error(error.response?.data?.message || "Import failed");
     } finally {
       setLoadingImport(null);
@@ -116,11 +120,8 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      BULK IMPORT
   ========================================= */
   const importSelected = async () => {
-    if (selectedServices.length === 0) {
-      return toast.error("No services selected");
-    }
-
-    if (!providerProfile?.name) return toast.error("Provider required");
+    if (!providerProfile?._id) return toast.error("Provider required");
+    if (selectedServices.length === 0) return toast.error("No services selected");
 
     const servicesToImport = categories
       .flatMap((cat) => cat.services)
@@ -129,13 +130,14 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     try {
       await API.post("/provider/import-selected", {
         services: servicesToImport,
-        provider: providerProfile.name,
+        providerProfileId: providerProfile._id,
       });
 
       toast.success("Selected services imported");
       setSelectedServices([]);
       loadExistingServices();
     } catch (error) {
+      console.error(error);
       toast.error(error.response?.data?.message || "Bulk import failed");
     }
   };
@@ -144,7 +146,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      IMPORT CATEGORY
   ========================================= */
   const importCategory = async (category) => {
-    if (!providerProfile?.name) return toast.error("Provider required");
+    if (!providerProfile?._id) return toast.error("Provider required");
 
     const catObj = categories.find((c) => c.category === category);
 
@@ -156,7 +158,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       await API.post("/provider/import-category", {
         category,
         services: catObj.services,
-        provider: providerProfile.name,
+        providerProfileId: providerProfile._id,
       });
 
       toast.success("Category imported");
@@ -172,13 +174,11 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   ========================================= */
   const updateRate = async (existing, newRate) => {
     try {
-      await API.put(`/admin/services/${existing._id}`, {
-        rate: newRate,
-      });
-
+      await API.put(`/admin/services/${existing._id}`, { rate: newRate });
       toast.success("Rate updated");
       loadExistingServices();
-    } catch {
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to update rate");
     }
   };
@@ -251,11 +251,8 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                 const existing = findExisting(s.service);
 
                 const newRate = Number(s.rate);
-                const oldRate =
-                  existing?.lastSyncedRate || existing?.rate || 0;
-
+                const oldRate = existing?.lastSyncedRate || existing?.rate || 0;
                 const rateDiff = existing ? newRate - oldRate : 0;
-
                 const status = getStatus(existing);
 
                 return (
@@ -279,9 +276,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                         {existing && rateDiff !== 0 && (
                           <span
                             className={`ml-2 text-xs ${
-                              rateDiff > 0
-                                ? "text-red-500"
-                                : "text-green-600"
+                              rateDiff > 0 ? "text-red-500" : "text-green-600"
                             }`}
                           >
                             {rateDiff > 0 ? "+" : ""}
@@ -309,9 +304,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                           onClick={() => importService(s)}
                           className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
                         >
-                          {loadingImport === s.service
-                            ? "..."
-                            : "Import"}
+                          {loadingImport === s.service ? "..." : "Import"}
                         </button>
                       )}
 
