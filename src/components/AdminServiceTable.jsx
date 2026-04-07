@@ -11,10 +11,9 @@ const AdminServiceTable = ({
   onToggleStatus,
 }) => {
   const [search, setSearch] = useState("");
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedDescription, setSelectedDescription] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [updating, setUpdating] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null); // ✅ NEW
 
   // ================= SEARCH =================
   const filteredServices = useMemo(() => {
@@ -45,7 +44,8 @@ const AdminServiceTable = ({
   }, [filteredServices]);
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(String(text || "No Description"));
+    if (!text) return;
+    navigator.clipboard.writeText(String(text));
     toast.success("Copied!");
   };
 
@@ -98,28 +98,24 @@ const AdminServiceTable = ({
   };
 
   const bulkDelete = async () => {
-    if (!deleteTarget) return;
+    const confirmDelete = window.confirm(
+      "⚠️ Are you sure you want to permanently delete the selected services?\n\nThis action cannot be undone."
+    );
+    if (!confirmDelete) return;
 
     try {
       setUpdating(true);
-
-      if (Array.isArray(deleteTarget)) {
-        await Promise.all(
-          deleteTarget.map((id) =>
-            API.delete(`/admin/services/${id}`)
-          )
-        );
-      } else {
-        await API.delete(`/admin/services/${deleteTarget}`);
-      }
-
-      toast.success("Deleted successfully");
+      await Promise.all(
+        selectedIds.map((id) =>
+          API.delete(`/admin/services/${id}`)
+        )
+      );
+      toast.success("Selected services deleted successfully");
       window.location.reload();
     } catch {
-      toast.error("Delete failed");
+      toast.error("Bulk delete failed");
     } finally {
       setUpdating(false);
-      setDeleteTarget(null);
     }
   };
 
@@ -128,6 +124,7 @@ const AdminServiceTable = ({
     if (!s.newRate || s.newRate === s.rate) return null;
 
     const diff = (s.newRate - s.rate).toFixed(6);
+
     return { value: diff, isIncrease: diff > 0 };
   };
 
@@ -177,17 +174,39 @@ const AdminServiceTable = ({
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
 
+      {/* RATE BULK */}
+      {changedServices.length > 0 && (
+        <div className="mb-4 flex justify-between items-center bg-yellow-50 border border-yellow-300 p-3 rounded-lg">
+          <span className="text-sm font-medium">
+            {changedServices.length} services have updated rates
+          </span>
+          <button
+            onClick={acceptAll}
+            disabled={updating}
+            className="bg-green-600 text-white px-4 py-2 rounded text-sm"
+          >
+            Accept All
+          </button>
+        </div>
+      )}
+
       {/* BULK BAR */}
       {selectedIds.length > 0 && (
-        <div className="mb-4 flex justify-between items-center bg-blue-50 border p-3 rounded-lg">
-          <span>{selectedIds.length} selected</span>
+        <div className="mb-4 flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg">
+          <span className="text-sm font-medium">
+            {selectedIds.length} selected
+          </span>
+
           <div className="flex gap-3">
-            <button onClick={bulkToggle} className="bg-yellow-500 text-white px-3 py-1 rounded">
-              Toggle
+            <button
+              onClick={bulkToggle}
+              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+            >
+              Toggle Hide/Show
             </button>
             <button
-              onClick={() => setDeleteTarget(selectedIds)}
-              className="bg-red-600 text-white px-3 py-1 rounded"
+              onClick={bulkDelete}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
             >
               Delete
             </button>
@@ -195,117 +214,197 @@ const AdminServiceTable = ({
         </div>
       )}
 
-      {/* TABLE */}
-      <table className="w-full text-sm">
-        <tbody>
-          {groupedServices.map(([category, items]) => (
-            <>
-              <tr key={category} className="bg-gray-200">
-                <td>
-                  <input
-                    type="checkbox"
-                    onChange={() => toggleSelectCategory(items)}
-                    checked={items.every((i) =>
-                      selectedIds.includes(i._id)
-                    )}
-                  />
-                </td>
-                <td colSpan="10">{category}</td>
-              </tr>
+      {/* SEARCH */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full md:w-1/2 p-3 border rounded-xl"
+        />
+      </div>
 
-              {items.map((s) => (
-                <tr key={s._id}>
-                  <td>
+      {/* TABLE */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gray-100 uppercase text-gray-600 text-xs">
+            <tr>
+              <th className="px-4 py-3">
+                <input
+                  type="checkbox"
+                  onChange={toggleSelectAll}
+                  checked={
+                    selectedIds.length === filteredServices.length &&
+                    filteredServices.length > 0
+                  }
+                />
+              </th>
+              <th className="px-4 py-3">System ID</th>
+              <th className="px-4 py-3">Platform</th>
+              <th className="px-4 py-3">Service</th>
+              <th className="px-4 py-3">Provider</th>
+              <th className="px-4 py-3">Provider ID</th>
+              <th className="px-4 py-3">Rate</th>
+              <th className="px-4 py-3">Change</th>
+              <th className="px-4 py-3">Description</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y">
+            {groupedServices.map(([category, items]) => (
+              <>
+                <tr key={category} className="bg-gray-200">
+                  <td className="px-4 py-3">
                     <input
                       type="checkbox"
-                      checked={selectedIds.includes(s._id)}
-                      onChange={() => toggleSelect(s._id)}
+                      onChange={() => toggleSelectCategory(items)}
+                      checked={items.every((i) =>
+                        selectedIds.includes(i._id)
+                      )}
                     />
                   </td>
-
-                  <td>{s.name}</td>
-
-                  <td>
-                    <button
-                      onClick={() => setSelectedService(s)}
-                      className="bg-gray-800 text-white px-2 py-1 rounded"
-                    >
-                      View
-                    </button>
-                  </td>
-
-                  <td>
-                    <button
-                      onClick={() => setDeleteTarget(s._id)}
-                      className="bg-red-500 text-white px-2 py-1 rounded"
-                    >
-                      Delete
-                    </button>
+                  <td colSpan="10" className="px-4 py-3 font-bold text-gray-700">
+                    📦 {category} ({items.length})
                   </td>
                 </tr>
-              ))}
-            </>
-          ))}
-        </tbody>
-      </table>
 
-      {/* ✅ DESCRIPTION MODAL */}
-      {selectedService && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-xl w-[400px] relative">
+                {items.map((s) => {
+                  const diff = getRateDiff(s);
 
-            <FiX
-              className="absolute top-3 right-3 cursor-pointer"
-              onClick={() => setSelectedService(null)}
-            />
+                  return (
+                    <tr key={s._id} className="hover:bg-gray-50">
 
-            <h3 className="font-bold mb-3">{selectedService.name}</h3>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(s._id)}
+                          onChange={() => toggleSelect(s._id)}
+                        />
+                      </td>
 
-            <div className="bg-gray-100 p-3 rounded text-sm mb-4">
-              {selectedService.description || "No Description"}
-            </div>
+                      <td className="px-4 py-3 text-xs flex items-center gap-2">
+                        <span>{s.serviceId || s._id?.slice(-6)}</span>
+                        <button onClick={() => copyToClipboard(s.serviceId || s._id?.slice(-6))}>
+                          <FiCopy size={14} />
+                        </button>
+                      </td>
+
+                      <td className="px-4 py-3">{s.platform}</td>
+
+                      <td className="px-4 py-3">
+                        {s.name} {s.isDefault && "(Service Default)"}
+                      </td>
+
+                      <td className="px-4 py-3">{s.provider}</td>
+
+                      <td className="px-4 py-3 flex items-center gap-2">
+                        {s.providerServiceId}
+                        <button onClick={() => copyToClipboard(s.providerServiceId)}>
+                          <FiCopy size={14} />
+                        </button>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {s.isFree ? "FREE" : `$${s.rate}`}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {diff && (
+                          <span className={`font-bold ${diff.isIncrease ? "text-red-600" : "text-green-600"}`}>
+                            {diff.isIncrease ? "+" : ""}
+                            {diff.value}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setSelectedDescription(s.description || "No description")}
+                          className="bg-gray-800 text-white px-3 py-1 rounded text-xs"
+                        >
+                          View
+                        </button>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 text-xs rounded-full text-white ${s.status ? "bg-green-500" : "bg-gray-500"}`}>
+                          {s.status ? "Visible" : "Hidden"}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 flex flex-wrap gap-2">
+
+                        {diff && (
+                          <>
+                            <button onClick={() => acceptRate(s._id)} className="bg-green-600 text-white px-2 py-1 rounded text-xs">
+                              Accept
+                            </button>
+                            <button onClick={() => declineRate(s._id)} className="bg-gray-500 text-white px-2 py-1 rounded text-xs">
+                              Decline
+                            </button>
+                          </>
+                        )}
+
+                        <button onClick={() => onEdit(s)} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => onToggleStatus(s._id)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          {s.status ? "Hide" : "Show"}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const confirmDelete = window.confirm(
+                              "⚠️ Delete this service?\n\nThis action cannot be undone."
+                            );
+                            if (confirmDelete) onDelete(s._id);
+                          }}
+                          className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Delete
+                        </button>
+
+                      </td>
+                    </tr>
+                  );
+                })}
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* MODAL */}
+      {selectedDescription && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl w-[400px] shadow-xl relative">
 
             <button
-              onClick={() =>
-                copyToClipboard(selectedService.description)
-              }
-              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded text-sm"
+              onClick={() => setSelectedDescription(null)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-black"
+            >
+              <FiX size={18} />
+            </button>
+
+            <h3 className="text-lg font-semibold mb-3">Service Description</h3>
+
+            <p className="text-sm text-gray-700 mb-4 whitespace-pre-wrap">
+              {selectedDescription}
+            </p>
+
+            <button
+              onClick={() => copyToClipboard(selectedDescription)}
+              className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded text-sm"
             >
               <FiCopy size={14} /> Copy
             </button>
-
-          </div>
-        </div>
-      )}
-
-      {/* ✅ DELETE CONFIRM MODAL */}
-      {deleteTarget && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-xl w-[350px] text-center">
-
-            <h3 className="text-lg font-bold mb-2 text-red-600">
-              Confirm Delete
-            </h3>
-
-            <p className="text-sm text-gray-600 mb-4">
-              This action cannot be undone.
-            </p>
-
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-1 border rounded"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={bulkDelete}
-                className="bg-red-600 text-white px-4 py-1 rounded"
-              >
-                Delete
-              </button>
-            </div>
 
           </div>
         </div>
