@@ -1,16 +1,14 @@
+// src/pages/ProviderSync.jsx
 import { useState, useEffect } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import ProviderServiceTable from "../components/ProviderServiceTable";
 import toast from "react-hot-toast";
 
-export default function ProviderServices() {
+export default function ProviderSync() {
   const [selectedProviderId, setSelectedProviderId] = useState("");
   const [providers, setProviders] = useState([]);
-
-  // 🔥 CHANGED: now categories instead of flat services
   const [categories, setCategories] = useState([]);
-
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -56,10 +54,8 @@ export default function ProviderServices() {
         provider: selectedProvider.name,
       });
 
-      // 🔥 EXPECTING GROUPED RESPONSE
       setCategories(data);
 
-      // count total services
       const total = data.reduce(
         (sum, cat) => sum + cat.services.length,
         0
@@ -101,7 +97,6 @@ export default function ProviderServices() {
     .map((cat) => {
       const filteredServices = cat.services.filter((s) => {
         const q = search.toLowerCase();
-
         return (
           s.name?.toLowerCase().includes(q) ||
           cat.category?.toLowerCase().includes(q) ||
@@ -156,7 +151,6 @@ export default function ProviderServices() {
             {loading ? "Fetching services..." : "Fetch Services"}
           </button>
 
-          {/* Selected provider */}
           {selectedProvider && (
             <div className="text-sm text-gray-600 ml-2">
               <span className="font-medium">{selectedProvider.name}</span>
@@ -181,7 +175,7 @@ export default function ProviderServices() {
         {/* ================= CATEGORY TABLE ================= */}
         <ProviderServiceTable
           categories={filteredCategories}
-          providerProfileId={selectedProviderId}
+          providerProfile={selectedProvider} // pass full provider object
         />
 
         {/* ================= LOADING ================= */}
@@ -250,4 +244,4 @@ export default function ProviderServices() {
       )}
     </div>
   );
-}
+        }
