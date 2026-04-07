@@ -1,4 +1,3 @@
-// src/pages/ProviderSync.jsx
 import { useState, useEffect } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
@@ -8,7 +7,10 @@ import toast from "react-hot-toast";
 export default function ProviderServices() {
   const [selectedProviderId, setSelectedProviderId] = useState("");
   const [providers, setProviders] = useState([]);
-  const [services, setServices] = useState([]);
+
+  // 🔥 CHANGED: now categories instead of flat services
+  const [categories, setCategories] = useState([]);
+
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -50,13 +52,20 @@ export default function ProviderServices() {
     try {
       setLoading(true);
 
-      // Only send provider name; backend fetches apiUrl & apiKey
       const { data } = await API.post("/provider/services", {
         provider: selectedProvider.name,
       });
 
-      setServices(data);
-      toast.success(`Fetched ${data.length} services`);
+      // 🔥 EXPECTING GROUPED RESPONSE
+      setCategories(data);
+
+      // count total services
+      const total = data.reduce(
+        (sum, cat) => sum + cat.services.length,
+        0
+      );
+
+      toast.success(`Fetched ${total} services`);
     } catch (error) {
       console.error("Fetch Services Error:", error);
       toast.error("Failed to fetch services");
@@ -87,17 +96,26 @@ export default function ProviderServices() {
     }
   };
 
-  /* ================= SEARCH ================= */
-  const filteredServices = services.filter((s) => {
-    const q = search.toLowerCase();
+  /* ================= SEARCH FILTER ================= */
+  const filteredCategories = categories
+    .map((cat) => {
+      const filteredServices = cat.services.filter((s) => {
+        const q = search.toLowerCase();
 
-    return (
-      s.name?.toLowerCase().includes(q) ||
-      s.category?.toLowerCase().includes(q) ||
-      String(s.rate).includes(q) ||
-      String(s.service).includes(q)
-    );
-  });
+        return (
+          s.name?.toLowerCase().includes(q) ||
+          cat.category?.toLowerCase().includes(q) ||
+          String(s.rate).includes(q) ||
+          String(s.service).includes(q)
+        );
+      });
+
+      return {
+        ...cat,
+        services: filteredServices,
+      };
+    })
+    .filter((cat) => cat.services.length > 0);
 
   return (
     <div className="flex">
@@ -138,7 +156,7 @@ export default function ProviderServices() {
             {loading ? "Fetching services..." : "Fetch Services"}
           </button>
 
-          {/* ✅ Selected provider info */}
+          {/* Selected provider */}
           {selectedProvider && (
             <div className="text-sm text-gray-600 ml-2">
               <span className="font-medium">{selectedProvider.name}</span>
@@ -160,13 +178,13 @@ export default function ProviderServices() {
           />
         </div>
 
-        {/* ================= TABLE ================= */}
+        {/* ================= CATEGORY TABLE ================= */}
         <ProviderServiceTable
-          services={filteredServices}
+          categories={filteredCategories}
           providerProfileId={selectedProviderId}
         />
 
-        {/* ================= LOADING OVERLAY ================= */}
+        {/* ================= LOADING ================= */}
         {loading && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-40">
             <div className="flex flex-col items-center gap-3">
@@ -232,4 +250,4 @@ export default function ProviderServices() {
       )}
     </div>
   );
-            }
+}
