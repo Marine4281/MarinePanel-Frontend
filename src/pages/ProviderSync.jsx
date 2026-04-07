@@ -6,8 +6,8 @@ import ProviderServiceTable from "../components/ProviderServiceTable";
 import toast from "react-hot-toast";
 
 export default function ProviderServices() {
-  const [selectedProviderId, setSelectedProviderId] = useState("");
   const [providers, setProviders] = useState([]);
+  const [selectedProviderId, setSelectedProviderId] = useState("");
 
   const [services, setServices] = useState([]);
   const [savedServices, setSavedServices] = useState([]);
@@ -18,30 +18,20 @@ export default function ProviderServices() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  /* ================= LOAD PROVIDERS ================= */
-  const loadProviders = async () => {
-    try {
-      const { data } = await API.get("/provider/profiles");
-      setProviders(data);
-    } catch {
-      toast.error("Failed to load providers");
-    }
-  };
-
+  /* LOAD PROVIDERS */
   useEffect(() => {
-    loadProviders();
+    API.get("/provider/profiles")
+      .then((res) => setProviders(res.data))
+      .catch(() => toast.error("Failed to load providers"));
   }, []);
 
   const selectedProvider = providers.find(
     (p) => p._id === selectedProviderId
   );
 
-  /* ================= FETCH SERVICES ================= */
+  /* FETCH SERVICES */
   const fetchServices = async () => {
-    if (!selectedProvider) {
-      toast.error("Select provider");
-      return;
-    }
+    if (!selectedProvider) return toast.error("Select provider");
 
     try {
       setLoading(true);
@@ -58,13 +48,12 @@ export default function ProviderServices() {
       setSavedServices(saved);
 
       const savedMap = new Map();
-      for (const s of saved) {
-        savedMap.set(String(s.providerServiceId), s);
-      }
+      saved.forEach((s) =>
+        savedMap.set(String(s.providerServiceId), s)
+      );
 
       const normalized = fetched.map((s) => {
         const existing = savedMap.get(String(s.service));
-
         return {
           ...s,
           category: s.category || "Uncategorized",
@@ -73,22 +62,18 @@ export default function ProviderServices() {
         };
       });
 
-      // 🔥 SORT: Imported first
-      normalized.sort((a, b) => {
-        if (a.imported === b.imported) return 0;
-        return a.imported ? -1 : 1;
-      });
+      // sort: imported first
+      normalized.sort((a, b) =>
+        a.imported === b.imported ? 0 : a.imported ? -1 : 1
+      );
 
       setServices(normalized);
 
-      const uniqueCategories = [
-        ...new Set(normalized.map((s) => s.category)),
-      ];
+      const cats = [...new Set(normalized.map((s) => s.category))];
+      setCategories(cats);
+      setActiveCategory(cats[0] || "");
 
-      setCategories(uniqueCategories);
-      setActiveCategory(uniqueCategories[0] || "");
-
-      toast.success(`Fetched ${fetched.length} services`);
+      toast.success(`Loaded ${normalized.length} services`);
     } catch {
       toast.error("Failed to fetch services");
     } finally {
@@ -96,27 +81,22 @@ export default function ProviderServices() {
     }
   };
 
-  /* ================= FILTER ================= */
-  const filteredServices = useMemo(() => {
+  /* FILTER */
+  const filtered = useMemo(() => {
     return services.filter((s) => {
       if (activeCategory && s.category !== activeCategory) return false;
 
       if (search) {
         const q = search.toLowerCase();
-
-        if (
-          !(
-            s.name?.toLowerCase().includes(q) ||
-            String(s.service).includes(q)
-          )
-        ) {
-          return false;
-        }
+        return (
+          s.name?.toLowerCase().includes(q) ||
+          String(s.service).includes(q)
+        );
       }
 
       return true;
     });
-  }, [services, search, activeCategory]);
+  }, [services, activeCategory, search]);
 
   return (
     <div className="flex">
@@ -124,11 +104,11 @@ export default function ProviderServices() {
 
       <div className="flex-1 p-6">
         <h1 className="text-2xl font-bold mb-6">
-          Provider Sync Dashboard
+          Provider Sync
         </h1>
 
         {/* TOP BAR */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6 flex gap-4 items-center">
+        <div className="bg-white p-5 rounded-xl shadow flex gap-4 mb-6">
           <select
             value={selectedProviderId}
             onChange={(e) => setSelectedProviderId(e.target.value)}
@@ -144,19 +124,16 @@ export default function ProviderServices() {
 
           <button
             onClick={fetchServices}
-            disabled={loading}
-            className={`px-4 py-2 rounded text-white ${
-              loading ? "bg-blue-300" : "bg-blue-600"
-            }`}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
-            {loading ? "Syncing..." : "Fetch & Sync"}
+            {loading ? "Syncing..." : "Fetch Services"}
           </button>
         </div>
 
-        {/* MAIN LAYOUT */}
+        {/* MAIN */}
         <div className="flex gap-6">
           {/* CATEGORY SIDEBAR */}
-          <div className="w-64 bg-white shadow rounded-lg p-4 h-fit">
+          <div className="w-64 bg-white rounded-xl shadow p-4">
             <h3 className="font-semibold mb-3">Categories</h3>
 
             <div className="space-y-2 max-h-[500px] overflow-auto">
@@ -176,32 +153,22 @@ export default function ProviderServices() {
             </div>
           </div>
 
-          {/* RIGHT CONTENT */}
+          {/* CONTENT */}
           <div className="flex-1">
-            {/* SEARCH */}
             <input
-              type="text"
-              placeholder="Search in category..."
+              placeholder="Search services..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="border p-2 rounded w-full mb-4"
             />
 
-            {/* TABLE */}
             <ProviderServiceTable
-              services={filteredServices}
+              services={filtered}
               providerProfileId={selectedProviderId}
             />
           </div>
         </div>
-
-        {/* LOADER */}
-        {loading && (
-          <div className="fixed inset-0 bg-white/70 flex items-center justify-center">
-            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
       </div>
     </div>
   );
-                   }
+}
