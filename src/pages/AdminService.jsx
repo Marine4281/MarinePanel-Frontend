@@ -14,7 +14,7 @@ const initialForm = {
   providerProfileId: "",
   providerServiceId: "",
 
-  // NEW PROVIDER FIELDS (hidden unless needed)
+  // NEW PROVIDER
   newProviderName: "",
   providerApiUrl: "",
   providerApiKey: "",
@@ -95,7 +95,7 @@ const AdminService = () => {
     try {
       let providerId = form.providerProfileId;
 
-      // ✅ CREATE NEW PROVIDER FIRST
+      // ✅ CREATE NEW PROVIDER
       if (isAddingNewProvider) {
         if (!form.newProviderName || !form.providerApiKey || !form.providerApiUrl) {
           return toast.error("Fill all new provider fields");
@@ -127,7 +127,7 @@ const AdminService = () => {
       setForm(initialForm);
       setSelectedService(null);
       fetchServices();
-      fetchProviders(); // refresh providers if new added
+      fetchProviders();
 
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save");
@@ -213,7 +213,7 @@ const AdminService = () => {
               required
             />
 
-            {/* PROVIDER DROPDOWN */}
+            {/* PROVIDER */}
             <select
               name="providerProfileId"
               value={form.providerProfileId}
@@ -232,7 +232,7 @@ const AdminService = () => {
               <option value="new">➕ Add New Provider</option>
             </select>
 
-            {/* ✅ CONDITIONAL NEW PROVIDER FIELDS */}
+            {/* NEW PROVIDER */}
             {isAddingNewProvider && (
               <>
                 <input
@@ -307,6 +307,7 @@ const AdminService = () => {
             className="w-full p-3 border rounded-lg"
           />
 
+          {/* FREE */}
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -319,7 +320,62 @@ const AdminService = () => {
 
           <FreeServiceFields form={form} handleChange={handleChange} />
 
-          <button className="w-full bg-blue-600 text-white py-3 rounded-lg">
+          {/* ✅ ALL FLAGS RESTORED */}
+          <div className="flex flex-wrap gap-6 pt-4">
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="refillAllowed"
+                checked={form.refillAllowed}
+                onChange={handleChange}
+              />
+              Refill Allowed
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="cancelAllowed"
+                checked={form.cancelAllowed}
+                onChange={handleChange}
+              />
+              Cancel Allowed
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isDefault"
+                checked={form.isDefault}
+                onChange={handleChange}
+              />
+              Default Service
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isDefaultCategoryGlobal"
+                checked={form.isDefaultCategoryGlobal}
+                onChange={handleChange}
+              />
+              Global Default Category
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                name="isDefaultCategoryPlatform"
+                checked={form.isDefaultCategoryPlatform}
+                onChange={handleChange}
+              />
+              Platform Default Category
+            </label>
+
+          </div>
+
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
             {selectedService ? "Update Service" : "Add Service"}
           </button>
         </form>
