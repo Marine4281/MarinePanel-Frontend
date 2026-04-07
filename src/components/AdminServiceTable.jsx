@@ -13,8 +13,8 @@ const AdminServiceTable = ({
   const [search, setSearch] = useState("");
   const [selectedDescription, setSelectedDescription] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [collapsed, setCollapsed] = useState({});
   const [updating, setUpdating] = useState(false);
+  const [openCategories, setOpenCategories] = useState({});
 
   // ================= SEARCH =================
   const filteredServices = useMemo(() => {
@@ -32,27 +32,31 @@ const AdminServiceTable = ({
     );
   }, [search, services]);
 
-  // ================= GROUPING =================
+  // ================= GROUP BY CATEGORY =================
   const groupedServices = useMemo(() => {
-    const groups = {};
+    return Object.values(
+      filteredServices.reduce((acc, service) => {
+        const key = service.category || "Uncategorized";
 
-    filteredServices.forEach((s) => {
-      const key = `${s.platform}__${s.category}`;
+        if (!acc[key]) {
+          acc[key] = {
+            category: key,
+            services: [],
+          };
+        }
 
-      if (!groups[key]) {
-        groups[key] = {
-          key,
-          platform: s.platform,
-          category: s.category,
-          services: [],
-        };
-      }
-
-      groups[key].services.push(s);
-    });
-
-    return Object.values(groups);
+        acc[key].services.push(service);
+        return acc;
+      }, {})
+    );
   }, [filteredServices]);
+
+  const toggleCategory = (category) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
 
   const copyToClipboard = (text) => {
     if (!text) return;
@@ -70,23 +74,12 @@ const AdminServiceTable = ({
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredServices.length) {
+    const allIds = filteredServices.map((s) => s._id);
+
+    if (selectedIds.length === allIds.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredServices.map((s) => s._id));
-    }
-  };
-
-  // ✅ SELECT PER CATEGORY
-  const toggleCategorySelect = (group) => {
-    const ids = group.services.map((s) => s._id);
-
-    const allSelected = ids.every((id) => selectedIds.includes(id));
-
-    if (allSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
-    } else {
-      setSelectedIds((prev) => [...new Set([...prev, ...ids])]);
+      setSelectedIds(allIds);
     }
   };
 
@@ -94,13 +87,9 @@ const AdminServiceTable = ({
   const bulkHide = async () => {
     try {
       setUpdating(true);
-
       await Promise.all(
-        selectedIds.map((id) =>
-          API.patch(`/admin/services/${id}/toggle`)
-        )
+        selectedIds.map((id) => API.patch(`/admin/services/${id}/toggle`))
       );
-
       toast.success("Selected services updated");
       window.location.reload();
     } catch {
@@ -115,13 +104,9 @@ const AdminServiceTable = ({
 
     try {
       setUpdating(true);
-
       await Promise.all(
-        selectedIds.map((id) =>
-          API.delete(`/admin/services/${id}`)
-        )
+        selectedIds.map((id) => API.delete(`/admin/services/${id}`))
       );
-
       toast.success("Selected services deleted");
       window.location.reload();
     } catch {
@@ -143,7 +128,6 @@ const AdminServiceTable = ({
     };
   };
 
-  // ================= API ACTIONS =================
   const acceptRate = async (id) => {
     try {
       setUpdating(true);
@@ -192,9 +176,12 @@ const AdminServiceTable = ({
 
       {/* RATE BULK */}
       {changedServices.length > 0 && (
-        <div className="mb-4 flex justify-between items-center bg-yellow-50 border p-3 rounded-lg">
+        <div className="mb-4 flex justify-between bg-yellow-50 border p-3 rounded-lg">
           <span>{changedServices.length} services have updated rates</span>
-          <button onClick={acceptAll} className="bg-green-600 text-white px-4 py-2 rounded">
+          <button
+            onClick={acceptAll}
+            className="bg-green-600 text-white px-4 py-2 rounded"
+          >
             Accept All
           </button>
         </div>
@@ -202,11 +189,15 @@ const AdminServiceTable = ({
 
       {/* BULK BAR */}
       {selectedIds.length > 0 && (
-        <div className="mb-4 flex justify-between bg-blue-50 p-3 rounded-lg">
+        <div className="mb-4 flex justify-between bg-blue-50 border p-3 rounded-lg">
           <span>{selectedIds.length} selected</span>
           <div className="flex gap-3">
-            <button onClick={bulkHide} className="bg-yellow-500 text-white px-3 py-1 rounded">Hide</button>
-            <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+            <button onClick={bulkHide} className="bg-yellow-500 text-white px-3 py-1 rounded">
+              Hide
+            </button>
+            <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded">
+              Delete
+            </button>
           </div>
         </div>
       )}
@@ -217,144 +208,111 @@ const AdminServiceTable = ({
         placeholder="Search..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="mb-6 w-full md:w-1/2 p-3 border rounded-xl"
+        className="w-full md:w-1/2 p-3 border rounded-xl mb-6"
       />
 
-      {/* TABLE */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      {/* SELECT ALL */}
+      <div className="mb-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            onChange={toggleSelectAll}
+            checked={
+              selectedIds.length === filteredServices.length &&
+              filteredServices.length > 0
+            }
+          />
+          Select All
+        </label>
+      </div>
 
-          <thead className="bg-gray-100 text-xs uppercase">
-            <tr>
-              <th className="px-4 py-3">
-                <input
-                  type="checkbox"
-                  onChange={toggleSelectAll}
-                  checked={selectedIds.length === filteredServices.length && filteredServices.length > 0}
-                />
-              </th>
-              <th className="px-4 py-3">System ID</th>
-              <th className="px-4 py-3">Platform</th>
-              <th className="px-4 py-3">Service</th>
-              <th className="px-4 py-3">Provider</th>
-              <th className="px-4 py-3">Provider ID</th>
-              <th className="px-4 py-3">Rate</th>
-              <th className="px-4 py-3">Change</th>
-              <th className="px-4 py-3">Description</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
+      {/* ================= CATEGORY VIEW ================= */}
+      <div className="space-y-4">
+        {groupedServices.map((group) => {
+          const isOpen = openCategories[group.category];
 
-          <tbody>
-            {groupedServices.map((group) => (
-              <>
-                {/* CATEGORY HEADER */}
-                <tr className="bg-blue-50">
-                  <td colSpan="11" className="px-4 py-3 font-semibold text-blue-800 flex justify-between items-center">
+          return (
+            <div key={group.category} className="border rounded-xl">
 
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() =>
-                          setCollapsed((prev) => ({
-                            ...prev,
-                            [group.key]: !prev[group.key],
-                          }))
-                        }
-                      >
-                        {collapsed[group.key] ? <FiChevronRight /> : <FiChevronDown />}
-                      </button>
+              {/* CATEGORY HEADER */}
+              <div
+                onClick={() => toggleCategory(group.category)}
+                className="flex justify-between items-center p-4 cursor-pointer bg-gray-100"
+              >
+                <div className="flex items-center gap-2 font-semibold">
+                  {isOpen ? <FiChevronDown /> : <FiChevronRight />}
+                  📦 {group.category}
+                  <span className="text-sm text-gray-500">
+                    ({group.services.length})
+                  </span>
+                </div>
+              </div>
 
-                      <span>
-                        {group.platform} → {group.category} ({group.services.length})
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => toggleCategorySelect(group)}
-                      className="text-xs bg-gray-200 px-2 py-1 rounded"
-                    >
-                      Select All
-                    </button>
-                  </td>
-                </tr>
-
-                {/* SERVICES */}
-                {!collapsed[group.key] &&
-                  group.services.map((s) => {
+              {/* SERVICES */}
+              {isOpen && (
+                <div className="divide-y">
+                  {group.services.map((s) => {
                     const diff = getRateDiff(s);
 
                     return (
-                      <tr key={s._id} className="border-t hover:bg-gray-50">
+                      <div key={s._id} className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
 
-                        <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(s._id)}
                             onChange={() => toggleSelect(s._id)}
                           />
-                        </td>
 
-                        <td className="px-4 py-3 flex gap-2">
-                          {s.serviceId || s._id?.slice(-6)}
-                          <FiCopy onClick={() => copyToClipboard(s.serviceId)} />
-                        </td>
+                          <div>
+                            <div className="font-medium">
+                              {s.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              ID: {s.serviceId || s._id?.slice(-6)}
+                            </div>
+                          </div>
+                        </div>
 
-                        <td className="px-4 py-3">{s.platform}</td>
+                        <div className="flex flex-wrap gap-3 items-center">
 
-                        <td className="px-4 py-3">
-                          {s.name} {s.isDefault && "(Default)"}
-                        </td>
+                          <span>{s.platform}</span>
 
-                        <td className="px-4 py-3">{s.provider}</td>
+                          <span>
+                            {s.isFree ? "FREE" : `$${s.rate}`}
+                          </span>
 
-                        <td className="px-4 py-3 flex gap-2">
-                          {s.providerServiceId}
-                          <FiCopy onClick={() => copyToClipboard(s.providerServiceId)} />
-                        </td>
-
-                        <td className="px-4 py-3">
-                          {s.isFree ? "FREE" : `$${s.rate}`}
-                        </td>
-
-                        <td className="px-4 py-3">
                           {diff && (
-                            <span className={diff.isIncrease ? "text-red-600" : "text-green-600"}>
+                            <span className={diff.isIncrease ? "text-red-500" : "text-green-500"}>
                               {diff.isIncrease ? "+" : ""}
                               {diff.value}
                             </span>
                           )}
-                        </td>
 
-                        <td className="px-4 py-3">
-                          <button onClick={() => setSelectedDescription(s.description)}>View</button>
-                        </td>
+                          <button onClick={() => setSelectedDescription(s.description)} className="bg-gray-800 text-white px-2 py-1 rounded text-xs">
+                            View
+                          </button>
 
-                        <td className="px-4 py-3">
-                          {s.status ? "Visible" : "Hidden"}
-                        </td>
+                          <button onClick={() => onEdit(s)} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">
+                            Edit
+                          </button>
 
-                        <td className="px-4 py-3 flex gap-2">
+                          <button onClick={() => onToggleStatus(s._id)} className="bg-yellow-500 text-white px-2 py-1 rounded text-xs">
+                            Toggle
+                          </button>
 
-                          {diff && (
-                            <>
-                              <button onClick={() => acceptRate(s._id)}>Accept</button>
-                              <button onClick={() => declineRate(s._id)}>Decline</button>
-                            </>
-                          )}
-
-                          <button onClick={() => onEdit(s)}>Edit</button>
-                          <button onClick={() => onToggleStatus(s._id)}>Toggle</button>
-                          <button onClick={() => onDelete(s._id)}>Delete</button>
-
-                        </td>
-                      </tr>
+                          <button onClick={() => onDelete(s._id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
-              </>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* MODAL */}
