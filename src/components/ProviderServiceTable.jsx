@@ -1,14 +1,14 @@
+//src/components/ProviderServiceTable.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
-const ProviderServiceTable = ({ categories, providerProfileId }) => {
+const ProviderServiceTable = ({ categories, providerProfile }) => {
   const [existingServices, setExistingServices] = useState([]);
   const [loadingImport, setLoadingImport] = useState(null);
 
   const [selectedServices, setSelectedServices] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
-
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showDescription, setShowDescription] = useState(false);
 
@@ -35,7 +35,7 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
     return existingServices.find(
       (s) =>
         s.providerServiceId === String(providerServiceId) &&
-        s.providerProfileId?._id === providerProfileId
+        s.provider === providerProfile?.name
     );
   };
 
@@ -89,19 +89,18 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
      IMPORT SINGLE
   ========================================= */
   const importService = async (service) => {
+    if (!providerProfile?.name) return toast.error("Provider required");
+
     try {
       setLoadingImport(service.service);
 
-      await API.post("/admin/services/import", {
-        name: service.name,
-        category: service.category,
-        rate: service.rate,
-        min: service.min,
-        max: service.max,
-        providerServiceId: service.service,
-        providerProfileId,
-        platform: service.platform || "General",
-        description: service.description || "",
+      await API.post("/provider/import-selected", {
+        services: [
+          {
+            ...service,
+          },
+        ],
+        provider: providerProfile.name,
       });
 
       toast.success("Imported");
@@ -121,17 +120,23 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
       return toast.error("No services selected");
     }
 
+    if (!providerProfile?.name) return toast.error("Provider required");
+
+    const servicesToImport = categories
+      .flatMap((cat) => cat.services)
+      .filter((s) => selectedServices.includes(s.service));
+
     try {
       await API.post("/provider/import-selected", {
-        services: selectedServices,
-        providerProfileId,
+        services: servicesToImport,
+        provider: providerProfile.name,
       });
 
       toast.success("Selected services imported");
       setSelectedServices([]);
       loadExistingServices();
     } catch (error) {
-      toast.error("Bulk import failed");
+      toast.error(error.response?.data?.message || "Bulk import failed");
     }
   };
 
@@ -139,16 +144,26 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
      IMPORT CATEGORY
   ========================================= */
   const importCategory = async (category) => {
+    if (!providerProfile?.name) return toast.error("Provider required");
+
+    const catObj = categories.find((c) => c.category === category);
+
+    if (!catObj || catObj.services.length === 0) {
+      return toast.error("No services found in this category");
+    }
+
     try {
       await API.post("/provider/import-category", {
         category,
-        providerProfileId,
+        services: catObj.services,
+        provider: providerProfile.name,
       });
 
       toast.success("Category imported");
       loadExistingServices();
     } catch (error) {
-      toast.error("Category import failed");
+      console.error(error);
+      toast.error(error.response?.data?.message || "Category import failed");
     }
   };
 
@@ -180,7 +195,6 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
 
   return (
     <div className="bg-white rounded-xl shadow p-4">
-
       {/* TOP ACTIONS */}
       <div className="flex flex-wrap gap-3 mb-4">
         <button
@@ -201,7 +215,6 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
       {/* CATEGORIES */}
       {categories.map((cat) => (
         <div key={cat.category} className="border rounded mb-4">
-
           {/* CATEGORY HEADER */}
           <div className="flex items-center justify-between bg-gray-100 p-3">
             <div className="flex items-center gap-3">
@@ -251,7 +264,6 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
                     className="border p-3 rounded flex flex-col gap-2"
                   >
                     <div className="flex items-center gap-3">
-
                       <input
                         type="checkbox"
                         checked={selectedServices.includes(s.service)}
@@ -305,9 +317,7 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
 
                       {existing && rateDiff !== 0 && (
                         <button
-                          onClick={() =>
-                            updateRate(existing, newRate)
-                          }
+                          onClick={() => updateRate(existing, newRate)}
                           className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
                         >
                           Update
@@ -315,9 +325,7 @@ const ProviderServiceTable = ({ categories, providerProfileId }) => {
                       )}
 
                       {existing && rateDiff === 0 && (
-                        <span className="text-gray-400 text-xs">
-                          ✓
-                        </span>
+                        <span className="text-gray-400 text-xs">✓</span>
                       )}
                     </div>
 
