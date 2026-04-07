@@ -11,11 +11,11 @@ const initialForm = {
   category: "",
   name: "",
 
-  // ✅ Provider system
   providerProfileId: "",
   providerServiceId: "",
 
-  // ✅ RESTORED (important for debugging providers)
+  // NEW PROVIDER FIELDS (hidden unless needed)
+  newProviderName: "",
   providerApiUrl: "",
   providerApiKey: "",
 
@@ -31,7 +31,6 @@ const initialForm = {
   isDefaultCategoryGlobal: false,
   isDefaultCategoryPlatform: false,
 
-  // ✅ FREE SERVICE
   isFree: false,
   freeQuantity: "",
   cooldownHours: "",
@@ -42,6 +41,8 @@ const AdminService = () => {
   const [providers, setProviders] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
   const [form, setForm] = useState(initialForm);
+
+  const isAddingNewProvider = form.providerProfileId === "new";
 
   /* ================= FETCH ================= */
   const fetchServices = async () => {
@@ -85,26 +86,51 @@ const AdminService = () => {
       !form.platform ||
       !form.category ||
       !form.name ||
-      !form.providerProfileId ||
+      (!form.providerProfileId && !isAddingNewProvider) ||
       (!form.isFree && !form.rate)
     ) {
       return toast.error("Please fill all required fields");
     }
 
     try {
+      let providerId = form.providerProfileId;
+
+      // ✅ CREATE NEW PROVIDER FIRST
+      if (isAddingNewProvider) {
+        if (!form.newProviderName || !form.providerApiKey || !form.providerApiUrl) {
+          return toast.error("Fill all new provider fields");
+        }
+
+        const res = await API.post("/provider/profiles", {
+          name: form.newProviderName,
+          apiUrl: form.providerApiUrl,
+          apiKey: form.providerApiKey,
+        });
+
+        providerId = res.data._id;
+        toast.success("Provider created");
+      }
+
+      const payload = {
+        ...form,
+        providerProfileId: providerId,
+      };
+
       if (selectedService) {
-        await API.put(`/admin/services/${selectedService._id}`, form);
-        toast.success("Service updated successfully");
+        await API.put(`/admin/services/${selectedService._id}`, payload);
+        toast.success("Service updated");
       } else {
-        await API.post("/admin/services", form);
-        toast.success("Service added successfully");
+        await API.post("/admin/services", payload);
+        toast.success("Service added");
       }
 
       setForm(initialForm);
       setSelectedService(null);
       fetchServices();
+      fetchProviders(); // refresh providers if new added
+
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to save service");
+      toast.error(err.response?.data?.message || "Failed to save");
     }
   };
 
@@ -123,15 +149,14 @@ const AdminService = () => {
 
   /* ================= DELETE ================= */
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this service?"))
-      return;
+    if (!window.confirm("Delete this service?")) return;
 
     try {
       await API.delete(`/admin/services/${id}`);
-      toast.success("Service deleted");
+      toast.success("Deleted");
       fetchServices();
     } catch {
-      toast.error("Failed to delete service");
+      toast.error("Delete failed");
     }
   };
 
@@ -139,10 +164,10 @@ const AdminService = () => {
   const handleToggleStatus = async (id) => {
     try {
       await API.patch(`/admin/services/${id}/toggle`);
-      toast.success("Service status updated");
+      toast.success("Updated");
       fetchServices();
     } catch {
-      toast.error("Failed to update status");
+      toast.error("Failed");
     }
   };
 
@@ -155,14 +180,12 @@ const AdminService = () => {
           {selectedService ? "Edit Service" : "Add New Service"}
         </h2>
 
-        {/* ================= FORM ================= */}
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl shadow-lg p-8 mb-10 space-y-6"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* PLATFORM */}
             <input
               name="platform"
               placeholder="Platform *"
@@ -172,7 +195,6 @@ const AdminService = () => {
               required
             />
 
-            {/* CATEGORY */}
             <input
               name="category"
               placeholder="Category *"
@@ -182,7 +204,6 @@ const AdminService = () => {
               required
             />
 
-            {/* NAME */}
             <input
               name="name"
               placeholder="Service Name *"
@@ -192,7 +213,7 @@ const AdminService = () => {
               required
             />
 
-            {/* PROVIDER */}
+            {/* PROVIDER DROPDOWN */}
             <select
               name="providerProfileId"
               value={form.providerProfileId}
@@ -201,14 +222,45 @@ const AdminService = () => {
               required
             >
               <option value="">Select Provider</option>
+
               {providers.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.name}
                 </option>
               ))}
+
+              <option value="new">➕ Add New Provider</option>
             </select>
 
-            {/* PROVIDER SERVICE ID */}
+            {/* ✅ CONDITIONAL NEW PROVIDER FIELDS */}
+            {isAddingNewProvider && (
+              <>
+                <input
+                  name="newProviderName"
+                  placeholder="New Provider Name"
+                  value={form.newProviderName}
+                  onChange={handleChange}
+                  className="p-3 border rounded-lg"
+                />
+
+                <input
+                  name="providerApiUrl"
+                  placeholder="API URL"
+                  value={form.providerApiUrl}
+                  onChange={handleChange}
+                  className="p-3 border rounded-lg"
+                />
+
+                <input
+                  name="providerApiKey"
+                  placeholder="API Key"
+                  value={form.providerApiKey}
+                  onChange={handleChange}
+                  className="p-3 border rounded-lg"
+                />
+              </>
+            )}
+
             <input
               name="providerServiceId"
               placeholder="Provider Service ID"
@@ -217,25 +269,6 @@ const AdminService = () => {
               className="p-3 border rounded-lg"
             />
 
-            {/* ✅ RESTORED API URL */}
-            <input
-              name="providerApiUrl"
-              placeholder="Provider API URL"
-              value={form.providerApiUrl}
-              onChange={handleChange}
-              className="p-3 border rounded-lg"
-            />
-
-            {/* ✅ RESTORED API KEY */}
-            <input
-              name="providerApiKey"
-              placeholder="Provider API Key"
-              value={form.providerApiKey}
-              onChange={handleChange}
-              className="p-3 border rounded-lg"
-            />
-
-            {/* RATE */}
             <input
               type="number"
               step="0.0001"
@@ -266,7 +299,6 @@ const AdminService = () => {
             />
           </div>
 
-          {/* DESCRIPTION */}
           <textarea
             name="description"
             placeholder="Description"
@@ -275,7 +307,6 @@ const AdminService = () => {
             className="w-full p-3 border rounded-lg"
           />
 
-          {/* FREE */}
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -288,67 +319,11 @@ const AdminService = () => {
 
           <FreeServiceFields form={form} handleChange={handleChange} />
 
-          {/* FLAGS */}
-          <div className="flex flex-wrap gap-6 pt-4">
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="refillAllowed"
-                checked={form.refillAllowed}
-                onChange={handleChange}
-              />
-              Refill Allowed
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="cancelAllowed"
-                checked={form.cancelAllowed}
-                onChange={handleChange}
-              />
-              Cancel Allowed
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isDefault"
-                checked={form.isDefault}
-                onChange={handleChange}
-              />
-              Default Service
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isDefaultCategoryGlobal"
-                checked={form.isDefaultCategoryGlobal}
-                onChange={handleChange}
-              />
-              Global Default Category
-            </label>
-
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isDefaultCategoryPlatform"
-                checked={form.isDefaultCategoryPlatform}
-                onChange={handleChange}
-              />
-              Platform Default Category
-            </label>
-
-          </div>
-
-          <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+          <button className="w-full bg-blue-600 text-white py-3 rounded-lg">
             {selectedService ? "Update Service" : "Add Service"}
           </button>
         </form>
 
-        {/* ================= TABLE ================= */}
         <AdminServiceTable
           services={services}
           onEdit={handleEdit}
