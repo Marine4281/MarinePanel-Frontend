@@ -66,19 +66,34 @@ const AdminServiceTable = ({
     }
   };
 
+  // ✅ NEW: SELECT PER CATEGORY
+  const toggleSelectCategory = (items) => {
+    const ids = items.map((i) => i._id);
+    const allSelected = ids.every((id) => selectedIds.includes(id));
+
+    if (allSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+    } else {
+      setSelectedIds((prev) => [...new Set([...prev, ...ids])]);
+    }
+  };
+
   // ================= BULK =================
-  const bulkHide = async () => {
+  // ✅ UPDATED: SMART TOGGLE (HIDE / SHOW)
+  const bulkToggle = async () => {
     try {
       setUpdating(true);
+
       await Promise.all(
         selectedIds.map((id) =>
           API.patch(`/admin/services/${id}/toggle`)
         )
       );
+
       toast.success("Selected services updated");
       window.location.reload();
     } catch {
-      toast.error("Bulk hide failed");
+      toast.error("Bulk update failed");
     } finally {
       setUpdating(false);
     }
@@ -182,10 +197,16 @@ const AdminServiceTable = ({
           </span>
 
           <div className="flex gap-3">
-            <button onClick={bulkHide} className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">
-              Hide
+            <button
+              onClick={bulkToggle}
+              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+            >
+              Toggle Hide/Show
             </button>
-            <button onClick={bulkDelete} className="bg-red-600 text-white px-3 py-1 rounded text-sm">
+            <button
+              onClick={bulkDelete}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+            >
               Delete
             </button>
           </div>
@@ -236,7 +257,16 @@ const AdminServiceTable = ({
               <>
                 {/* CATEGORY ROW */}
                 <tr key={category} className="bg-gray-200">
-                  <td colSpan="11" className="px-4 py-3 font-bold text-gray-700">
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      onChange={() => toggleSelectCategory(items)}
+                      checked={items.every((i) =>
+                        selectedIds.includes(i._id)
+                      )}
+                    />
+                  </td>
+                  <td colSpan="10" className="px-4 py-3 font-bold text-gray-700">
                     📦 {category} ({items.length})
                   </td>
                 </tr>
@@ -323,8 +353,12 @@ const AdminServiceTable = ({
                           Edit
                         </button>
 
-                        <button onClick={() => onToggleStatus(s._id)} className="bg-yellow-500 text-white px-2 py-1 rounded text-xs">
-                          Toggle
+                        {/* ✅ UPDATED BUTTON LABEL */}
+                        <button
+                          onClick={() => onToggleStatus(s._id)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          {s.status ? "Hide" : "Show"}
                         </button>
 
                         <button onClick={() => onDelete(s._id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">
