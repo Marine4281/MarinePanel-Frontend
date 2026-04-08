@@ -96,6 +96,7 @@ const AdminServiceTable = ({
 
       await API.put(`/admin/services/${id}`, {
         rate: service.providerRate,
+        lastSyncedRate: service.providerRate,
         // optional but safer if backend supports it
         // rate: providerRate,
         // lastSyncedRate: providerRate,
@@ -118,7 +119,10 @@ const AdminServiceTable = ({
 
       await Promise.all(
         rateChanges.map((s) =>
-          API.put(`/admin/services/${s._id}`, {})
+          API.put(`/admin/services/${s._id}`, {
+            rate: s.providerRate,
+            lastSyncedRate: s.providerRate,
+          })
         )
       );
 
