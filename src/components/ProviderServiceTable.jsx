@@ -175,7 +175,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             rate: service.rate,
             min: service.min,
             max: service.max,
-            service: service.service,
+            providerServiceId: service.service,
             platform: service.platform || "General",
             description: service.description || "",
           },
