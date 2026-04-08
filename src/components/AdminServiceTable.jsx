@@ -45,12 +45,21 @@ const AdminServiceTable = ({
 
   // ================= RATE HELPERS =================
   const getProviderRate = (s) => {
-    return Number(s.newRate ?? s.lastSyncedRate ?? 0);
+    return Number(
+      s.newRate ??
+      s.lastSyncedRate ??
+      s.rate ?? // ✅ FIX: fallback to actual rate
+      0
+    );
+  };
+
+  const getYourRate = (s) => {
+    return Number(s.rate ?? 0);
   };
 
   const getDiffValue = (s) => {
     const providerRate = getProviderRate(s);
-    const yourRate = Number(s.rate || 0);
+    const yourRate = getYourRate(s);
     return providerRate - yourRate;
   };
 
@@ -60,14 +69,15 @@ const AdminServiceTable = ({
     return `${diff > 0 ? "+" : ""}${diff.toFixed(4)}`;
   };
 
-  // ================= RATE CHANGES (TOP TABLE 🔥) =================
+  // ================= RATE CHANGES =================
   const rateChanges = useMemo(() => {
     return services
       .map((s) => {
         const providerRate = getProviderRate(s);
-        const yourRate = Number(s.rate || 0);
+        const yourRate = getYourRate(s);
 
-        if (!providerRate || providerRate === yourRate) return null;
+        // ✅ FIX: removed "!providerRate"
+        if (providerRate === yourRate) return null;
 
         return {
           ...s,
@@ -83,7 +93,13 @@ const AdminServiceTable = ({
   const acceptRate = async (id) => {
     try {
       setUpdating(true);
-      await API.put(`/admin/services/${id}`, {});
+
+      await API.put(`/admin/services/${id}`, {
+        // optional but safer if backend supports it
+        // rate: providerRate,
+        // lastSyncedRate: providerRate,
+      });
+
       toast.success("Rate synced");
       window.location.reload();
     } catch {
@@ -145,7 +161,7 @@ const AdminServiceTable = ({
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
 
-      {/* 🔥 RATE SUMMARY TABLE */}
+      {/* 🔥 RATE SUMMARY */}
       {rateChanges.length > 0 && (
         <div className="mb-6 border rounded-xl p-4 bg-yellow-50">
           <div className="flex justify-between items-center mb-3">
@@ -193,6 +209,7 @@ const AdminServiceTable = ({
                   <button
                     onClick={() => acceptRate(s._id)}
                     className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                    disabled={updating}
                   >
                     Sync
                   </button>
@@ -267,7 +284,6 @@ const AdminServiceTable = ({
                       <td className="px-4 py-3">{s.provider}</td>
                       <td className="px-4 py-3">{s.providerServiceId}</td>
 
-                      {/* 🔥 CLEAN RATE COLUMN */}
                       <td className="px-4 py-3">
                         {providerRate.toFixed(4)}
                         {diff && (
