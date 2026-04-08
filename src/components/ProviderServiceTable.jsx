@@ -1,5 +1,5 @@
 // src/components/ProviderServiceTable.jsx
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
@@ -11,8 +11,6 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showDescription, setShowDescription] = useState(false);
   const [updatingAll, setUpdatingAll] = useState(false);
-  const [updatingSelected, setUpdatingSelected] = useState(false);
-  const [updatingSingle, setUpdatingSingle] = useState(null);
 
   /* =========================================
      LOAD EXISTING SERVICES
@@ -43,60 +41,54 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   };
 
   /* =========================================
-     RATE CHANGES (OPTIMIZED)
+     RATE CHANGES SUMMARY (🔥 NEW)
   ========================================= */
-  const rateChanges = useMemo(() => {
-    return categories.flatMap((cat) =>
-      cat.services
-        .map((s) => {
-          const existing = findExisting(s.service);
-          if (!existing) return null;
+  const rateChanges = categories.flatMap((cat) =>
+    cat.services
+      .map((s) => {
+        const existing = findExisting(s.service);
+        if (!existing) return null;
 
-          const newRate = Number(s.rate);
-          const oldRate =
-            existing?.lastSyncedRate || existing?.rate || 0;
+        const newRate = Number(s.rate);
+        const oldRate =
+          existing?.lastSyncedRate || existing?.rate || 0;
 
-          const diff = newRate - oldRate;
-          if (diff === 0) return null;
+        const diff = newRate - oldRate;
 
-          return {
-            id: s.service,
-            name: s.name,
-            category: cat.category,
-            oldRate,
-            newRate,
-            diff,
-            existing,
-          };
-        })
-        .filter(Boolean)
-    );
-  }, [categories, existingServices]);
+        if (diff === 0) return null;
+
+        return {
+          id: s.service,
+          name: s.name,
+          category: cat.category,
+          oldRate,
+          newRate,
+          diff,
+          existing,
+        };
+      })
+      .filter(Boolean)
+  );
 
   /* =========================================
-     UPDATE RATE (SINGLE)
+     UPDATE RATE
   ========================================= */
   const updateRate = async (existing, newRate) => {
     try {
-      setUpdatingSingle(existing._id);
-
       await API.put(`/admin/services/${existing._id}`, {
         rate: newRate,
-        lastSyncedRate: newRate,
+        lastSyncedRate: newRate, // ✅ FIX
       });
-
       toast.success("Rate updated");
       loadExistingServices();
     } catch (error) {
       console.error(error);
       toast.error("Failed to update rate");
-    } finally {
-      setUpdatingSingle(null);
     }
   };
 
   /* =========================================
-     UPDATE ALL (PARALLEL 🔥)
+     UPDATE ALL RATES
   ========================================= */
   const updateAllRates = async () => {
     if (rateChanges.length === 0) return;
@@ -104,14 +96,12 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     try {
       setUpdatingAll(true);
 
-      await Promise.all(
-        rateChanges.map((r) =>
-          API.put(`/admin/services/${r.existing._id}`, {
-            rate: r.newRate,
-            lastSyncedRate: r.newRate,
-          })
-        )
-      );
+      for (const r of rateChanges) {
+        await API.put(`/admin/services/${r.existing._id}`, {
+          rate: r.newRate,
+          lastSyncedRate: r.newRate,
+        });
+      }
 
       toast.success("All rates updated");
       loadExistingServices();
@@ -124,47 +114,17 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   };
 
   /* =========================================
-     UPDATE SELECTED ONLY 🔥 NEW
+     STATUS LABEL
   ========================================= */
-  const updateSelectedRates = async () => {
-    const selectedChanges = rateChanges.filter((r) =>
-      selectedServices.includes(r.id)
-    );
-
-    if (selectedChanges.length === 0) {
-      return toast.error("No changed selected services");
-    }
-
-    try {
-      setUpdatingSelected(true);
-
-      await Promise.all(
-        selectedChanges.map((r) =>
-          API.put(`/admin/services/${r.existing._id}`, {
-            rate: r.newRate,
-            lastSyncedRate: r.newRate,
-          })
-        )
-      );
-
-      toast.success("Selected rates updated");
-      loadExistingServices();
-    } catch (error) {
-      console.error(error);
-      toast.error("Selected update failed");
-    } finally {
-      setUpdatingSelected(false);
-    }
-  };
-
-  /* ========================================= */
   const getStatus = (existing) => {
     if (existing?.deleted) return "Deleted";
     if (existing) return "Imported";
     return "New";
   };
 
-  /* ========================================= */
+  /* =========================================
+     TOGGLE CATEGORY
+  ========================================= */
   const toggleCategory = (cat) => {
     const isSelected = selectedCategories.includes(cat.category);
 
@@ -187,6 +147,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     }
   };
 
+  /* =========================================
+     TOGGLE SERVICE
+  ========================================= */
   const toggleService = (service) => {
     setSelectedServices((prev) =>
       prev.includes(service.service)
@@ -195,7 +158,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     );
   };
 
-  /* ========================================= */
+  /* =========================================
+     IMPORT SINGLE SERVICE
+  ========================================= */
   const importService = async (service) => {
     if (!providerProfile?.name) return toast.error("Provider required");
 
@@ -203,7 +168,18 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       setLoadingImport(service.service);
 
       await API.post("/provider/import-selected", {
-        services: [service],
+        services: [
+          {
+            name: service.name,
+            category: service.category,
+            rate: service.rate,
+            min: service.min,
+            max: service.max,
+            service: service.service,
+            platform: service.platform || "General",
+            description: service.description || "",
+          },
+        ],
         provider: providerProfile.name,
       });
 
@@ -211,16 +187,18 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       loadExistingServices();
     } catch (error) {
       console.error(error);
-      toast.error("Import failed");
+      toast.error(error.response?.data?.message || "Import failed");
     } finally {
       setLoadingImport(null);
     }
   };
 
+  /* =========================================
+     BULK IMPORT
+  ========================================= */
   const importSelected = async () => {
     if (!providerProfile?.name) return toast.error("Provider required");
-    if (selectedServices.length === 0)
-      return toast.error("No services selected");
+    if (selectedServices.length === 0) return toast.error("No services selected");
 
     const servicesToImport = categories
       .flatMap((cat) => cat.services)
@@ -237,14 +215,20 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       loadExistingServices();
     } catch (error) {
       console.error(error);
-      toast.error("Bulk import failed");
+      toast.error(error.response?.data?.message || "Bulk import failed");
     }
   };
 
+  /* =========================================
+     IMPORT CATEGORY
+  ========================================= */
   const importCategory = async (category) => {
     if (!providerProfile?.name) return toast.error("Provider required");
 
     const catObj = categories.find((c) => c.category === category);
+    if (!catObj || catObj.services.length === 0) {
+      return toast.error("No services found in this category");
+    }
 
     try {
       await API.post("/provider/import-category", {
@@ -257,10 +241,13 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       loadExistingServices();
     } catch (error) {
       console.error(error);
-      toast.error("Category import failed");
+      toast.error(error.response?.data?.message || "Category import failed");
     }
   };
 
+  /* =========================================
+     TOGGLE CATEGORY EXPAND
+  ========================================= */
   const toggleExpand = (category) => {
     setExpandedCategories((prev) => ({
       ...prev,
@@ -280,16 +267,6 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         </button>
 
         <button
-          onClick={updateSelectedRates}
-          disabled={updatingSelected}
-          className="bg-purple-600 text-white px-4 py-2 rounded"
-        >
-          {updatingSelected
-            ? "Updating..."
-            : "Update Selected"}
-        </button>
-
-        <button
           onClick={() => setShowDescription(!showDescription)}
           className="bg-gray-600 text-white px-4 py-2 rounded"
         >
@@ -297,7 +274,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         </button>
       </div>
 
-      {/* RATE SUMMARY */}
+      {/* 🔥 RATE CHANGES SUMMARY */}
       {rateChanges.length > 0 && (
         <div className="mb-4 border rounded-lg p-4 bg-yellow-50">
           <div className="flex justify-between items-center mb-2">
@@ -322,15 +299,18 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
               >
                 <div className="text-sm">
                   <span className="font-medium">{r.id}</span> — {r.name}
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({r.category})
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-gray-500">
-                    Your: {r.oldRate.toFixed(4)}
+                    {r.oldRate.toFixed(4)}
                   </span>
                   <span>→</span>
                   <span className="font-semibold">
-                    Provider: {r.newRate.toFixed(4)}
+                    {r.newRate.toFixed(4)}
                   </span>
 
                   <span
@@ -343,15 +323,10 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                   </span>
 
                   <button
-                    disabled={updatingSingle === r.existing._id}
-                    onClick={() =>
-                      updateRate(r.existing, r.newRate)
-                    }
+                    onClick={() => updateRate(r.existing, r.newRate)}
                     className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
                   >
-                    {updatingSingle === r.existing._id
-                      ? "..."
-                      : "Update"}
+                    Update
                   </button>
                 </div>
               </div>
@@ -363,15 +338,23 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       {/* CATEGORIES */}
       {categories.map((cat) => (
         <div key={cat.category} className="border rounded mb-4">
-          <div className="flex justify-between bg-gray-100 p-3">
-            <div className="flex gap-3">
+          <div className="flex items-center justify-between bg-gray-100 p-3">
+            <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={selectedCategories.includes(cat.category)}
                 onChange={() => toggleCategory(cat)}
               />
-              <span onClick={() => toggleExpand(cat.category)}>
-                {cat.category} ({cat.services.length})
+
+              <span
+                className="font-semibold cursor-pointer"
+                onClick={() => toggleExpand(cat.category)}
+              >
+                {cat.category}
+              </span>
+
+              <span className="text-xs text-gray-500">
+                ({cat.services.length})
               </span>
             </div>
 
@@ -387,54 +370,83 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             <div className="p-3 space-y-2">
               {cat.services.map((s) => {
                 const existing = findExisting(s.service);
+
                 const newRate = Number(s.rate);
                 const oldRate =
                   existing?.lastSyncedRate || existing?.rate || 0;
-                const rateDiff = existing
-                  ? newRate - oldRate
-                  : 0;
+                const rateDiff = existing ? newRate - oldRate : 0;
+                const status = getStatus(existing);
 
                 return (
-                  <div key={s.service} className="border p-3 rounded">
-                    <div className="flex gap-3 items-center">
+                  <div
+                    key={s.service}
+                    className={`border p-3 rounded flex flex-col gap-2 ${
+                      rateDiff !== 0 ? "bg-yellow-50 border-yellow-300" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
                       <input
                         type="checkbox"
                         checked={selectedServices.includes(s.service)}
                         onChange={() => toggleService(s)}
                       />
 
-                      <span>{s.name}</span>
+                      <span className="w-16">{s.service}</span>
+                      <span className="flex-1">{s.name}</span>
 
-                      <span>
+                      <span className="text-sm">
                         ${newRate.toFixed(4)}
-                        {rateDiff !== 0 && (
-                          <span className="ml-2 text-xs">
-                            ({rateDiff > 0 ? "+" : ""}
-                            {rateDiff.toFixed(4)})
+                        {existing && rateDiff !== 0 && (
+                          <span
+                            className={`ml-2 text-xs ${
+                              rateDiff > 0
+                                ? "text-red-500"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {rateDiff > 0 ? "+" : ""}
+                            {rateDiff.toFixed(4)}
                           </span>
                         )}
                       </span>
 
-                      {existing && rateDiff !== 0 && (
-                        <button
-                          onClick={() =>
-                            updateRate(existing, newRate)
-                          }
-                          className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
-                        >
-                          Update
-                        </button>
-                      )}
+                      <span className="text-xs font-semibold">
+                        {status}
+                      </span>
 
                       {!existing && (
                         <button
                           onClick={() => importService(s)}
                           className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
                         >
-                          Import
+                          {loadingImport === s.service ? "..." : "Import"}
                         </button>
                       )}
+
+                      {existing && rateDiff !== 0 && (
+                        <button
+                          onClick={() => updateRate(existing, newRate)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                        >
+                          Update
+                        </button>
+                      )}
+
+                      {existing && rateDiff === 0 && (
+                        <span className="text-gray-400 text-xs">✓</span>
+                      )}
                     </div>
+
+                    <div className="text-xs text-gray-500 flex gap-4">
+                      <span>Min: {s.min}</span>
+                      <span>Max: {s.max}</span>
+                    </div>
+
+                    {showDescription && (
+                      <div className="text-xs text-gray-400">
+                        {s.description || "No description"}
+                      </div>
+                    )}
                   </div>
                 );
               })}
