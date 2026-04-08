@@ -1,6 +1,6 @@
 // src/components/AdminServiceTable.jsx
 import { useState, useMemo } from "react";
-import { FiCopy, FiX } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
 import API from "../api/axios";
 
@@ -43,46 +43,75 @@ const AdminServiceTable = ({
     );
   }, [filteredServices]);
 
-  const copyToClipboard = (text) => {
-    if (!text) return;
-    navigator.clipboard.writeText(String(text));
-    toast.success("Copied!");
-  };
-
   // ================= RATE HELPERS =================
   const getProviderRate = (s) => {
-    return s.newRate ?? s.lastSyncedRate ?? 0;
+    return Number(s.newRate ?? s.lastSyncedRate ?? 0);
   };
 
-  const getRateStatus = (s) => {
+  const getDiffValue = (s) => {
     const providerRate = getProviderRate(s);
-    const yourRate = s.rate || 0;
-
-    if (!providerRate) return "neutral";
-
-    if (providerRate > yourRate) return "loss"; // bad
-    if (providerRate < yourRate) return "profit"; // good
-    return "same";
+    const yourRate = Number(s.rate || 0);
+    return providerRate - yourRate;
   };
 
-  const getRateColor = (status, hasChange) => {
-    if (hasChange) return "bg-yellow-50 border-yellow-300";
+  const getDiffFormatted = (s) => {
+    const diff = getDiffValue(s);
+    if (diff === 0) return null;
+    return `${diff > 0 ? "+" : ""}${diff.toFixed(4)}`;
+  };
 
-    switch (status) {
-      case "loss":
-        return "bg-red-50 border-red-300";
-      case "profit":
-        return "bg-green-50 border-green-300";
-      default:
-        return "bg-gray-50 border-gray-200";
+  // ================= RATE CHANGES (TOP TABLE 🔥) =================
+  const rateChanges = useMemo(() => {
+    return services
+      .map((s) => {
+        const providerRate = getProviderRate(s);
+        const yourRate = Number(s.rate || 0);
+
+        if (!providerRate || providerRate === yourRate) return null;
+
+        return {
+          ...s,
+          providerRate,
+          yourRate,
+          diff: providerRate - yourRate,
+        };
+      })
+      .filter(Boolean);
+  }, [services]);
+
+  // ================= ACTIONS =================
+  const acceptRate = async (id) => {
+    try {
+      setUpdating(true);
+      await API.put(`/admin/services/${id}`, {});
+      toast.success("Rate synced");
+      window.location.reload();
+    } catch {
+      toast.error("Failed");
+    } finally {
+      setUpdating(false);
     }
   };
 
-  const getDiff = (s) => {
-    const providerRate = getProviderRate(s);
-    const yourRate = s.rate || 0;
+  const updateAllRates = async () => {
+    if (rateChanges.length === 0) return;
 
-    return (yourRate - providerRate).toFixed(6);
+    try {
+      setUpdating(true);
+
+      await Promise.all(
+        rateChanges.map((s) =>
+          API.put(`/admin/services/${s._id}`, {})
+        )
+      );
+
+      toast.success("All rates synced");
+      window.location.reload();
+    } catch {
+      toast.error("Bulk update failed");
+    } finally {
+      setUpdating(false);
+    }
   };
 
   // ================= SELECT =================
@@ -113,23 +142,66 @@ const AdminServiceTable = ({
     }
   };
 
-  // ================= RATE ACTIONS =================
-  const acceptRate = async (id) => {
-    try {
-      setUpdating(true);
-      await API.put(`/admin/services/${id}`, {}); // triggers backend update
-      toast.success("Rate synced");
-      window.location.reload();
-    } catch {
-      toast.error("Failed");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  // ================= UI =================
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
+
+      {/* 🔥 RATE SUMMARY TABLE */}
+      {rateChanges.length > 0 && (
+        <div className="mb-6 border rounded-xl p-4 bg-yellow-50">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-semibold text-yellow-800">
+              ⚠ Rate Changes ({rateChanges.length})
+            </h2>
+
+            <button
+              onClick={updateAllRates}
+              disabled={updating}
+              className="bg-red-600 text-white px-3 py-1 rounded text-xs"
+            >
+              {updating ? "Updating..." : "Update All"}
+            </button>
+          </div>
+
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {rateChanges.map((s) => (
+              <div
+                key={s._id}
+                className="flex justify-between bg-white p-2 rounded border text-sm"
+              >
+                <div>
+                  <strong>{s.name}</strong>
+                </div>
+
+                <div className="flex gap-3 items-center">
+                  <span className="text-gray-500">
+                    Your: {s.yourRate.toFixed(4)}
+                  </span>
+                  <span>→</span>
+                  <span className="font-semibold">
+                    Provider: {s.providerRate.toFixed(4)}
+                  </span>
+
+                  <span
+                    className={`text-xs ${
+                      s.diff > 0 ? "text-red-500" : "text-green-600"
+                    }`}
+                  >
+                    {s.diff > 0 ? "+" : ""}
+                    {s.diff.toFixed(4)}
+                  </span>
+
+                  <button
+                    onClick={() => acceptRate(s._id)}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+                  >
+                    Sync
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* SEARCH */}
       <div className="mb-6">
@@ -145,43 +217,28 @@ const AdminServiceTable = ({
       {/* TABLE */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="bg-gray-100 uppercase text-gray-600 text-xs">
+          <thead className="bg-gray-100 text-xs">
             <tr>
               <th className="px-4 py-3">
-                <input
-                  type="checkbox"
-                  onChange={toggleSelectAll}
-                  checked={
-                    selectedIds.length === filteredServices.length &&
-                    filteredServices.length > 0
-                  }
-                />
+                <input type="checkbox" onChange={toggleSelectAll} />
               </th>
               <th className="px-4 py-3">System ID</th>
               <th className="px-4 py-3">Platform</th>
               <th className="px-4 py-3">Service</th>
               <th className="px-4 py-3">Provider</th>
               <th className="px-4 py-3">Provider ID</th>
-              <th className="px-4 py-3">Rates</th>
+              <th className="px-4 py-3">Provider Rate</th>
               <th className="px-4 py-3">Description</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y">
+          <tbody>
             {groupedServices.map(([category, items]) => (
               <>
                 <tr key={category} className="bg-gray-200">
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      onChange={() => toggleSelectCategory(items)}
-                      checked={items.every((i) =>
-                        selectedIds.includes(i._id)
-                      )}
-                    />
-                  </td>
+                  <td />
                   <td colSpan="9" className="px-4 py-3 font-bold">
                     📦 {category} ({items.length})
                   </td>
@@ -189,13 +246,10 @@ const AdminServiceTable = ({
 
                 {items.map((s) => {
                   const providerRate = getProviderRate(s);
-                  const status = getRateStatus(s);
-                  const hasChange = s.newRate && s.newRate !== s.rate;
-                  const diff = getDiff(s);
+                  const diff = getDiffFormatted(s);
 
                   return (
                     <tr key={s._id} className="hover:bg-gray-50">
-
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
@@ -209,40 +263,24 @@ const AdminServiceTable = ({
                       </td>
 
                       <td className="px-4 py-3">{s.platform}</td>
-
                       <td className="px-4 py-3">{s.name}</td>
-
                       <td className="px-4 py-3">{s.provider}</td>
-
                       <td className="px-4 py-3">{s.providerServiceId}</td>
 
-                      {/* 🔥 NEW RATE UI */}
+                      {/* 🔥 CLEAN RATE COLUMN */}
                       <td className="px-4 py-3">
-                        <div
-                          className={`p-2 rounded-lg border text-xs ${getRateColor(
-                            status,
-                            hasChange
-                          )}`}
-                        >
-                          <div>
-                            <strong>Your:</strong> ${s.rate}
-                          </div>
-                          <div>
-                            <strong>Provider:</strong> ${providerRate}
-                          </div>
-                          <div className="font-bold">
-                            Diff: {diff}
-                          </div>
-
-                          {hasChange && (
-                            <button
-                              onClick={() => acceptRate(s._id)}
-                              className="mt-1 bg-green-600 text-white px-2 py-1 rounded text-xs"
-                            >
-                              Sync
-                            </button>
-                          )}
-                        </div>
+                        {providerRate.toFixed(4)}
+                        {diff && (
+                          <span
+                            className={`ml-2 text-xs ${
+                              diff.startsWith("+")
+                                ? "text-red-500"
+                                : "text-green-600"
+                            }`}
+                          >
+                            ({diff})
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-4 py-3">
@@ -302,14 +340,13 @@ const AdminServiceTable = ({
       {/* MODAL */}
       {selectedDescription && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-[400px]">
+          <div className="bg-white p-6 rounded-xl w-[400px] relative">
             <button
               onClick={() => setSelectedDescription(null)}
               className="absolute top-3 right-3"
             >
               <FiX />
             </button>
-
             <p>{selectedDescription}</p>
           </div>
         </div>
