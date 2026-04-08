@@ -95,6 +95,7 @@ const AdminServiceTable = ({
       setUpdating(true);
 
       await API.put(`/admin/services/${id}`, {
+        rate: service.providerRate,
         // optional but safer if backend supports it
         // rate: providerRate,
         // lastSyncedRate: providerRate,
@@ -207,7 +208,7 @@ const AdminServiceTable = ({
                   </span>
 
                   <button
-                    onClick={() => acceptRate(s._id)}
+                    onClick={() => acceptRate(s)}
                     className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
                     disabled={updating}
                   >
