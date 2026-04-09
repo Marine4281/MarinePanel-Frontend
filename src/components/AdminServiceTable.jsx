@@ -9,8 +9,8 @@ import DescriptionModal from "./AdminServiceTable/DescriptionModal";
 const AdminServiceTable = ({
   services = [],
   onEdit,
-  onDelete,        // Optional: if single delete is handled here
-  onToggleStatus,  // Optional: if single toggle is handled here
+  onDelete,
+  onToggleStatus,
 }) => {
   const [search, setSearch] = useState("");
   const [selectedDescription, setSelectedDescription] = useState(null);
@@ -41,14 +41,14 @@ const AdminServiceTable = ({
       return acc;
     }, {});
 
-    // Convert to array of [category, services]
-    return Object.entries(grouped).sort((a, b) =>
-      a[0].localeCompare(b[0])
-    );
+    return Object.entries(grouped); // Keep original order
   }, [filteredServices]);
 
   // ================= SELECTION HANDLERS =================
+
+  // Toggle single service selection
   const toggleSelect = (id) => {
+    if (!id) return;
     setSelectedIds((prev) =>
       prev.includes(id)
         ? prev.filter((i) => i !== id)
@@ -56,24 +56,41 @@ const AdminServiceTable = ({
     );
   };
 
+  // Toggle select all filtered services
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredServices.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredServices.map((s) => s._id));
-    }
+    const allIds = filteredServices.map((s) => s._id).filter(Boolean);
+
+    const isAllSelected =
+      allIds.length > 0 &&
+      allIds.every((id) => selectedIds.includes(id));
+
+    setSelectedIds(isAllSelected ? [] : allIds);
   };
 
-  const toggleSelectCategory = (items) => {
-    const ids = items.map((i) => i._id);
-    const allSelected = ids.every((id) => selectedIds.includes(id));
+  // Toggle selection for a specific category
+  const toggleSelectCategory = (items = []) => {
+    const ids = items.map((i) => i._id).filter(Boolean);
+    if (!ids.length) return;
 
-    if (allSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
-    } else {
-      setSelectedIds((prev) => [...new Set([...prev, ...ids])]);
-    }
+    const allSelected = ids.every((id) =>
+      selectedIds.includes(id)
+    );
+
+    setSelectedIds((prev) =>
+      allSelected
+        ? prev.filter((id) => !ids.includes(id)) // Deselect category
+        : [...new Set([...prev, ...ids])]        // Select category
+    );
   };
+
+  // Helper for "Select All" checkbox state
+  const isAllSelected = useMemo(() => {
+    const allIds = filteredServices.map((s) => s._id).filter(Boolean);
+    return (
+      allIds.length > 0 &&
+      allIds.every((id) => selectedIds.includes(id))
+    );
+  }, [filteredServices, selectedIds]);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -96,6 +113,7 @@ const AdminServiceTable = ({
         toggleSelect={toggleSelect}
         toggleSelectAll={toggleSelectAll}
         toggleSelectCategory={toggleSelectCategory}
+        isAllSelected={isAllSelected}
         onEdit={onEdit}
         onDelete={onDelete}
         onToggleStatus={onToggleStatus}
