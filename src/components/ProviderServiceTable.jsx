@@ -175,7 +175,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             rate: service.rate,
             min: service.min,
             max: service.max,
-            providerServiceId: service.service,
+            service: service.service,
             platform: service.platform || "General",
             description: service.description || "",
           },
@@ -212,7 +212,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     rate: s.rate,
     min: s.min,
     max: s.max,
-    providerServiceId: s.service,
+    service: s.service,
     platform: s.platform || "General",
     description: s.description || "",
   })),
@@ -251,7 +251,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         rate: s.rate,
         min: s.min,
         max: s.max,
-        providerServiceId: s.service, // ✅ CRITICAL
+        service: s.service, // ✅ CRITICAL
         platform: s.platform || "General",
         description: s.description || "",
       })),
