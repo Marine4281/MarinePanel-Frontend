@@ -49,42 +49,6 @@ const AdminServiceTable = ({
     toast.success("Copied!");
   };
 
-  // ================= RATE HELPERS =================
-  const getProviderRate = (s) => {
-    return s.newRate ?? s.lastSyncedRate ?? 0;
-  };
-
-  const getRateStatus = (s) => {
-    const providerRate = getProviderRate(s);
-    const yourRate = s.rate || 0;
-
-    if (!providerRate) return "neutral";
-
-    if (providerRate > yourRate) return "loss"; // bad
-    if (providerRate < yourRate) return "profit"; // good
-    return "same";
-  };
-
-  const getRateColor = (status, hasChange) => {
-    if (hasChange) return "bg-yellow-50 border-yellow-300";
-
-    switch (status) {
-      case "loss":
-        return "bg-red-50 border-red-300";
-      case "profit":
-        return "bg-green-50 border-green-300";
-      default:
-        return "bg-gray-50 border-gray-200";
-    }
-  };
-
-  const getDiff = (s) => {
-    const providerRate = getProviderRate(s);
-    const yourRate = s.rate || 0;
-
-    return (yourRate - providerRate).toFixed(6);
-  };
-
   // ================= SELECT =================
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
@@ -102,6 +66,7 @@ const AdminServiceTable = ({
     }
   };
 
+  // ✅ NEW: SELECT PER CATEGORY
   const toggleSelectCategory = (items) => {
     const ids = items.map((i) => i._id);
     const allSelected = ids.every((id) => selectedIds.includes(id));
@@ -113,23 +78,140 @@ const AdminServiceTable = ({
     }
   };
 
-  // ================= RATE ACTIONS =================
-  const acceptRate = async (id) => {
+  // ================= BULK =================
+  // ✅ UPDATED: SMART TOGGLE (HIDE / SHOW)
+  const bulkToggle = async () => {
     try {
       setUpdating(true);
-      await API.put(`/admin/services/${id}`, {}); // triggers backend update
-      toast.success("Rate synced");
+
+      await Promise.all(
+        selectedIds.map((id) =>
+          API.patch(`/admin/services/${id}/toggle`)
+        )
+      );
+
+      toast.success("Selected services updated");
       window.location.reload();
     } catch {
-      toast.error("Failed");
+      toast.error("Bulk update failed");
     } finally {
       setUpdating(false);
     }
   };
 
-  // ================= UI =================
+  const bulkDelete = async () => {
+    if (!window.confirm("Delete selected services?")) return;
+
+    try {
+      setUpdating(true);
+      await Promise.all(
+        selectedIds.map((id) =>
+          API.delete(`/admin/services/${id}`)
+        )
+      );
+      toast.success("Selected services deleted");
+      window.location.reload();
+    } catch {
+      toast.error("Bulk delete failed");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // ================= RATE =================
+  const getRateDiff = (s) => {
+    if (!s.newRate || s.newRate === s.rate) return null;
+
+    const diff = (s.newRate - s.rate).toFixed(6);
+
+    return { value: diff, isIncrease: diff > 0 };
+  };
+
+  const acceptRate = async (id) => {
+    try {
+      setUpdating(true);
+      await API.patch(`/admin/services/${id}/accept-rate`);
+      toast.success("Rate updated");
+      window.location.reload();
+    } catch {
+      toast.error("Failed to update rate");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const declineRate = async (id) => {
+    try {
+      setUpdating(true);
+      await API.patch(`/admin/services/${id}/decline-rate`);
+      toast.success("Rate change declined");
+      window.location.reload();
+    } catch {
+      toast.error("Failed to decline");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const acceptAll = async () => {
+    try {
+      setUpdating(true);
+      await API.patch(`/admin/services/accept-all-rates`);
+      toast.success("All rates updated");
+      window.location.reload();
+    } catch {
+      toast.error("Failed to update all");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const changedServices = services.filter(
+    (s) => s.newRate && s.newRate !== s.rate
+  );
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
+
+      {/* RATE BULK */}
+      {changedServices.length > 0 && (
+        <div className="mb-4 flex justify-between items-center bg-yellow-50 border border-yellow-300 p-3 rounded-lg">
+          <span className="text-sm font-medium">
+            {changedServices.length} services have updated rates
+          </span>
+          <button
+            onClick={acceptAll}
+            disabled={updating}
+            className="bg-green-600 text-white px-4 py-2 rounded text-sm"
+          >
+            Accept All
+          </button>
+        </div>
+      )}
+
+      {/* BULK BAR */}
+      {selectedIds.length > 0 && (
+        <div className="mb-4 flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg">
+          <span className="text-sm font-medium">
+            {selectedIds.length} selected
+          </span>
+
+          <div className="flex gap-3">
+            <button
+              onClick={bulkToggle}
+              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+            >
+              Toggle Hide/Show
+            </button>
+            <button
+              onClick={bulkDelete}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* SEARCH */}
       <div className="mb-6">
@@ -162,7 +244,8 @@ const AdminServiceTable = ({
               <th className="px-4 py-3">Service</th>
               <th className="px-4 py-3">Provider</th>
               <th className="px-4 py-3">Provider ID</th>
-              <th className="px-4 py-3">Rates</th>
+              <th className="px-4 py-3">Rate</th>
+              <th className="px-4 py-3">Change</th>
               <th className="px-4 py-3">Description</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Actions</th>
@@ -172,6 +255,7 @@ const AdminServiceTable = ({
           <tbody className="divide-y">
             {groupedServices.map(([category, items]) => (
               <>
+                {/* CATEGORY ROW */}
                 <tr key={category} className="bg-gray-200">
                   <td className="px-4 py-3">
                     <input
@@ -182,16 +266,14 @@ const AdminServiceTable = ({
                       )}
                     />
                   </td>
-                  <td colSpan="9" className="px-4 py-3 font-bold">
+                  <td colSpan="10" className="px-4 py-3 font-bold text-gray-700">
                     📦 {category} ({items.length})
                   </td>
                 </tr>
 
+                {/* SERVICES */}
                 {items.map((s) => {
-                  const providerRate = getProviderRate(s);
-                  const status = getRateStatus(s);
-                  const hasChange = s.newRate && s.newRate !== s.rate;
-                  const diff = getDiff(s);
+                  const diff = getRateDiff(s);
 
                   return (
                     <tr key={s._id} className="hover:bg-gray-50">
@@ -204,78 +286,74 @@ const AdminServiceTable = ({
                         />
                       </td>
 
-                      <td className="px-4 py-3 text-xs">
-                        {s.serviceId || s._id?.slice(-6)}
+                      <td className="px-4 py-3 text-xs flex items-center gap-2">
+                        <span>{s.serviceId || s._id?.slice(-6)}</span>
+                        <button onClick={() => copyToClipboard(s.serviceId || s._id?.slice(-6))}>
+                          <FiCopy size={14} />
+                        </button>
                       </td>
 
                       <td className="px-4 py-3">{s.platform}</td>
 
-                      <td className="px-4 py-3">{s.name}</td>
+                      <td className="px-4 py-3">
+                        {s.name} {s.isDefault && "(Service Default)"}
+                      </td>
 
                       <td className="px-4 py-3">{s.provider}</td>
 
-                      <td className="px-4 py-3">{s.providerServiceId}</td>
+                      <td className="px-4 py-3 flex items-center gap-2">
+                        {s.providerServiceId}
+                        <button onClick={() => copyToClipboard(s.providerServiceId)}>
+                          <FiCopy size={14} />
+                        </button>
+                      </td>
 
-                      {/* 🔥 NEW RATE UI */}
                       <td className="px-4 py-3">
-                        <div
-                          className={`p-2 rounded-lg border text-xs ${getRateColor(
-                            status,
-                            hasChange
-                          )}`}
-                        >
-                          <div>
-                            <strong>Your:</strong> ${s.rate}
-                          </div>
-                          <div>
-                            <strong>Provider:</strong> ${providerRate}
-                          </div>
-                          <div className="font-bold">
-                            Diff: {diff}
-                          </div>
+                        {s.isFree ? "FREE" : `$${s.rate}`}
+                      </td>
 
-                          {hasChange && (
-                            <button
-                              onClick={() => acceptRate(s._id)}
-                              className="mt-1 bg-green-600 text-white px-2 py-1 rounded text-xs"
-                            >
-                              Sync
-                            </button>
-                          )}
-                        </div>
+                      <td className="px-4 py-3">
+                        {diff && (
+                          <span className={`font-bold ${diff.isIncrease ? "text-red-600" : "text-green-600"}`}>
+                            {diff.isIncrease ? "+" : ""}
+                            {diff.value}
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-4 py-3">
                         <button
-                          onClick={() =>
-                            setSelectedDescription(
-                              s.description || "No description"
-                            )
-                          }
-                          className="bg-gray-800 text-white px-2 py-1 rounded text-xs"
+                          onClick={() => setSelectedDescription(s.description)}
+                          className="bg-gray-800 text-white px-3 py-1 rounded text-xs"
                         >
                           View
                         </button>
                       </td>
 
                       <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full text-white ${
-                            s.status ? "bg-green-500" : "bg-gray-500"
-                          }`}
-                        >
+                        <span className={`px-2 py-1 text-xs rounded-full text-white ${s.status ? "bg-green-500" : "bg-gray-500"}`}>
                           {s.status ? "Visible" : "Hidden"}
                         </span>
                       </td>
 
-                      <td className="px-4 py-3 flex gap-2">
-                        <button
-                          onClick={() => onEdit(s)}
-                          className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
-                        >
+                      <td className="px-4 py-3 flex flex-wrap gap-2">
+
+                        {diff && (
+                          <>
+                            <button onClick={() => acceptRate(s._id)} className="bg-green-600 text-white px-2 py-1 rounded text-xs">
+                              Accept
+                            </button>
+                            <button onClick={() => declineRate(s._id)} className="bg-gray-500 text-white px-2 py-1 rounded text-xs">
+                              Decline
+                            </button>
+                          </>
+                        )}
+
+                        <button onClick={() => onEdit(s)} className="bg-blue-500 text-white px-2 py-1 rounded text-xs">
                           Edit
                         </button>
 
+                        {/* ✅ UPDATED BUTTON LABEL */}
                         <button
                           onClick={() => onToggleStatus(s._id)}
                           className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
@@ -283,12 +361,10 @@ const AdminServiceTable = ({
                           {s.status ? "Hide" : "Show"}
                         </button>
 
-                        <button
-                          onClick={() => onDelete(s._id)}
-                          className="bg-red-500 text-white px-2 py-1 rounded text-xs"
-                        >
+                        <button onClick={() => onDelete(s._id)} className="bg-red-500 text-white px-2 py-1 rounded text-xs">
                           Delete
                         </button>
+
                       </td>
                     </tr>
                   );
@@ -302,14 +378,8 @@ const AdminServiceTable = ({
       {/* MODAL */}
       {selectedDescription && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-[400px]">
-            <button
-              onClick={() => setSelectedDescription(null)}
-              className="absolute top-3 right-3"
-            >
-              <FiX />
-            </button>
-
+          <div className="bg-white p-6 rounded-lg w-[400px]">
+            <FiX onClick={() => setSelectedDescription(null)} />
             <p>{selectedDescription}</p>
           </div>
         </div>
