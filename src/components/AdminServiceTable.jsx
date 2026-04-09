@@ -204,34 +204,7 @@ const AdminServiceTable = ({
     }
   };
 
-  // ================= SELECT =================
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredServices.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredServices.map((s) => s._id));
-    }
-  };
-
-  const toggleSelectCategory = (items) => {
-    const ids = items.map((i) => i._id);
-    const allSelected = ids.every((id) => selectedIds.includes(id));
-
-    if (allSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
-    } else {
-      setSelectedIds((prev) => [...new Set([...prev, ...ids])]);
-    }
-  };
-
+  
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
 
