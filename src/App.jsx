@@ -49,6 +49,10 @@ import ResellerAdminDetails from "./pages/reseller/ResellerAdminDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { setupNetworkManager } from "./utils/networkManager";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const client = new QueryClient();
+
 /* ======================================================
    INTERNAL ROUTES COMPONENT
 ====================================================== */
@@ -332,6 +336,9 @@ function AppRoutes() {
   );
 }
 
+<QueryClientProvider client={client}>
+  <App />
+</QueryClientProvider>
 
 /* ======================================================
    ROOT APP
