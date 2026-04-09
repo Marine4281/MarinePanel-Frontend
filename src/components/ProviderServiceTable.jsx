@@ -180,7 +180,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             description: service.description || "",
           },
         ],
-        provider: providerProfile.name,
+        provider: providerProfile._id,,
       });
 
       toast.success("Service imported");
@@ -234,7 +234,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       await API.post("/provider/import-category", {
         category,
         services: catObj.services,
-        provider: providerProfile.name,
+        provider: providerProfile._id,
       });
 
       toast.success("Category imported");
