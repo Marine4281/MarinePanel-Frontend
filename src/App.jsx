@@ -336,20 +336,18 @@ function AppRoutes() {
   );
 }
 
-<QueryClientProvider client={client}>
-  <App />
-</QueryClientProvider>
-
 /* ======================================================
    ROOT APP
 ====================================================== */
 
 export default function App() {
   return (
+  <QueryClientProvider client={client}>
     <AuthProvider>
       <CachedServicesProvider>
         <AppRoutes />
       </CachedServicesProvider>
     </AuthProvider>
+  </QueryClientProvider>
   );
 }
