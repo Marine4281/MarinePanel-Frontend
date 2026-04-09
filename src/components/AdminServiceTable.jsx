@@ -90,7 +90,7 @@ const AdminServiceTable = ({
   }, [services]);
 
   // ================= ACTIONS =================
-  const acceptRate = async (id) => {
+  const acceptRate = async (service) => {
     try {
       setUpdating(true);
 
