@@ -1,61 +1,80 @@
+// src/components/AdminServiceTable/RateChangesPanel.jsx
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 
-const RateChangesPanel = ({ services }) => {
+const RateChangesPanel = ({ rateChanges }) => {
   const queryClient = useQueryClient();
 
-  const getProviderRate = (s) =>
-    Number(s.newRate ?? s.lastSyncedRate ?? s.rate ?? 0);
-
-  const rateChanges = services
-    .map((s) => {
-      const providerRate = getProviderRate(s);
-      const yourRate = Number(s.rate ?? 0);
-      if (providerRate === yourRate) return null;
-
-      return { ...s, providerRate, yourRate };
-    })
-    .filter(Boolean);
-
-  const mutation = useMutation({
-    mutationFn: ({ id, rate }) =>
-      API.put(`/admin/services/${id}`, {
-        rate,
-        lastSyncedRate: rate,
-      }),
-
+  const updateAllMutation = useMutation({
+    mutationFn: async () => {
+      return Promise.all(
+        rateChanges.map((s) =>
+          API.put(`/admin/services/${s._id}`, {
+            rate: s.providerRate,
+            lastSyncedRate: s.providerRate,
+          })
+        )
+      );
+    },
     onSuccess: () => {
-      toast.success("Rate synced");
-      queryClient.invalidateQueries(["services"]);
+      toast.success("All rates synced");
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+    },
+    onError: () => {
+      toast.error("Bulk update failed");
     },
   });
 
   if (!rateChanges.length) return null;
 
   return (
-    <div className="mb-6 bg-yellow-50 p-4 rounded-xl">
-      <div className="flex justify-between mb-3">
-        <h2>⚠ Rate Changes ({rateChanges.length})</h2>
+    <div className="mb-6 border rounded-xl p-4 bg-yellow-50">
+      <div className="flex justify-between items-center mb-3">
+        <h2 className="font-semibold text-yellow-800">
+          ⚠ Rate Changes ({rateChanges.length})
+        </h2>
+
+        <button
+          onClick={() => updateAllMutation.mutate()}
+          disabled={updateAllMutation.isPending}
+          className="bg-red-600 text-white px-3 py-1 rounded text-xs"
+        >
+          {updateAllMutation.isPending ? "Updating..." : "Update All"}
+        </button>
       </div>
 
-      {rateChanges.map((s) => (
-        <div key={s._id} className="flex justify-between p-2 bg-white rounded">
-          <strong>{s.name}</strong>
-
-          <button
-            onClick={() =>
-              mutation.mutate({
-                id: s._id,
-                rate: s.providerRate,
-              })
-            }
-            className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
+      {/* Scrollable container */}
+      <div className="max-h-60 overflow-y-auto space-y-2">
+        {rateChanges.map((s) => (
+          <div
+            key={s._id}
+            className="flex justify-between bg-white p-2 rounded border text-sm"
           >
-            Sync
-          </button>
-        </div>
-      ))}
+            <div>
+              <strong>{s.name}</strong>
+            </div>
+
+            <div className="flex gap-3 items-center">
+              <span className="text-gray-500">
+                Your: {s.yourRate.toFixed(4)}
+              </span>
+              <span>→</span>
+              <span className="font-semibold">
+                Provider: {s.providerRate.toFixed(4)}
+              </span>
+              <span
+                className={`text-xs ${
+                  s.diff > 0 ? "text-red-500" : "text-green-600"
+                }`}
+              >
+                {s.diff > 0 ? "+" : ""}
+                {s.diff.toFixed(4)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
