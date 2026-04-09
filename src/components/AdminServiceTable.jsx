@@ -94,7 +94,7 @@ const AdminServiceTable = ({
     try {
       setUpdating(true);
 
-      await API.put(`/admin/services/${id}`, {
+      await API.put(`/admin/services/${service._id}`, {
         rate: service.providerRate,
         lastSyncedRate: service.providerRate,
         // optional but safer if backend supports it
