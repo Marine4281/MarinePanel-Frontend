@@ -180,7 +180,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             description: service.description || "",
           },
         ],
-        provider: providerProfile._id,,
+        provider: providerProfile._id,
       });
 
       toast.success("Service imported");
