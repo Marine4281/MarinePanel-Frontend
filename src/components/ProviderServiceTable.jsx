@@ -180,7 +180,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             description: service.description || "",
           },
         ],
-        provider: providerProfile._id,
+        provider: providerProfile.name,
       });
 
       toast.success("Service imported");
@@ -216,7 +216,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     platform: s.platform || "General",
     description: s.description || "",
   })),
-  providerProfileId: providerProfile._id,
+  provider: providerProfile.name,
 });
 
       toast.success("Selected services imported");
@@ -255,7 +255,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         platform: s.platform || "General",
         description: s.description || "",
       })),
-      providerProfileId: providerProfile._id, // ✅ CRITICAL
+      provider: providerProfile.name, // ✅ CRITICAL
     });
 
     toast.success("Category imported");
