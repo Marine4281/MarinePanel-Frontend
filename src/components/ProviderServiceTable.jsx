@@ -206,9 +206,18 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
 
     try {
       await API.post("/provider/import-selected", {
-        services: servicesToImport,
-        provider: providerProfile.name,
-      });
+  services: servicesToImport.map((s) => ({
+    name: s.name,
+    category: s.category,
+    rate: s.rate,
+    min: s.min,
+    max: s.max,
+    providerServiceId: s.service,
+    platform: s.platform || "General",
+    description: s.description || "",
+  })),
+  providerProfileId: providerProfile._id,
+});
 
       toast.success("Selected services imported");
       setSelectedServices([]);
@@ -223,27 +232,39 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      IMPORT CATEGORY
   ========================================= */
   const importCategory = async (category) => {
-    if (!providerProfile?.name) return toast.error("Provider required");
+  if (!providerProfile?._id) {
+    return toast.error("Provider required");
+  }
 
-    const catObj = categories.find((c) => c.category === category);
-    if (!catObj || catObj.services.length === 0) {
-      return toast.error("No services found in this category");
-    }
+  const catObj = categories.find((c) => c.category === category);
 
-    try {
-      await API.post("/provider/import-category", {
-        category,
-        services: catObj.services,
-        provider: providerProfile._id,
-      });
+  if (!catObj || catObj.services.length === 0) {
+    return toast.error("No services found in this category");
+  }
 
-      toast.success("Category imported");
-      loadExistingServices();
-    } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Category import failed");
-    }
-  };
+  try {
+    await API.post("/provider/import-category", {
+      category,
+      services: catObj.services.map((s) => ({
+        name: s.name,
+        category: s.category,
+        rate: s.rate,
+        min: s.min,
+        max: s.max,
+        providerServiceId: s.service, // ✅ CRITICAL
+        platform: s.platform || "General",
+        description: s.description || "",
+      })),
+      providerProfileId: providerProfile._id, // ✅ CRITICAL
+    });
+
+    toast.success("Category imported");
+    loadExistingServices();
+  } catch (error) {
+    console.error(error);
+    toast.error(error.response?.data?.message || "Category import failed");
+  }
+};
 
   /* =========================================
      TOGGLE CATEGORY EXPAND
