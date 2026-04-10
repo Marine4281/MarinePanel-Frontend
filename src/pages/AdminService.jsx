@@ -44,21 +44,22 @@ const AdminService = () => {
 
   const isAddingNewProvider = form.providerProfileId === "new";
 
-  /* ================= FETCH ================= */
+  /* ================= FETCH SERVICES ================= */
   const fetchServices = async () => {
     try {
       const res = await API.get("/admin/services");
       setServices(res.data);
-    } catch {
+    } catch (err) {
       toast.error("Failed to fetch services");
     }
   };
 
+  /* ================= FETCH PROVIDERS ================= */
   const fetchProviders = async () => {
     try {
       const res = await API.get("/provider/profiles");
       setProviders(res.data);
-    } catch {
+    } catch (err) {
       toast.error("Failed to fetch providers");
     }
   };
@@ -68,7 +69,7 @@ const AdminService = () => {
     fetchProviders();
   }, []);
 
-  /* ================= INPUT ================= */
+  /* ================= INPUT HANDLER ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -82,6 +83,7 @@ const AdminService = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // basic validation
     if (
       !form.platform ||
       !form.category ||
@@ -95,9 +97,13 @@ const AdminService = () => {
     try {
       let providerId = form.providerProfileId;
 
-      // ✅ CREATE NEW PROVIDER
+      /* ================= CREATE NEW PROVIDER ================= */
       if (isAddingNewProvider) {
-        if (!form.newProviderName || !form.providerApiKey || !form.providerApiUrl) {
+        if (
+          !form.newProviderName ||
+          !form.providerApiUrl ||
+          !form.providerApiKey
+        ) {
           return toast.error("Fill all new provider fields");
         }
 
@@ -111,24 +117,30 @@ const AdminService = () => {
         toast.success("Provider created");
       }
 
+      /* ================= PAYLOAD ================= */
       const payload = {
         ...form,
         providerProfileId: providerId,
       };
 
+      /* ================= CREATE OR UPDATE ================= */
       if (selectedService) {
-        await API.put(`/admin/services/${selectedService._id}`, payload);
+        await API.put(
+          `/admin/services/${selectedService._id}`,
+          payload
+        );
         toast.success("Service updated");
       } else {
         await API.post("/admin/services", payload);
         toast.success("Service added");
       }
 
+      /* ================= RESET ================= */
       setForm(initialForm);
       setSelectedService(null);
+
       fetchServices();
       fetchProviders();
-
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save");
     }
@@ -155,19 +167,19 @@ const AdminService = () => {
       await API.delete(`/admin/services/${id}`);
       toast.success("Deleted");
       fetchServices();
-    } catch {
+    } catch (err) {
       toast.error("Delete failed");
     }
   };
 
-  /* ================= TOGGLE ================= */
+  /* ================= TOGGLE STATUS ================= */
   const handleToggleStatus = async (id) => {
     try {
       await API.patch(`/admin/services/${id}/toggle`);
       toast.success("Updated");
       fetchServices();
-    } catch {
-      toast.error("Failed");
+    } catch (err) {
+      toast.error("Failed to update");
     }
   };
 
@@ -180,6 +192,7 @@ const AdminService = () => {
           {selectedService ? "Edit Service" : "Add New Service"}
         </h2>
 
+        {/* ================= FORM ================= */}
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl shadow-lg p-8 mb-10 space-y-6"
@@ -213,7 +226,7 @@ const AdminService = () => {
               required
             />
 
-            {/* PROVIDER */}
+            {/* PROVIDER SELECT */}
             <select
               name="providerProfileId"
               value={form.providerProfileId}
@@ -232,7 +245,7 @@ const AdminService = () => {
               <option value="new">➕ Add New Provider</option>
             </select>
 
-            {/* NEW PROVIDER */}
+            {/* NEW PROVIDER FIELDS */}
             {isAddingNewProvider && (
               <>
                 <input
@@ -307,7 +320,7 @@ const AdminService = () => {
             className="w-full p-3 border rounded-lg"
           />
 
-          {/* FREE */}
+          {/* FREE SERVICE */}
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -320,7 +333,7 @@ const AdminService = () => {
 
           <FreeServiceFields form={form} handleChange={handleChange} />
 
-          {/* ✅ ALL FLAGS RESTORED */}
+          {/* FLAGS */}
           <div className="flex flex-wrap gap-6 pt-4">
 
             <label className="flex items-center gap-2">
@@ -380,6 +393,7 @@ const AdminService = () => {
           </button>
         </form>
 
+        {/* ================= TABLE ================= */}
         <AdminServiceTable
           services={services}
           onEdit={handleEdit}
