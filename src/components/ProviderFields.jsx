@@ -30,6 +30,49 @@ const ProviderFields = ({
     setShowDropdown(false);
   };
 
+  /* ================= CREATE ================= */
+  const handleCreateProvider = async () => {
+    try {
+      if (
+        !form.newProviderName ||
+        !form.providerApiUrl ||
+        !form.providerApiKey
+      ) {
+        return toast.error("All fields are required");
+      }
+
+      const res = await API.post("/provider/profiles", {
+        name: form.newProviderName,
+        apiUrl: form.providerApiUrl,
+        apiKey: form.providerApiKey,
+      });
+
+      toast.success("Provider created");
+
+      // Auto select new provider
+      handleChange({
+        target: {
+          name: "providerProfileId",
+          value: res.data._id,
+        },
+      });
+
+      // Clear fields
+      handleChange({
+        target: { name: "newProviderName", value: "" },
+      });
+      handleChange({
+        target: { name: "providerApiUrl", value: "" },
+      });
+      handleChange({
+        target: { name: "providerApiKey", value: "" },
+      });
+
+    } catch {
+      toast.error("Failed to create provider");
+    }
+  };
+
   /* ================= VIEW ================= */
   const handleView = (provider) => {
     setViewProvider(provider);
@@ -129,28 +172,58 @@ const ProviderFields = ({
 
       {/* ================= NEW PROVIDER ================= */}
       {isAddingNewProvider && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-          <input
-            name="newProviderName"
-            placeholder="Provider Name"
-            value={form.newProviderName}
-            onChange={handleChange}
-            className="p-2 border rounded-lg"
-          />
-          <input
-            name="providerApiUrl"
-            placeholder="API URL"
-            value={form.providerApiUrl}
-            onChange={handleChange}
-            className="p-2 border rounded-lg"
-          />
-          <input
-            name="providerApiKey"
-            placeholder="API Key"
-            value={form.providerApiKey}
-            onChange={handleChange}
-            className="p-2 border rounded-lg"
-          />
+        <div className="mt-4 border rounded-xl p-4 bg-gray-50 space-y-4">
+
+          <h4 className="text-sm font-semibold text-gray-700">
+            Add New Provider
+          </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+              name="newProviderName"
+              placeholder="Provider Name"
+              value={form.newProviderName}
+              onChange={handleChange}
+              className="p-2 border rounded-lg"
+            />
+            <input
+              name="providerApiUrl"
+              placeholder="API URL"
+              value={form.providerApiUrl}
+              onChange={handleChange}
+              className="p-2 border rounded-lg"
+            />
+            <input
+              name="providerApiKey"
+              placeholder="API Key"
+              value={form.providerApiKey}
+              onChange={handleChange}
+              className="p-2 border rounded-lg"
+            />
+          </div>
+
+          {/* ACTIONS */}
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() =>
+                handleChange({
+                  target: { name: "providerProfileId", value: "" },
+                })
+              }
+              className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100 transition"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCreateProvider}
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Save Provider
+            </button>
+          </div>
         </div>
       )}
 
@@ -174,7 +247,6 @@ const ProviderFields = ({
             {/* FIELDS */}
             <div className="space-y-4">
 
-              {/* NAME */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   Provider Name
@@ -189,7 +261,6 @@ const ProviderFields = ({
                 />
               </div>
 
-              {/* API URL */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   API URL
@@ -204,7 +275,6 @@ const ProviderFields = ({
                 />
               </div>
 
-              {/* API KEY */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   API Key
