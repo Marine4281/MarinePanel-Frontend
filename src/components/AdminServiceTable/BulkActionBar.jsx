@@ -5,6 +5,7 @@ import API from "../../api/axios";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import ConfirmModal from "./ConfirmModal";
+import { QUERY_KEYS } from "../../constants/queryKeys";
 
 const QUERY_KEY = QUERY_KEYS.SERVICES;
 
