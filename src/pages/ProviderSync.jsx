@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import ProviderServiceTable from "../components/ProviderServiceTable";
-import ProviderFields from "../components/ProviderFields"; // ✅ IMPORT
+import ProviderFields from "../components/ProviderFields";
 import toast from "react-hot-toast";
 
 export default function ProviderSync() {
@@ -48,6 +48,27 @@ export default function ProviderSync() {
 
   const isAddingNewProvider = form.providerProfileId === "new";
 
+  /* ================= 🔥 INSTANT UI UPDATE ================= */
+
+  // When provider is created
+  const handleProviderCreated = (newProvider) => {
+    setProviders((prev) => [newProvider, ...prev]);
+
+    setForm((prev) => ({
+      ...prev,
+      providerProfileId: newProvider._id,
+    }));
+  };
+
+  // When provider is updated
+  const handleProviderUpdated = (updatedProvider) => {
+    setProviders((prev) =>
+      prev.map((p) =>
+        p._id === updatedProvider._id ? updatedProvider : p
+      )
+    );
+  };
+
   /* ================= FETCH SERVICES ================= */
   const fetchServices = async () => {
     if (!selectedProvider) {
@@ -69,7 +90,7 @@ export default function ProviderSync() {
         0
       );
 
-      toast.success(`Fetched ${total} services`);
+      toast.success(`Fetched ${total} services 🚀`);
     } catch (error) {
       console.error("Fetch Services Error:", error);
       toast.error("Failed to fetch services");
@@ -103,37 +124,48 @@ export default function ProviderSync() {
       <Sidebar />
 
       <div className="flex-1 p-6 relative">
-        <h1 className="text-2xl font-bold mb-6">Provider Services</h1>
+        {/* 🔥 HEADER */}
+        <div className="mb-6 p-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg">
+          <h1 className="text-2xl font-bold">Provider Services</h1>
+          <p className="text-sm opacity-90">
+            Sync, manage and import provider services in real-time ⚡
+          </p>
+        </div>
 
-        {/* ================= PROVIDER FIELDS (REPLACED EVERYTHING) ================= */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6 space-y-4">
+        {/* ================= PROVIDER SECTION ================= */}
+        <div className="bg-white shadow-xl rounded-xl p-6 mb-6 space-y-5 border">
 
           <ProviderFields
             form={form}
             handleChange={handleChange}
             providers={providers}
             isAddingNewProvider={isAddingNewProvider}
+            onProviderCreated={handleProviderCreated}   // 🔥
+            onProviderUpdated={handleProviderUpdated}   // 🔥
           />
 
           <div className="flex items-center gap-4 flex-wrap">
+
             <button
               onClick={fetchServices}
               disabled={loading}
-              className={`px-4 py-2 rounded text-white ${
-                loading ? "bg-blue-300" : "bg-blue-600 hover:bg-blue-700"
+              className={`px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
+                loading
+                  ? "bg-blue-300"
+                  : "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg"
               }`}
             >
-              {loading ? "Fetching services..." : "Fetch Services"}
+              {loading ? "Fetching..." : "🚀 Fetch Services"}
             </button>
 
             {selectedProvider && (
-              <div className="text-sm text-gray-600">
-                <span className="font-medium">
+              <div className="bg-gray-50 border px-4 py-2 rounded-lg text-sm shadow-sm">
+                <p className="font-semibold text-gray-800">
                   {selectedProvider.name}
-                </span>
-                <span className="block text-xs">
-                  API: {selectedProvider.apiUrl}
-                </span>
+                </p>
+                <p className="text-xs text-gray-500 truncate max-w-[250px]">
+                  {selectedProvider.apiUrl}
+                </p>
               </div>
             )}
           </div>
@@ -143,10 +175,10 @@ export default function ProviderSync() {
         <div className="mb-4">
           <input
             type="text"
-            placeholder="Search services..."
+            placeholder="🔍 Search services..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border p-2 rounded w-full"
+            className="border p-3 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none"
           />
         </div>
 
@@ -161,8 +193,8 @@ export default function ProviderSync() {
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-40">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm text-gray-700 font-medium">
-                Fetching services from provider...
+              <p className="text-sm font-medium text-gray-700">
+                Fetching services...
               </p>
             </div>
           </div>
@@ -170,4 +202,4 @@ export default function ProviderSync() {
       </div>
     </div>
   );
-}
+  }
