@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import ConfirmModal from "./ConfirmModal";
 
-const QUERY_KEY = ["services"];
+const QUERY_KEY = QUERY_KEYS.SERVICES;
 
 const BulkActionBar = ({ selectedIds = [], setSelectedIds }) => {
   const queryClient = useQueryClient();
