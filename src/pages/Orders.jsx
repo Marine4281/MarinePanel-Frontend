@@ -28,43 +28,42 @@ const Orders = () => {
       .catch(() => console.error("Failed to load orders"));
   }, []);
 
-  /* JOIN USER ROOM */
-useEffect(() => {
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  if (user?._id) {
-    socket.emit("join_user_room", user._id);
-  }
-}, []);
+  /* ===============================
+     JOIN USER ROOM
+  =============================== */
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user?._id) {
+      socket.emit("join_user_room", user._id);
+    }
+  }, []);
 
   /* ===============================
      SOCKET LIVE UPDATES
   =============================== */
   useEffect(() => {
-  socket.on("orderUpdated", (data) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order._id === data.orderId
-          ? {
-              ...order,
-              status: data.status,
-              quantityDelivered: data.delivered,
-            }
-          : order
-      )
-    );
-  });
+    socket.on("orderUpdated", (data) => {
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === data.orderId
+            ? {
+                ...order,
+                status: data.status,
+                quantityDelivered: data.delivered,
+              }
+            : order
+        )
+      );
+    });
 
-  return () => socket.off("orderUpdated");
-}, []);
+    return () => socket.off("orderUpdated");
+  }, []);
 
   /* ===============================
      SHORT SERVICE NAME
   =============================== */
   const shortenService = (service) => {
     if (!service) return "Service";
-
-    // Extract first two words only
     const words = service.split(" ");
     return words.slice(0, 2).join(" ");
   };
@@ -136,17 +135,35 @@ useEffect(() => {
                     ? new Date(order.createdAt)
                     : null;
 
-                  const progress =
+                  const progress = Math.min(
                     ((order.quantityDelivered || 0) /
                       (order.quantity || 1)) *
-                    100;
+                      100,
+                    100
+                  );
 
-                  const isExpanded = expandedService === order.customOrderId;
+                  const isExpanded = expandedService === order._id;
 
                   return (
                     <tr key={order._id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 font-semibold text-gray-700">
-                        #{order.customOrderId}
+                      
+                      {/* ORDER ID */}
+                      <td className="px-4 py-3 font-semibold">
+                        <span className="text-blue-600 font-bold">
+                          #{order.customOrderId || "—"}
+                        </span>
+
+                        {order.customOrderId && (
+                          <button
+                            onClick={() =>
+                              navigator.clipboard.writeText(order.customOrderId)
+                            }
+                            className="ml-2 text-gray-400 hover:text-black"
+                            title="Copy Order ID"
+                          >
+                            📋
+                          </button>
+                        )}
                       </td>
 
                       {/* SERVICE */}
@@ -209,11 +226,7 @@ useEffect(() => {
 
                       {/* DATE */}
                       <td className="px-4 py-3 text-gray-600 text-xs">
-                        {created
-                          ? created.toLocaleDateString() +
-                            " " +
-                            created.toLocaleTimeString()
-                          : "N/A"}
+                        {created ? created.toLocaleString() : "N/A"}
                       </td>
                     </tr>
                   );
