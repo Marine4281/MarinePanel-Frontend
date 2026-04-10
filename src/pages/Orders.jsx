@@ -161,7 +161,6 @@ const Orders = () => {
                             className="ml-2 text-gray-400 hover:text-black"
                             title="Copy Order ID"
                           >
-                            📋
                           </button>
                         )}
                       </td>
