@@ -13,6 +13,18 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   const [updatingAll, setUpdatingAll] = useState(false);
 
   /* =========================================
+     RATE HELPERS (✅ SAME AS ADMIN PANEL)
+  ========================================= */
+  const getProviderRate = (s) =>
+    Number(s.newRate ?? s.rate ?? 0);
+
+  const getYourRate = (existing) =>
+    Number(existing?.rate ?? 0);
+
+  const getLastSyncedRate = (existing) =>
+    Number(existing?.lastSyncedRate ?? existing?.rate ?? 0);
+
+  /* =========================================
      LOAD EXISTING SERVICES
   ========================================= */
   const loadExistingServices = async () => {
@@ -41,7 +53,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   };
 
   /* =========================================
-     RATE CHANGES SUMMARY (🔥 NEW)
+     RATE CHANGES SUMMARY (✅ FIXED)
   ========================================= */
   const rateChanges = categories.flatMap((cat) =>
     cat.services
@@ -49,21 +61,20 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         const existing = findExisting(s.service);
         if (!existing) return null;
 
-        const newRate = Number(s.rate);
-        const oldRate =
-          existing?.lastSyncedRate || existing?.rate || 0;
+        const providerRate = getProviderRate(s);
+        const yourRate = getYourRate(existing);
+        const lastSyncedRate = getLastSyncedRate(existing);
 
-        const diff = newRate - oldRate;
-
-        if (diff === 0) return null;
+        if (providerRate === yourRate) return null;
 
         return {
           id: s.service,
           name: s.name,
           category: cat.category,
-          oldRate,
-          newRate,
-          diff,
+          providerRate,
+          yourRate,
+          lastSyncedRate,
+          diff: providerRate - yourRate,
           existing,
         };
       })
@@ -77,7 +88,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
     try {
       await API.put(`/admin/services/${existing._id}`, {
         rate: newRate,
-        lastSyncedRate: newRate, // ✅ FIX
+        lastSyncedRate: newRate,
       });
       toast.success("Rate updated");
       loadExistingServices();
@@ -98,8 +109,8 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
 
       for (const r of rateChanges) {
         await API.put(`/admin/services/${r.existing._id}`, {
-          rate: r.newRate,
-          lastSyncedRate: r.newRate,
+          rate: r.providerRate,
+          lastSyncedRate: r.providerRate,
         });
       }
 
@@ -198,7 +209,8 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   ========================================= */
   const importSelected = async () => {
     if (!providerProfile?.name) return toast.error("Provider required");
-    if (selectedServices.length === 0) return toast.error("No services selected");
+    if (selectedServices.length === 0)
+      return toast.error("No services selected");
 
     const servicesToImport = categories
       .flatMap((cat) => cat.services)
@@ -206,18 +218,18 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
 
     try {
       await API.post("/provider/import-selected", {
-  services: servicesToImport.map((s) => ({
-    name: s.name,
-    category: s.category,
-    rate: s.rate,
-    min: s.min,
-    max: s.max,
-    service: s.service,
-    platform: s.platform || "General",
-    description: s.description || "",
-  })),
-  provider: providerProfile.name,
-});
+        services: servicesToImport.map((s) => ({
+          name: s.name,
+          category: s.category,
+          rate: s.rate,
+          min: s.min,
+          max: s.max,
+          service: s.service,
+          platform: s.platform || "General",
+          description: s.description || "",
+        })),
+        provider: providerProfile.name,
+      });
 
       toast.success("Selected services imported");
       setSelectedServices([]);
@@ -232,39 +244,41 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      IMPORT CATEGORY
   ========================================= */
   const importCategory = async (category) => {
-  if (!providerProfile?._id) {
-    return toast.error("Provider required");
-  }
+    if (!providerProfile?._id) {
+      return toast.error("Provider required");
+    }
 
-  const catObj = categories.find((c) => c.category === category);
+    const catObj = categories.find((c) => c.category === category);
 
-  if (!catObj || catObj.services.length === 0) {
-    return toast.error("No services found in this category");
-  }
+    if (!catObj || catObj.services.length === 0) {
+      return toast.error("No services found in this category");
+    }
 
-  try {
-    await API.post("/provider/import-category", {
-      category,
-      services: catObj.services.map((s) => ({
-        name: s.name,
-        category: s.category,
-        rate: s.rate,
-        min: s.min,
-        max: s.max,
-        service: s.service, // ✅ CRITICAL
-        platform: s.platform || "General",
-        description: s.description || "",
-      })),
-      provider: providerProfile.name, // ✅ CRITICAL
-    });
+    try {
+      await API.post("/provider/import-category", {
+        category,
+        services: catObj.services.map((s) => ({
+          name: s.name,
+          category: s.category,
+          rate: s.rate,
+          min: s.min,
+          max: s.max,
+          service: s.service,
+          platform: s.platform || "General",
+          description: s.description || "",
+        })),
+        provider: providerProfile.name,
+      });
 
-    toast.success("Category imported");
-    loadExistingServices();
-  } catch (error) {
-    console.error(error);
-    toast.error(error.response?.data?.message || "Category import failed");
-  }
-};
+      toast.success("Category imported");
+      loadExistingServices();
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error.response?.data?.message || "Category import failed"
+      );
+    }
+  };
 
   /* =========================================
      TOGGLE CATEGORY EXPAND
@@ -295,7 +309,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
         </button>
       </div>
 
-      {/* 🔥 RATE CHANGES SUMMARY */}
+      {/* RATE CHANGES */}
       {rateChanges.length > 0 && (
         <div className="mb-4 border rounded-lg p-4 bg-yellow-50">
           <div className="flex justify-between items-center mb-2">
@@ -327,11 +341,11 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
 
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-gray-500">
-                    {r.oldRate.toFixed(4)}
+                    Your: {r.yourRate.toFixed(4)}
                   </span>
                   <span>→</span>
                   <span className="font-semibold">
-                    {r.newRate.toFixed(4)}
+                    Provider: {r.providerRate.toFixed(4)}
                   </span>
 
                   <span
@@ -344,7 +358,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                   </span>
 
                   <button
-                    onClick={() => updateRate(r.existing, r.newRate)}
+                    onClick={() =>
+                      updateRate(r.existing, r.providerRate)
+                    }
                     className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
                   >
                     Update
@@ -392,17 +408,21 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
               {cat.services.map((s) => {
                 const existing = findExisting(s.service);
 
-                const newRate = Number(s.rate);
-                const oldRate =
-                  existing?.lastSyncedRate || existing?.rate || 0;
-                const rateDiff = existing ? newRate - oldRate : 0;
+                const providerRate = getProviderRate(s);
+                const yourRate = getYourRate(existing);
+                const rateDiff = existing
+                  ? providerRate - yourRate
+                  : 0;
+
                 const status = getStatus(existing);
 
                 return (
                   <div
                     key={s.service}
                     className={`border p-3 rounded flex flex-col gap-2 ${
-                      rateDiff !== 0 ? "bg-yellow-50 border-yellow-300" : ""
+                      rateDiff !== 0
+                        ? "bg-yellow-50 border-yellow-300"
+                        : ""
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -416,7 +436,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                       <span className="flex-1">{s.name}</span>
 
                       <span className="text-sm">
-                        ${newRate.toFixed(4)}
+                        ${providerRate.toFixed(4)}
                         {existing && rateDiff !== 0 && (
                           <span
                             className={`ml-2 text-xs ${
@@ -440,13 +460,17 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                           onClick={() => importService(s)}
                           className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
                         >
-                          {loadingImport === s.service ? "..." : "Import"}
+                          {loadingImport === s.service
+                            ? "..."
+                            : "Import"}
                         </button>
                       )}
 
                       {existing && rateDiff !== 0 && (
                         <button
-                          onClick={() => updateRate(existing, newRate)}
+                          onClick={() =>
+                            updateRate(existing, providerRate)
+                          }
                           className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
                         >
                           Update
@@ -454,7 +478,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
                       )}
 
                       {existing && rateDiff === 0 && (
-                        <span className="text-gray-400 text-xs">✓</span>
+                        <span className="text-gray-400 text-xs">
+                          ✓
+                        </span>
                       )}
                     </div>
 
