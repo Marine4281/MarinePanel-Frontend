@@ -1,304 +1,356 @@
 //src/components/ProviderFields.jsx
-
 import { useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
 const ProviderFields = ({
-  form,
-  handleChange,
-  providers,
-  isAddingNewProvider,
-  onProviderCreated,   // 🔥 NEW
-  onProviderUpdated,   // 🔥 NEW
+form,
+handleChange,
+providers,
+isAddingNewProvider,
 }) => {
-  const [search, setSearch] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [viewProvider, setViewProvider] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [editData, setEditData] = useState({});
+const [search, setSearch] = useState("");
+const [showDropdown, setShowDropdown] = useState(false);
+const [viewProvider, setViewProvider] = useState(null);
+const [editMode, setEditMode] = useState(false);
+const [editData, setEditData] = useState({});
 
-  const filteredProviders = providers.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+const filteredProviders = providers.filter((p) =>
+p.name.toLowerCase().includes(search.toLowerCase())
+);
 
-  const selectedProvider = providers.find(
-    (p) => p._id === form.providerProfileId
-  );
+const selectedProvider = providers.find(
+(p) => p._id === form.providerProfileId
+);
 
-  /* ================= SELECT ================= */
-  const handleSelect = (id) => {
-    handleChange({
-      target: { name: "providerProfileId", value: id },
-    });
-    setShowDropdown(false);
-  };
+/* ================= SELECT ================= */
+const handleSelect = (id) => {
+handleChange({
+target: { name: "providerProfileId", value: id },
+});
+setShowDropdown(false);
+};
 
-  /* ================= CREATE ================= */
-  const handleCreateProvider = async () => {
-    try {
-      if (
-        !form.newProviderName ||
-        !form.providerApiUrl ||
-        !form.providerApiKey
-      ) {
-        return toast.error("All fields are required");
-      }
+/* ================= CREATE ================= */
+const handleCreateProvider = async () => {
+try {
+if (
+!form.newProviderName ||
+!form.providerApiUrl ||
+!form.providerApiKey
+) {
+return toast.error("All fields are required");
+}
 
-      const res = await API.post("/provider/profiles", {
-        name: form.newProviderName,
-        apiUrl: form.providerApiUrl,
-        apiKey: form.providerApiKey,
-      });
+const res = await API.post("/provider/profiles", {  
+    name: form.newProviderName,  
+    apiUrl: form.providerApiUrl,  
+    apiKey: form.providerApiKey,  
+  });  
 
-      const newProvider = res.data.provider;
+  toast.success("Provider created");  
 
-      toast.success("🎉 Provider created");
+  // ✅ FIXED: correct response path  
+  handleChange({  
+    target: {  
+      name: "providerProfileId",  
+      value: res.data.provider._id,  
+    },  
+  });  
 
-      // 🔥 Instant UI update
-      onProviderCreated?.(newProvider);
+  // Clear fields  
+  handleChange({  
+    target: { name: "newProviderName", value: "" },  
+  });  
+  handleChange({  
+    target: { name: "providerApiUrl", value: "" },  
+  });  
+  handleChange({  
+    target: { name: "providerApiKey", value: "" },  
+  });  
 
-      handleChange({
-        target: {
-          name: "providerProfileId",
-          value: newProvider._id,
-        },
-      });
+} catch {  
+  toast.error("Failed to create provider");  
+}
 
-      handleChange({ target: { name: "newProviderName", value: "" } });
-      handleChange({ target: { name: "providerApiUrl", value: "" } });
-      handleChange({ target: { name: "providerApiKey", value: "" } });
+};
 
-    } catch {
-      toast.error("Failed to create provider");
-    }
-  };
+/* ================= VIEW ================= */
+const handleView = (provider) => {
+setViewProvider(provider);
+setEditMode(false);
+};
 
-  /* ================= VIEW ================= */
-  const handleView = (provider) => {
-    setViewProvider(provider);
-    setEditMode(false);
-  };
+/* ================= EDIT ================= */
+const handleEdit = (provider) => {
+setViewProvider(provider);
+setEditMode(true);
+setEditData({ ...provider }); // ✅ FIXED (no mutation)
+};
 
-  /* ================= EDIT ================= */
-  const handleEdit = (provider) => {
-    setViewProvider(provider);
-    setEditMode(true);
-    setEditData({ ...provider });
-  };
+const handleSaveEdit = async () => {
+try {
+// ✅ validation
+if (!editData.name || !editData.apiUrl || !editData.apiKey) {
+return toast.error("All fields are required");
+}
 
-  const handleSaveEdit = async () => {
-    try {
-      if (!editData.name || !editData.apiUrl || !editData.apiKey) {
-        return toast.error("All fields are required");
-      }
+const res = await API.put(  
+    `/provider/profiles/${viewProvider._id}`,  
+    editData  
+  );  
 
-      const res = await API.put(
-        `/provider/profiles/${viewProvider._id}`,
-        editData
-      );
+  toast.success("Provider updated");  
 
-      const updated = res.data.provider;
+  // ✅ Update UI instantly (no refresh needed)  
+  const updated = res.data.provider;  
 
-      toast.success("✅ Provider updated");
+  handleChange({  
+    target: {  
+      name: "providerProfileId",  
+      value:  
+        form.providerProfileId === updated._id  
+          ? updated._id  
+          : form.providerProfileId,  
+    },  
+  });  
 
-      // 🔥 Instant UI update
-      onProviderUpdated?.(updated);
+  setViewProvider(null);  
+  setEditMode(false);  
+  setEditData({});  
 
-      setViewProvider(null);
-      setEditMode(false);
-      setEditData({});
+} catch {  
+  toast.error("Failed to update provider");  
+}
 
-    } catch {
-      toast.error("Failed to update provider");
-    }
-  };
+};
 
-  return (
-    <div className="relative">
-      {/* ================= SELECT ================= */}
-      <div
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="p-4 border rounded-xl bg-gradient-to-r from-white to-gray-50 cursor-pointer flex justify-between items-center shadow-sm hover:shadow-md transition"
-      >
-        <span className="truncate text-sm font-medium text-gray-700">
-          {selectedProvider ? selectedProvider.name : "Select Provider"}
-        </span>
-        <span className="text-gray-400 text-xs">▼</span>
-      </div>
+return (
+<div className="relative">
+{/* ================= SELECT ================= */}
+<div
+onClick={() => setShowDropdown(!showDropdown)}
+className="p-3 border rounded-lg bg-white cursor-pointer flex justify-between items-center"
+>
+<span className="truncate text-sm">
+{selectedProvider ? selectedProvider.name : "Select Provider"}
+</span>
+<span className="text-gray-400 text-xs">▼</span>
+</div>
 
-      {/* ================= DROPDOWN ================= */}
-      {showDropdown && (
-        <div className="absolute z-50 w-full bg-white border rounded-xl shadow-xl mt-2 max-h-80 overflow-y-auto">
+{/* ================= DROPDOWN ================= */}  
+  {showDropdown && (  
+    <div className="absolute z-50 w-full bg-white border rounded-xl shadow-lg mt-2 max-h-72 overflow-y-auto">  
+        
+      {/* SEARCH */}  
+      <input  
+        type="text"  
+        placeholder="Search provider..."  
+        value={search}  
+        onChange={(e) => setSearch(e.target.value)}  
+        className="w-full p-2 border-b outline-none text-sm"  
+      />  
 
-          {/* SEARCH */}
-          <input
-            type="text"
-            placeholder="🔍 Search provider..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full p-3 border-b outline-none text-sm focus:ring-2 focus:ring-blue-500"
-          />
+      {/* LIST */}  
+      {filteredProviders.map((p) => (  
+        <div  
+          key={p._id}  
+          className="p-3 hover:bg-gray-50 border-b flex justify-between items-center"  
+        >  
+          {/* LEFT */}  
+          <div  
+            className="cursor-pointer"  
+            onClick={() => handleSelect(p._id)}  
+          >  
+            <p className="font-medium text-sm">{p.name}</p>  
+            <p className="text-xs text-gray-400 truncate max-w-[160px]">  
+              {p.apiUrl}  
+            </p>  
+          </div>  
 
-          {/* LIST */}
-          {filteredProviders.map((p) => (
-            <div
-              key={p._id}
-              className={`p-3 border-b flex justify-between items-center transition ${
-                selectedProvider?._id === p._id
-                  ? "bg-blue-50"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              <div
-                className="cursor-pointer"
-                onClick={() => handleSelect(p._id)}
-              >
-                <p className="font-medium text-sm text-gray-800">
-                  {p.name}
-                </p>
-                <p className="text-xs text-gray-400 truncate max-w-[180px]">
-                  {p.apiUrl}
-                </p>
-              </div>
+          {/* RIGHT ACTIONS */}  
+          <div className="flex gap-2">  
+            <button  
+              type="button"  
+              onClick={() => handleView(p)}  
+              className="px-3 py-1 text-xs font-medium border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition"  
+            >  
+              View  
+            </button>  
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleView(p)}
-                  className="px-3 py-1 text-xs border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50"
-                >
-                  View
-                </button>
+            <button  
+              type="button"  
+              onClick={() => handleEdit(p)}  
+              className="px-3 py-1 text-xs font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition"  
+            >  
+              Edit  
+            </button>  
+          </div>  
+        </div>  
+      ))}  
 
-                <button
-                  onClick={() => handleEdit(p)}
-                  className="px-3 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 shadow-sm"
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* ADD NEW */}  
+      <div  
+        onClick={() => handleSelect("new")}  
+        className="p-3 text-center text-blue-600 cursor-pointer hover:bg-gray-50 text-sm font-medium"  
+      >  
+        + Add New Provider  
+      </div>  
+    </div>  
+  )}  
 
-          {/* ADD NEW */}
-          <div
-            onClick={() => handleSelect("new")}
-            className="p-3 text-center text-blue-600 cursor-pointer hover:bg-blue-50 font-medium"
-          >
-            + Add New Provider
-          </div>
-        </div>
-      )}
+  {/* ================= NEW PROVIDER ================= */}  
+  {isAddingNewProvider && (  
+    <div className="mt-4 border rounded-xl p-4 bg-gray-50 space-y-4">  
 
-      {/* ================= NEW PROVIDER ================= */}
-      {isAddingNewProvider && (
-        <div className="mt-5 border rounded-xl p-5 bg-gradient-to-r from-gray-50 to-white space-y-4 shadow-inner">
+      <h4 className="text-sm font-semibold text-gray-700">  
+        Add New Provider  
+      </h4>  
 
-          <h4 className="text-sm font-semibold text-gray-700">
-            ➕ Add New Provider
-          </h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">  
+        <input  
+          name="newProviderName"  
+          placeholder="Provider Name"  
+          value={form.newProviderName}  
+          onChange={handleChange}  
+          className="p-2 border rounded-lg"  
+        />  
+        <input  
+          name="providerApiUrl"  
+          placeholder="API URL"  
+          value={form.providerApiUrl}  
+          onChange={handleChange}  
+          className="p-2 border rounded-lg"  
+        />  
+        <input  
+          name="providerApiKey"  
+          placeholder="API Key"  
+          value={form.providerApiKey}  
+          onChange={handleChange}  
+          className="p-2 border rounded-lg"  
+        />  
+      </div>  
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              name="newProviderName"
-              placeholder="Provider Name"
-              value={form.newProviderName}
-              onChange={handleChange}
-              className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              name="providerApiUrl"
-              placeholder="API URL"
-              value={form.providerApiUrl}
-              onChange={handleChange}
-              className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              name="providerApiKey"
-              placeholder="API Key"
-              value={form.providerApiKey}
-              onChange={handleChange}
-              className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+      {/* ACTIONS */}  
+      <div className="flex justify-end gap-3">  
+        <button  
+          type="button"  
+          onClick={() =>  
+            handleChange({  
+              target: { name: "providerProfileId", value: "" },  
+            })  
+          }  
+          className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100 transition"  
+        >  
+          Cancel  
+        </button>  
 
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() =>
-                handleChange({
-                  target: { name: "providerProfileId", value: "" },
-                })
-              }
-              className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100"
-            >
-              Cancel
-            </button>
+        <button  
+          type="button"  
+          onClick={handleCreateProvider}  
+          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"  
+        >  
+          Save Provider  
+        </button>  
+      </div>  
+    </div>  
+  )}  
 
-            <button
-              onClick={handleCreateProvider}
-              className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md"
-            >
-              💾 Save Provider
-            </button>
-          </div>
-        </div>
-      )}
+  {/* ================= MODAL ================= */}  
+  {viewProvider && (  
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">  
+      <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-xl">  
 
-      {/* ================= MODAL ================= */}
-      {viewProvider && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl">
+        {/* HEADER */}  
+        <div className="mb-4">  
+          <h3 className="text-xl font-semibold text-gray-800">  
+            {editMode ? "Edit Provider" : "Provider Details"}  
+          </h3>  
+          <p className="text-sm text-gray-500">  
+            {editMode  
+              ? "Update provider details"  
+              : "View provider information"}  
+          </p>  
+        </div>  
 
-            <h3 className="text-lg font-bold mb-4">
-              {editMode ? "✏️ Edit Provider" : "Provider Details"}
-            </h3>
+        {/* FIELDS */}  
+        <div className="space-y-4">  
 
-            <div className="space-y-4">
-              {["name", "apiUrl", "apiKey"].map((field) => (
-                <input
-                  key={field}
-                  value={
-                    editMode
-                      ? editData[field]
-                      : viewProvider[field]
-                  }
-                  disabled={!editMode}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      [field]: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded-lg bg-gray-50 disabled:bg-gray-100"
-                />
-              ))}
-            </div>
+          <div>  
+            <label className="block text-sm font-medium text-gray-600 mb-1">  
+              Provider Name  
+            </label>  
+            <input  
+              value={editMode ? editData.name : viewProvider.name}  
+              disabled={!editMode}  
+              onChange={(e) =>  
+                setEditData({ ...editData, name: e.target.value })  
+              }  
+              className="w-full p-2 border rounded-lg bg-gray-50 disabled:bg-gray-100"  
+            />  
+          </div>  
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setViewProvider(null);
-                  setEditMode(false);
-                }}
-                className="px-4 py-2 border rounded-lg"
-              >
-                Close
-              </button>
+          <div>  
+            <label className="block text-sm font-medium text-gray-600 mb-1">  
+              API URL  
+            </label>  
+            <input  
+              value={editMode ? editData.apiUrl : viewProvider.apiUrl}  
+              disabled={!editMode}  
+              onChange={(e) =>  
+                setEditData({ ...editData, apiUrl: e.target.value })  
+              }  
+              className="w-full p-2 border rounded-lg bg-gray-50 disabled:bg-gray-100"  
+            />  
+          </div>  
 
-              {editMode && (
-                <button
-                  onClick={handleSaveEdit}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow"
-                >
-                  Save Changes
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+          <div>  
+            <label className="block text-sm font-medium text-gray-600 mb-1">  
+              API Key  
+            </label>  
+            <input  
+              value={editMode ? editData.apiKey : viewProvider.apiKey}  
+              disabled={!editMode}  
+              onChange={(e) =>  
+                setEditData({ ...editData, apiKey: e.target.value })  
+              }  
+              className="w-full p-2 border rounded-lg bg-gray-50 disabled:bg-gray-100"  
+            />  
+          </div>  
+
+        </div>  
+
+        {/* ACTIONS */}  
+        <div className="flex justify-end gap-3 mt-6">  
+          <button  
+            type="button"  
+            onClick={() => {  
+              setViewProvider(null);  
+              setEditMode(false);  
+              setEditData({});  
+            }}  
+            className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100 transition"  
+          >  
+            Close  
+          </button>  
+
+          {editMode && (  
+            <button  
+              type="button"  
+              onClick={handleSaveEdit}  
+              className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition"  
+            >  
+              Save Changes  
+            </button>  
+          )}  
+        </div>  
+
+      </div>  
+    </div>  
+  )}  
+</div>
+
+);
 };
 
 export default ProviderFields;
