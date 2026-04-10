@@ -49,11 +49,11 @@ const ProviderFields = ({
 
       toast.success("Provider created");
 
-      // Auto select new provider
+      // ✅ FIXED: correct response path
       handleChange({
         target: {
           name: "providerProfileId",
-          value: res.data._id,
+          value: res.data.provider._id,
         },
       });
 
@@ -83,14 +83,40 @@ const ProviderFields = ({
   const handleEdit = (provider) => {
     setViewProvider(provider);
     setEditMode(true);
-    setEditData(provider);
+    setEditData({ ...provider }); // ✅ FIXED (no mutation)
   };
 
   const handleSaveEdit = async () => {
     try {
-      await API.put(`/provider/profiles/${viewProvider._id}`, editData);
+      // ✅ validation
+      if (!editData.name || !editData.apiUrl || !editData.apiKey) {
+        return toast.error("All fields are required");
+      }
+
+      const res = await API.put(
+        `/provider/profiles/${viewProvider._id}`,
+        editData
+      );
+
       toast.success("Provider updated");
+
+      // ✅ Update UI instantly (no refresh needed)
+      const updated = res.data.provider;
+
+      handleChange({
+        target: {
+          name: "providerProfileId",
+          value:
+            form.providerProfileId === updated._id
+              ? updated._id
+              : form.providerProfileId,
+        },
+      });
+
       setViewProvider(null);
+      setEditMode(false);
+      setEditData({});
+
     } catch {
       toast.error("Failed to update provider");
     }
@@ -295,7 +321,11 @@ const ProviderFields = ({
             <div className="flex justify-end gap-3 mt-6">
               <button
                 type="button"
-                onClick={() => setViewProvider(null)}
+                onClick={() => {
+                  setViewProvider(null);
+                  setEditMode(false);
+                  setEditData({});
+                }}
                 className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-100 transition"
               >
                 Close
