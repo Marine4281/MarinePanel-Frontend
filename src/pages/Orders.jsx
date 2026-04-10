@@ -141,12 +141,12 @@ useEffect(() => {
                       (order.quantity || 1)) *
                     100;
 
-                  const isExpanded = expandedService === order._id;
+                  const isExpanded = expandedService === order.customOrderId;
 
                   return (
                     <tr key={order._id} className="hover:bg-gray-50 transition">
                       <td className="px-4 py-3 font-semibold text-gray-700">
-                        #{order._id.slice(-6)}
+                        #{order.customOrderId}
                       </td>
 
                       {/* SERVICE */}
