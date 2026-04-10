@@ -1,6 +1,7 @@
 // src/components/AdminServiceTable.jsx
-import { useState, useMemo, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query"; // ✅ ADDED
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import API from "../api/axios";
 import { QUERY_KEYS } from "../constants/queryKeys";
 
 import RateChangesPanel from "./AdminServiceTable/RateChangesPanel";
@@ -10,26 +11,24 @@ import ServiceTable from "./AdminServiceTable/ServiceTable";
 import DescriptionModal from "./AdminServiceTable/DescriptionModal";
 
 const AdminServiceTable = ({
-  services,
   onEdit,
   onDelete,
   onToggleStatus,
-  refresh, // fallback (optional)
 }) => {
-  const queryClient = useQueryClient(); // ✅ React Query client
+  // ================= FETCH SERVICES =================
+  const { data, isLoading, isError } = useQuery({
+    queryKey: QUERY_KEYS.SERVICES,
+    queryFn: async () => {
+      const res = await API.get("/admin/services");
+      return res.data;
+    },
+  });
+
+  const services = data || [];
 
   const [search, setSearch] = useState("");
   const [selectedDescription, setSelectedDescription] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
-
-  // ===== GLOBAL REFRESH HANDLER (PRODUCTION READY) =====
-  const handleRefresh = useCallback(() => {
-    // 🔥 Invalidate services cache everywhere
-    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SERVICES });
-
-    // Optional fallback (if still used somewhere)
-    if (refresh) refresh();
-  }, [queryClient, refresh]);
 
   // ===== SEARCH =====
   const filteredServices = useMemo(() => {
@@ -59,15 +58,32 @@ const AdminServiceTable = ({
     );
   }, [filteredServices]);
 
+  // ===== LOADING STATE =====
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6 text-center text-gray-500">
+        Loading services...
+      </div>
+    );
+  }
+
+  // ===== ERROR STATE =====
+  if (isError) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-6 text-center text-red-500">
+        Failed to load services
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
 
-      <RateChangesPanel services={services} refresh={handleRefresh} />
+      <RateChangesPanel services={services} />
 
       <BulkActionBar
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
-        refresh={handleRefresh}
       />
 
       <SearchBar search={search} setSearch={setSearch} />
@@ -80,7 +96,6 @@ const AdminServiceTable = ({
         onDelete={onDelete}
         onToggleStatus={onToggleStatus}
         setSelectedDescription={setSelectedDescription}
-        refresh={handleRefresh} // ✅ optional future use
       />
 
       <DescriptionModal
