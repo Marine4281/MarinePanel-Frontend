@@ -1,3 +1,4 @@
+// src/pages/AdminUserOrders.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
@@ -20,13 +21,21 @@ const AdminUserOrders = () => {
   const [processingId, setProcessingId] = useState(null);
   const [progressInput, setProgressInput] = useState({});
 
+  // ✅ PAGINATION STATE
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
+
       const res = await API.get(
-        `/admin/user-orders?search=${search}&page=1&limit=20`
+        `/admin/user-orders?search=${search}&page=${page}&limit=10`
       );
+
       setOrders(res.data.orders || []);
+      setTotalPages(res.data.totalPages || 1);
+
     } catch (err) {
       toast.error("Failed to fetch orders");
     } finally {
@@ -36,7 +45,7 @@ const AdminUserOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [page]);
 
   /* ===============================
      SOCKET LIVE UPDATES
@@ -59,6 +68,9 @@ const AdminUserOrders = () => {
     return () => socket.off("orderUpdated");
   }, []);
 
+  /* ===============================
+     STATUS UPDATE
+  =============================== */
   const updateStatus = async (id, status) => {
     try {
       setProcessingId(id);
@@ -72,6 +84,9 @@ const AdminUserOrders = () => {
     }
   };
 
+  /* ===============================
+     PROGRESS UPDATE
+  =============================== */
   const updateProgress = async (order) => {
     try {
       const value = Number(progressInput[order._id]);
@@ -96,12 +111,9 @@ const AdminUserOrders = () => {
   };
 
   /* ===============================
-     REFUND HANDLER
+     REFUND
   =============================== */
   const refundOrder = async (order, type) => {
-    const email = order.userId?.email || "";
-    const firstName = email.split("@")[0] || "User";
-
     let customAmount = null;
 
     if (type === "custom") {
@@ -119,7 +131,7 @@ const AdminUserOrders = () => {
     }
 
     const confirmRefund = window.confirm(
-      `Refund (${type}) for order ${order.orderId} to ${firstName}?`
+      `Refund (${type}) for order #${order.customOrderId || order.orderId}?`
     );
 
     if (!confirmRefund) return;
@@ -158,17 +170,20 @@ const AdminUserOrders = () => {
       <div className="flex-1 p-8">
         <h2 className="text-2xl font-bold mb-6">User Orders</h2>
 
-        {/* Search */}
+        {/* SEARCH */}
         <div className="flex gap-3 mb-6">
           <input
             type="text"
-            placeholder="Search by Order ID or Email"
+            placeholder="Search by Order ID (#1001), Internal ID, or Email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-4 py-2 w-72 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 w-80 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
-            onClick={fetchOrders}
+            onClick={() => {
+              setPage(1);
+              fetchOrders();
+            }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             Search
@@ -182,172 +197,115 @@ const AdminUserOrders = () => {
             No orders found
           </div>
         ) : (
-          orders.map((order) => {
-            const created = order.createdAt
-              ? new Date(order.createdAt)
-              : null;
+          <>
+            {orders.map((order) => {
+              const created = order.createdAt
+                ? new Date(order.createdAt)
+                : null;
 
-            const progress =
-              ((order.quantityDelivered || 0) /
-                (order.quantity || 1)) *
-              100;
+              const progress = Math.min(
+                ((order.quantityDelivered || 0) /
+                  (order.quantity || 1)) *
+                  100,
+                100
+              );
 
-            const locked =
-              order.status === "refunded" ||
-              order.status === "completed";
+              const locked =
+                order.status === "refunded" ||
+                order.status === "completed";
 
-            return (
-              <div
-                key={order._id}
-                className="bg-white p-6 mb-5 rounded-2xl shadow-sm border border-gray-100"
-              >
-                {/* Header */}
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-semibold text-sm text-gray-700">
-                    {order.orderId || order._id}
-                  </span>
-                  <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status]}`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
+              return (
+                <div
+                  key={order._id}
+                  className="bg-white p-6 mb-5 rounded-2xl shadow-sm border"
+                >
+                  {/* HEADER */}
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-bold text-blue-600">
+                      #{order.customOrderId || order.orderId}
+                    </span>
 
-                {/* Order Info */}
-                <div className="space-y-1 text-sm text-gray-700">
-                  <p><strong>Email:</strong> {order.userId?.email}</p>
-
-                  <p>
-                    <strong>User Balance:</strong>{" "}
-                    ${order.userId?.balance?.toFixed(4) || "0.0000"}
-                  </p>
-
-                  <p><strong>Service:</strong> {order.service}</p>
-
-                  <p>
-                    <strong>Provider:</strong>{" "}
-                    {order.provider || "N/A"}
-                  </p>
-
-                  <p>
-                    <strong>Link:</strong>{" "}
-                    <a
-                      href={order.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline break-all"
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status]}`}
                     >
-                      {order.link}
-                    </a>
-                  </p>
-
-                  <p><strong>Charge:</strong> ${order.charge}</p>
-
-                  <p>
-                    <strong>Created:</strong>{" "}
-                    {created
-                      ? created.toLocaleDateString() +
-                        " " +
-                        created.toLocaleTimeString()
-                      : "N/A"}
-                  </p>
-                </div>
-
-                {/* Progress */}
-                <div className="mt-4">
-                  <p className="text-sm mb-1">
-                    <strong>Progress:</strong>{" "}
-                    {order.quantityDelivered || 0} / {order.quantity}
-                  </p>
-
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
+                      {order.status}
+                    </span>
                   </div>
-                </div>
 
-                {/* Progress Update */}
-                {!locked && (
-                  <div className="flex gap-3 mt-4">
-                    <input
-                      type="number"
-                      min={0}
-                      max={order.quantity}
-                      placeholder="Delivered"
-                      value={progressInput[order._id] ?? ""}
-                      onChange={(e) =>
-                        setProgressInput({
-                          ...progressInput,
-                          [order._id]: e.target.value,
-                        })
-                      }
-                      className="px-3 py-1 border rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-
-                    <button
-                      disabled={processingId === order._id}
-                      onClick={() => updateProgress(order)}
-                      className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                    >
-                      Update
-                    </button>
+                  {/* INFO */}
+                  <div className="space-y-1 text-sm text-gray-700">
+                    <p><strong>Email:</strong> {order.userId?.email}</p>
+                    <p><strong>Service:</strong> {order.service}</p>
+                    <p><strong>Charge:</strong> ${order.charge}</p>
+                    <p><strong>Created:</strong> {created?.toLocaleString()}</p>
                   </div>
-                )}
 
-                {/* Actions */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {["pending", "processing", "completed", "failed"].map((s) => (
-                    <button
-                      key={s}
-                      disabled={locked || processingId === order._id}
-                      onClick={() => updateStatus(order._id, s)}
-                      className="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-gray-300 disabled:opacity-40"
-                    >
-                      {s}
-                    </button>
-                  ))}
+                  {/* PROGRESS */}
+                  <div className="mt-4">
+                    <p className="text-sm mb-1">
+                      <strong>Progress:</strong>{" "}
+                      {order.quantityDelivered || 0} / {order.quantity}
+                    </p>
 
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ACTIONS */}
                   {!locked && (
-                    <>
-                      <button
-                        disabled={processingId === order._id}
-                        onClick={() => refundOrder(order, "full")}
-                        className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                      >
-                        Full Refund
-                      </button>
-
-                      {order.quantityDelivered > 0 &&
-                        order.quantityDelivered < order.quantity && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {["pending", "processing", "completed", "failed"].map(
+                        (s) => (
                           <button
+                            key={s}
                             disabled={processingId === order._id}
-                            onClick={() => refundOrder(order, "partial")}
-                            className="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                            onClick={() => updateStatus(order._id, s)}
+                            className="px-3 py-1 bg-gray-200 rounded-lg text-sm"
                           >
-                            Partial Refund
+                            {s}
                           </button>
-                        )}
+                        )
+                      )}
 
                       <button
-                        disabled={processingId === order._id}
-                        onClick={() => refundOrder(order, "custom")}
-                        className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                        onClick={() => refundOrder(order, "full")}
+                        className="px-3 py-1 bg-red-600 text-white rounded-lg"
                       >
-                        Custom Refund
+                        Refund
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
+              );
+            })}
 
-                <p className="mt-4 text-xs text-gray-400">
-                  {created?.toLocaleDateString()}{" "}
-                  {created?.toLocaleTimeString()}
-                </p>
-              </div>
-            );
-          })
+            {/* PAGINATION */}
+            <div className="flex justify-center gap-4 mt-6">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              <span className="px-4 py-2 font-semibold">
+                Page {page} / {totalPages}
+              </span>
+
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
