@@ -203,8 +203,7 @@ const AdminUserDetails = () => {
                   <>
                     <img
                       src={`https://flagcdn.com/24x18/${user.countryCode
-                        .toLowerCase()
-                        .slice(0, 2)}.png`}
+                        .toLowerCase()}.png`}
                       alt={user.country}
                       className="w-6 h-4"
                     />
