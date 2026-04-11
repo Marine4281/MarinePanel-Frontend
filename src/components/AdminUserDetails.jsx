@@ -208,7 +208,7 @@ const AdminUserDetails = () => {
                       alt=""
                       className="w-6 h-4"
                     />
-                    {user.country}
+                    {user.countryCode}
                   </>
                 ) : "-"}
               </p>
