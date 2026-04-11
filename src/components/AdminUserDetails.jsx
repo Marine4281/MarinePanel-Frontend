@@ -199,7 +199,7 @@ const AdminUserDetails = () => {
 
               <p className="flex items-center gap-2">
                 <strong>Country:</strong>
-                {user.country && user.countryCode ? (
+                {user.countryCode ? (
                   <>
                     <img
                       src={`https://flagcdn.com/24x18/${user.countryCode
