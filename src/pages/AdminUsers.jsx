@@ -57,7 +57,6 @@ const AdminUsers = () => {
             <thead className="bg-gray-100 text-gray-600 uppercase">
               <tr>
                 <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Phone</th>
                 <th className="px-4 py-3">Country</th>
@@ -71,7 +70,6 @@ const AdminUsers = () => {
               {currentUsers.map((user) => (
                 <tr key={user._id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">{user._id.slice(-6)}</td>
-                  <td className="px-4 py-3">{user.name || "-"}</td>
                   <td className="px-4 py-3">{user.email}</td>
                   <td className="px-4 py-3">{user.phone || "-"}</td>
 
