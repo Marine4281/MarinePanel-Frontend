@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const OrdersFilters = ({
   search,
   setSearch,
@@ -9,14 +11,31 @@ const OrdersFilters = ({
   setToDate,
   onSearch,
 }) => {
+  const [localSearch, setLocalSearch] = useState(search);
+
+  /* 🔥 DEBOUNCE */
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      setSearch(localSearch);
+      onSearch(); // trigger fetch
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(delay);
+  }, [localSearch]);
+
+  /* 🔥 AUTO FETCH ON FILTER CHANGE */
+  useEffect(() => {
+    onSearch();
+  }, [status, fromDate, toDate]);
+
   return (
     <div className="flex flex-wrap gap-3 mb-6">
       <input
         type="text"
-        placeholder="Search ID / Custom ID / Email"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 w-72 border rounded-lg"
+        placeholder="Search Service / ID / Custom ID / Email / Rate"
+        value={localSearch}
+        onChange={(e) => setLocalSearch(e.target.value)}
+        className="px-4 py-2 w-80 border rounded-lg"
       />
 
       <select
@@ -44,13 +63,6 @@ const OrdersFilters = ({
         onChange={(e) => setToDate(e.target.value)}
         className="px-3 py-2 border rounded-lg"
       />
-
-      <button
-        onClick={onSearch}
-        className="px-6 py-2 bg-blue-600 text-white rounded-lg"
-      >
-        Filter
-      </button>
     </div>
   );
 };
