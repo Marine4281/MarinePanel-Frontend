@@ -205,10 +205,10 @@ const AdminUserDetails = () => {
                       src={`https://flagcdn.com/24x18/${user.countryCode
                         .toLowerCase()
                         .slice(0, 2)}.png`}
-                      alt=""
+                      alt={user.country}
                       className="w-6 h-4"
                     />
-                    {user.countryCode}
+                    {user.country}
                   </>
                 ) : "-"}
               </p>
