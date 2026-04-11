@@ -150,8 +150,6 @@ const AdminUserOrders = () => {
         <h2 className="text-2xl font-bold mb-6">User Orders</h2>
 
         <OrdersStats 
-          search={search}
-          status={status}
           fromDate={fromDate}
           toDate={toDate}
           />
