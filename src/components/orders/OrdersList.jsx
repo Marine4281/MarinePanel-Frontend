@@ -3,6 +3,8 @@ const statusStyles = {
   processing: "bg-blue-100 text-blue-600",
   completed: "bg-green-100 text-green-600",
   failed: "bg-red-100 text-red-600",
+  refunded: "bg-gray-200 text-gray-600",
+  cancelled: "bg-gray-200 text-gray-600",
 };
 
 const OrdersList = ({
@@ -15,62 +17,146 @@ const OrdersList = ({
   updateProgress,
   refundOrder,
 }) => {
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p>Loading orders...</p>;
+
   if (!orders.length)
-    return <div className="bg-white p-6 rounded-xl">No orders</div>;
+    return (
+      <div className="bg-white p-6 rounded-xl shadow">
+        No orders found
+      </div>
+    );
 
   return orders.map((order) => {
-    const created = order.createdAt ? new Date(order.createdAt) : null;
+    const created = order.createdAt
+      ? new Date(order.createdAt)
+      : null;
 
     const progress =
-      ((order.quantityDelivered || 0) / (order.quantity || 1)) * 100;
+      ((order.quantityDelivered || 0) /
+        (order.quantity || 1)) *
+      100;
 
     const locked =
-      order.status === "refunded" || order.status === "completed";
+      order.status === "refunded" ||
+      order.status === "completed";
 
     return (
       <div
         key={order._id}
-        className="bg-white p-6 mb-5 rounded-2xl shadow-sm"
+        className="bg-white p-6 mb-5 rounded-2xl shadow-sm border border-gray-100"
       >
-        <div className="flex justify-between">
-          <div>
-            <p className="font-semibold">
-              {order.orderId} | {order.customOrderId || "—"}
-            </p>
-            <p className="text-xs text-gray-400">{order.userId?.email}</p>
-          </div>
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-3">
+          <span className="font-semibold text-sm text-gray-700">
+            {order.orderId || order._id}
+            {" | "}
+            {order.customOrderId || "—"}
+          </span>
 
           <span
-            className={`px-3 py-1 text-xs rounded-full capitalize ${statusStyles[order.status]}`}
+            className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status]}`}
           >
             {order.status}
           </span>
         </div>
 
-        <div className="mt-3 text-sm">
-          <p>Service: {order.service}</p>
-          <p>Charge: ${order.charge}</p>
+        {/* ORDER INFO */}
+        <div className="space-y-1 text-sm text-gray-700">
+          <p>
+            <strong>Email:</strong> {order.userId?.email}
+          </p>
+
+          <p>
+            <strong>User Balance:</strong>{" "}
+            ${order.userId?.balance?.toFixed(4) || "0.0000"}
+          </p>
+
+          <p>
+            <strong>Service:</strong> {order.service}
+          </p>
+
+          <p>
+            <strong>Provider:</strong>{" "}
+            {order.provider || "N/A"}
+          </p>
+
+          <p>
+            <strong>Link:</strong>{" "}
+            <a
+              href={order.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline break-all"
+            >
+              {order.link}
+            </a>
+          </p>
+
+          <p>
+            <strong>Charge:</strong> ${order.charge}
+          </p>
+
+          <p>
+            <strong>Created:</strong>{" "}
+            {created
+              ? created.toLocaleDateString() +
+                " " +
+                created.toLocaleTimeString()
+              : "N/A"}
+          </p>
         </div>
 
-        {/* Progress */}
-        <div className="mt-3">
-          <div className="w-full bg-gray-200 h-2 rounded">
+        {/* PROGRESS */}
+        <div className="mt-4">
+          <p className="text-sm mb-1">
+            <strong>Progress:</strong>{" "}
+            {order.quantityDelivered || 0} / {order.quantity}
+          </p>
+
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded"
+              className="bg-blue-600 h-2 rounded-full transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 mt-3">
+        {/* PROGRESS UPDATE */}
+        {!locked && (
+          <div className="flex gap-3 mt-4">
+            <input
+              type="number"
+              min={0}
+              max={order.quantity}
+              placeholder="Delivered"
+              value={progressInput[order._id] ?? ""}
+              onChange={(e) =>
+                setProgressInput({
+                  ...progressInput,
+                  [order._id]: e.target.value,
+                })
+              }
+              className="px-3 py-1 border rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <button
+              disabled={processingId === order._id}
+              onClick={() => updateProgress(order)}
+              className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              Update
+            </button>
+          </div>
+        )}
+
+        {/* ACTIONS */}
+        <div className="flex flex-wrap gap-2 mt-4">
           {["pending", "processing", "completed", "failed"].map((s) => (
             <button
               key={s}
               disabled={locked || processingId === order._id}
               onClick={() => updateStatus(order._id, s)}
-              className="px-3 py-1 bg-gray-200 rounded text-sm"
+              className="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-gray-300 disabled:opacity-40"
             >
               {s}
             </button>
@@ -79,14 +165,40 @@ const OrdersList = ({
           {!locked && (
             <>
               <button
+                disabled={processingId === order._id}
                 onClick={() => refundOrder(order, "full")}
-                className="px-3 py-1 bg-red-600 text-white rounded"
+                className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                Refund
+                Full Refund
+              </button>
+
+              {order.quantityDelivered > 0 &&
+                order.quantityDelivered < order.quantity && (
+                  <button
+                    disabled={processingId === order._id}
+                    onClick={() => refundOrder(order, "partial")}
+                    className="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    Partial Refund
+                  </button>
+                )}
+
+              <button
+                disabled={processingId === order._id}
+                onClick={() => refundOrder(order, "custom")}
+                className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              >
+                Custom Refund
               </button>
             </>
           )}
         </div>
+
+        {/* FOOTER */}
+        <p className="mt-4 text-xs text-gray-400">
+          {created?.toLocaleDateString()}{" "}
+          {created?.toLocaleTimeString()}
+        </p>
       </div>
     );
   });
