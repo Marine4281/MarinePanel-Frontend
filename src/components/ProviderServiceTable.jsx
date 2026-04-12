@@ -12,6 +12,22 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   const [showDescription, setShowDescription] = useState(false);
   const [updatingAll, setUpdatingAll] = useState(false);
 
+   /* =========================================
+     ✅ PLATFORM DETECTION (NEW)
+  ========================================= */
+  const getPlatformFromCategory = (category = "") => {
+    const c = category.toLowerCase();
+
+    if (c.includes("instagram")) return "Instagram";
+    if (c.includes("tiktok")) return "TikTok";
+    if (c.includes("facebook")) return "Facebook";
+    if (c.includes("youtube")) return "YouTube";
+    if (c.includes("whatsapp")) return "WhatsApp";
+    if (c.includes("telegram")) return "Telegram";
+
+    return "Other";
+  };
+
   /* =========================================
      RATE HELPERS (✅ SAME AS ADMIN PANEL)
   ========================================= */
@@ -187,7 +203,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             min: service.min,
             max: service.max,
             service: service.service,
-            platform: service.platform || "General",
+            platform: getPlatformFromCategory(cat.category),
             description: service.description || "",
           },
         ],
@@ -225,7 +241,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
           min: s.min,
           max: s.max,
           service: s.service,
-          platform: s.platform || "General",
+          platform: getPlatformFromCategory(cat.category),
           description: s.description || "",
         })),
         provider: providerProfile.name,
@@ -264,7 +280,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
           min: s.min,
           max: s.max,
           service: s.service,
-          platform: s.platform || "General",
+          platform: getPlatformFromCategory(cat.category),
           description: s.description || "",
         })),
         provider: providerProfile.name,
