@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 
-const OrdersStats = ({ search, status, fromDate, toDate }) => {
+const AdminUserOrdersStats = ({ search, status, fromDate, toDate }) => {
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
