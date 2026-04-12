@@ -1,4 +1,4 @@
-//src/components/orders/OrdersFilters.jsx
+//src/components/orders/AdminUserOrdersFilters.jsx
 
 import { useEffect, useState } from "react";
 
@@ -155,4 +155,4 @@ const OrdersFilters = ({
   );
 };
 
-export default OrdersFilters;
+export default AdminUserOrdersFilters;
