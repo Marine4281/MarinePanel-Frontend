@@ -8,7 +8,7 @@ const statusStyles = {
   cancelled: "bg-gray-200 text-gray-600",
 };
 
-const OrdersList = ({
+const AdminUserOrdersList = ({
   orders,
   loading,
   processingId,
