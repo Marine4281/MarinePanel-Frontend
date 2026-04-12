@@ -141,8 +141,6 @@ const Orders = () => {
 
           {/* ✅ STATS */}
           <UserOrdersStats
-            search={search}
-            status={status}
             fromDate={fromDate}
             toDate={toDate}
           />
