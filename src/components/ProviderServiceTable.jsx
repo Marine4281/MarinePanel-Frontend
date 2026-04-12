@@ -473,7 +473,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
 
                       {!existing && (
                         <button
-                          onClick={() => importService(s)}
+                          onClick={() => importService(s, cat)}
                           className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
                         >
                           {loadingImport === s.service
