@@ -52,12 +52,12 @@ const Orders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page]);
+  }, [page, search, status, fromDate, toDate]);
 
   /* 🔥 FILTER TRIGGER */
   const handleSearch = () => {
     setPage(1);
-    fetchOrders();
+    
   };
 
   /* ===============================
