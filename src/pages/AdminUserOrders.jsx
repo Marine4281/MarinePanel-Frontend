@@ -1,12 +1,13 @@
+//src/pages/AdminUserOrders.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import toast, { Toaster } from "react-hot-toast";
 import { io } from "socket.io-client";
 
-import OrdersStats from "../components/orders/OrdersStats";
-import OrdersFilters from "../components/orders/OrdersFilters";
-import OrdersList from "../components/orders/OrdersList";
+import AdminUserOrdersStats from "../components/orders/AdminUserOrdersStats";
+import AdminUserOrdersFilters from "../components/orders/AdminUserOrdersFilters";
+import AdminUserOrdersList from "../components/orders/AdminUserOrdersList";
 
 /* SOCKET */
 const baseURL =
