@@ -32,7 +32,7 @@ const Orders = () => {
   =============================== */
   const fetchOrders = async () => {
     try {
-      const res = await API.get("/my-orders", {
+      const res = await API.get("/orders/my-orders", {
         params: {
           search,
           status,
