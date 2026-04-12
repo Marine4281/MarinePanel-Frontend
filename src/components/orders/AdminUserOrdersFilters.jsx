@@ -1,4 +1,4 @@
-//src/components/orders/AdminUserOrdersFilters.jsx
+// src/components/orders/AdminUserOrdersFilters.jsx
 
 import { useEffect, useState } from "react";
 
@@ -16,19 +16,24 @@ const AdminUserOrdersFilters = ({
   const [localSearch, setLocalSearch] = useState(search);
   const [quickFilter, setQuickFilter] = useState("");
 
-  /* ✅ DEBOUNCE SEARCH */
+  /* ✅ KEEP INPUT IN SYNC (important when parent updates search) */
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  /* ✅ PROPER DEBOUNCE (FIXED) */
   useEffect(() => {
     const delay = setTimeout(() => {
-      setSearch(localSearch);
+      setSearch(localSearch); // only update search
     }, 500);
 
     return () => clearTimeout(delay);
-  }, [localSearch]);
+  }, [localSearch, setSearch]);
 
-  /* ✅ AUTO TRIGGER ON FILTER CHANGE */
+  /* ✅ TRIGGER FETCH AFTER SEARCH IS UPDATED */
   useEffect(() => {
-    fetchOrders();
-  }, [status, fromDate, toDate]);
+    onSearch();
+  }, [search, status, fromDate, toDate]);
 
   /* ✅ QUICK DATE FILTER HANDLER */
   const handleQuickFilter = (value) => {
@@ -36,7 +41,7 @@ const AdminUserOrdersFilters = ({
 
     const now = new Date();
     let start = "";
-    let end = new Date().toISOString().split("T")[0]; // today
+    let end = new Date().toISOString().split("T")[0];
 
     if (value === "today") {
       start = end;
@@ -104,11 +109,10 @@ const AdminUserOrdersFilters = ({
         <option value="pending">Pending</option>
         <option value="processing">Processing</option>
         <option value="completed">Completed</option>
-        <option value="partial">Partial</option> {/* ✅ added */}
+        <option value="partial">Partial</option>
         <option value="failed">Failed</option>
       </select>
 
-      {/* ✅ UPDATED QUICK FILTER DROPDOWN */}
       <select
         value={quickFilter}
         onChange={(e) => handleQuickFilter(e.target.value)}
@@ -128,7 +132,7 @@ const AdminUserOrdersFilters = ({
         type="date"
         value={fromDate}
         onChange={(e) => {
-          setQuickFilter(""); // reset quick filter if manual change
+          setQuickFilter("");
           setFromDate(e.target.value);
         }}
         className="px-3 py-2 border rounded-lg"
@@ -138,7 +142,7 @@ const AdminUserOrdersFilters = ({
         type="date"
         value={toDate}
         onChange={(e) => {
-          setQuickFilter(""); // reset quick filter if manual change
+          setQuickFilter("");
           setToDate(e.target.value);
         }}
         className="px-3 py-2 border rounded-lg"
