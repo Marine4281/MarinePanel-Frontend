@@ -105,6 +105,7 @@ const OrdersFilters = ({
         <option value="pending">Pending</option>
         <option value="processing">Processing</option>
         <option value="completed">Completed</option>
+        <option value="partial">Partial</option> {/* ✅ added */}
         <option value="failed">Failed</option>
       </select>
 
