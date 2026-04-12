@@ -229,7 +229,12 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       return toast.error("No services selected");
 
     const servicesToImport = categories
-      .flatMap((cat) => cat.services)
+      .flatMap((cat) =>
+        cat.services.map((s) => ({
+          ...s,
+          _category: cat.category,
+        }))
+      )
       .filter((s) => selectedServices.includes(s.service));
 
     try {
@@ -241,7 +246,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
           min: s.min,
           max: s.max,
           service: s.service,
-          platform: getPlatformFromCategory(cat.category),
+          platform: getPlatformFromCategory(s._category),
           description: s.description || "",
         })),
         provider: providerProfile.name,
@@ -255,6 +260,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       toast.error(error.response?.data?.message || "Bulk import failed");
     }
   };
+
 
   /* =========================================
      IMPORT CATEGORY
