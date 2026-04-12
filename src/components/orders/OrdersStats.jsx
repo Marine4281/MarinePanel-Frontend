@@ -1,3 +1,4 @@
+//src/components/orders/OrdersStats.jsx
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 
@@ -7,6 +8,7 @@ const OrdersStats = ({ search, status, fromDate, toDate }) => {
     pending: 0,
     processing: 0,
     completed: 0,
+    partial: 0, // ✅ added
     failed: 0,
   });
 
@@ -30,6 +32,7 @@ const OrdersStats = ({ search, status, fromDate, toDate }) => {
         pending: res.data.pending || 0,
         processing: res.data.processing || 0,
         completed: res.data.completed || 0,
+        partial: res.data.partial || 0, // ✅ added
         failed: res.data.failed || 0,
       });
     } catch (err) {
@@ -54,11 +57,12 @@ const OrdersStats = ({ search, status, fromDate, toDate }) => {
   );
 
   return (
-    <div className="grid grid-cols-5 gap-4 mb-6">
+    <div className="grid grid-cols-6 gap-4 mb-6"> {/* ✅ updated cols */}
       <Card title="Total Orders" value={stats.total} />
       <Card title="Pending" value={stats.pending} />
       <Card title="Processing" value={stats.processing} />
       <Card title="Completed" value={stats.completed} />
+      <Card title="Partial" value={stats.partial} /> {/* ✅ added */}
       <Card title="Failed" value={stats.failed} />
     </div>
   );
