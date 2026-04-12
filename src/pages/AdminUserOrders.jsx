@@ -150,12 +150,12 @@ const AdminUserOrders = () => {
       <div className="flex-1 p-8">
         <h2 className="text-2xl font-bold mb-6">User Orders</h2>
 
-        <OrdersStats 
+        <AdminUserOrdersStats 
           fromDate={fromDate}
           toDate={toDate}
           />
 
-        <OrdersFilters
+        <AdminUserOrdersFilters
           search={search}
           setSearch={setSearch}
           status={status}
@@ -170,7 +170,7 @@ const AdminUserOrders = () => {
           }}
         />
 
-        <OrdersList
+        <AdminUserOrdersList
           orders={orders}
           loading={loading}
           processingId={processingId}
