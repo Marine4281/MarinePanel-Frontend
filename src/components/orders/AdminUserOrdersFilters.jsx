@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const OrdersFilters = ({
+const AdminUserOrdersFilters = ({
   search,
   setSearch,
   status,
