@@ -20,7 +20,6 @@ const AdminUserOrdersFilters = ({
   useEffect(() => {
     const delay = setTimeout(() => {
       setSearch(localSearch);
-      onSearch();
     }, 500);
 
     return () => clearTimeout(delay);
@@ -28,7 +27,7 @@ const AdminUserOrdersFilters = ({
 
   /* ✅ AUTO TRIGGER ON FILTER CHANGE */
   useEffect(() => {
-    onSearch();
+    fetchOrders();
   }, [status, fromDate, toDate]);
 
   /* ✅ QUICK DATE FILTER HANDLER */
