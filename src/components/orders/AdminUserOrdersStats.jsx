@@ -1,4 +1,4 @@
-//src/components/orders/OrdersStats.jsx
+//src/components/orders/AdminUserOrdersStats.jsx
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 
@@ -68,4 +68,4 @@ const OrdersStats = ({ search, status, fromDate, toDate }) => {
   );
 };
 
-export default OrdersStats;
+export default AdminUserOrdersStats;
