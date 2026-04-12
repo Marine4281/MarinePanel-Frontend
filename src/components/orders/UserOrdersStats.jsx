@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 
-const UserOrdersStats = ({ search, status, fromDate, toDate }) => {
+const UserOrdersStats = ({ status, fromDate, toDate }) => {
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -18,7 +18,7 @@ const UserOrdersStats = ({ search, status, fromDate, toDate }) => {
       setLoading(true);
 
       const res = await API.get("/orders/my-orders/stats", {
-        params: { search, status, fromDate, toDate },
+        params: { status, fromDate, toDate },
       });
 
       setStats(res.data);
@@ -31,7 +31,7 @@ const UserOrdersStats = ({ search, status, fromDate, toDate }) => {
 
   useEffect(() => {
     fetchStats();
-  }, [search, status, fromDate, toDate]);
+  }, [status, fromDate, toDate]);
 
   const Card = ({ title, value }) => (
     <div className="bg-white p-4 rounded-xl shadow-sm">
