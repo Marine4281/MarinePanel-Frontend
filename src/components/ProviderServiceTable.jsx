@@ -266,6 +266,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      IMPORT CATEGORY
   ========================================= */
   const importCategory = async (category) => {
+  const importCategory = async (category) => {
     if (!providerProfile?._id) {
       return toast.error("Provider required");
     }
@@ -286,7 +287,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
           min: s.min,
           max: s.max,
           service: s.service,
-          platform: getPlatformFromCategory(cat.category),
+          platform: getPlatformFromCategory(catObj.category),
           description: s.description || "",
         })),
         provider: providerProfile.name,
@@ -296,11 +297,10 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
       loadExistingServices();
     } catch (error) {
       console.error(error);
-      toast.error(
-        error.response?.data?.message || "Category import failed"
-      );
+      toast.error(error.response?.data?.message || "Category import failed");
     }
   };
+
 
   /* =========================================
      TOGGLE CATEGORY EXPAND
