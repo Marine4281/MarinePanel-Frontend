@@ -266,7 +266,6 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
      IMPORT CATEGORY
   ========================================= */
   const importCategory = async (category) => {
-  const importCategory = async (category) => {
     if (!providerProfile?._id) {
       return toast.error("Provider required");
     }
