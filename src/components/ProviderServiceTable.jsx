@@ -188,7 +188,7 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
   /* =========================================
      IMPORT SINGLE SERVICE
   ========================================= */
-  const importService = async (service) => {
+  const importService = async (service, cat) => {
     if (!providerProfile?.name) return toast.error("Provider required");
 
     try {
