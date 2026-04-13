@@ -17,18 +17,17 @@ const socket = io(baseURL, { transports: ["websocket"] });
 const Orders = () => {
   const [orders, setOrders] = useState([]);
 
-  /* ✅ FILTER STATES */
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  /* ✅ PAGINATION */
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  /* ✅ EXPAND SERVICE */
   const [expandedService, setExpandedService] = useState(null);
+
+  const [loadingAction, setLoadingAction] = useState(null); // 🔥 button loader
 
   /* ===============================
      FETCH ORDERS
@@ -57,9 +56,7 @@ const Orders = () => {
     fetchOrders();
   }, [page, search, status, fromDate, toDate]);
 
-  const handleSearch = () => {
-    setPage(1);
-  };
+  const handleSearch = () => setPage(1);
 
   /* ===============================
      SOCKET
@@ -74,7 +71,11 @@ const Orders = () => {
       setOrders((prev) =>
         prev.map((o) =>
           o._id === data.orderId
-            ? { ...o, status: data.status, quantityDelivered: data.delivered }
+            ? {
+                ...o,
+                status: data.status,
+                quantityDelivered: data.delivered,
+              }
             : o
         )
       );
@@ -84,15 +85,50 @@ const Orders = () => {
   }, []);
 
   /* ===============================
+     ACTIONS
+  =============================== */
+  const handleCancel = async (orderId) => {
+    try {
+      setLoadingAction(orderId);
+
+      await API.post(`/orders/${orderId}/cancel`);
+
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === orderId
+            ? { ...o, cancelRequested: true, cancelStatus: "pending" }
+            : o
+        )
+      );
+    } catch (err) {
+      alert(err.response?.data?.message || "Cancel failed");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleRefill = async (orderId) => {
+    try {
+      setLoadingAction(orderId);
+
+      await API.post(`/orders/${orderId}/refill`);
+
+      alert("Refill request sent");
+    } catch (err) {
+      alert(err.response?.data?.message || "Refill failed");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  /* ===============================
      HELPERS
   =============================== */
   const shortenService = (service) =>
     service?.split(" ").slice(0, 2).join(" ") || "Service";
 
-  const shortenLink = (link) => {
-    if (!link) return "";
-    return link.length > 35 ? link.slice(0, 35) + "..." : link;
-  };
+  const shortenLink = (link) =>
+    link?.length > 35 ? link.slice(0, 35) + "..." : link;
 
   const statusBadge = (status) => {
     const map = {
@@ -101,6 +137,7 @@ const Orders = () => {
       completed: "bg-green-100 text-green-700",
       partial: "bg-indigo-100 text-indigo-700",
       failed: "bg-red-100 text-red-700",
+      cancelled: "bg-gray-200 text-gray-700",
     };
 
     return (
@@ -114,6 +151,55 @@ const Orders = () => {
     );
   };
 
+  const renderAction = (order) => {
+    // 🔴 CANCEL (pending/processing only)
+    if (
+      ["pending", "processing"].includes(order.status) &&
+      !order.cancelRequested
+    ) {
+      return (
+        <button
+          onClick={() => handleCancel(order._id)}
+          disabled={loadingAction === order._id}
+          className="text-xs bg-red-500 text-white px-3 py-1 rounded"
+        >
+          {loadingAction === order._id ? "..." : "Cancel"}
+        </button>
+      );
+    }
+
+    // 🟡 CANCEL STATUS
+    if (order.cancelRequested) {
+      const map = {
+        pending: "Cancel requested",
+        processing: "Cancelling...",
+        success: "Cancelled",
+        failed: "Cancel failed",
+      };
+
+      return (
+        <span className="text-xs text-gray-600">
+          {map[order.cancelStatus] || "Canceling..."}
+        </span>
+      );
+    }
+
+    // 🟢 REFILL (completed only)
+    if (order.status === "completed") {
+      return (
+        <button
+          onClick={() => handleRefill(order._id)}
+          disabled={loadingAction === order._id}
+          className="text-xs bg-green-600 text-white px-3 py-1 rounded"
+        >
+          {loadingAction === order._id ? "..." : "Refill"}
+        </button>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
@@ -121,7 +207,6 @@ const Orders = () => {
       <main className="max-w-6xl mx-auto mt-6 flex-1 px-4 w-full">
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
-          {/* HEADER */}
           <div className="flex justify-between mb-6">
             <h2 className="text-2xl font-bold">My Orders</h2>
             <Link
@@ -132,7 +217,6 @@ const Orders = () => {
             </Link>
           </div>
 
-          {/* FILTERS */}
           <UserOrdersFilters
             search={search}
             setSearch={setSearch}
@@ -145,12 +229,10 @@ const Orders = () => {
             onSearch={handleSearch}
           />
 
-          {/* STATS */}
           <UserOrdersStats fromDate={fromDate} toDate={toDate} />
 
-          {/* TABLE */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="w-full text-sm min-w-[1000px]">
               <thead className="bg-gray-100 text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3">Order</th>
@@ -159,6 +241,7 @@ const Orders = () => {
                   <th className="px-4 py-3">Progress</th>
                   <th className="px-4 py-3">Charge</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Action</th> {/* 🔥 NEW */}
                   <th className="px-4 py-3">Date</th>
                 </tr>
               </thead>
@@ -180,39 +263,25 @@ const Orders = () => {
                         #{order.customOrderId || "—"}
                       </td>
 
-                      {/* ✅ SERVICE */}
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span
-                            onClick={() =>
-                              setExpandedService(
-                                isExpanded ? null : order._id
-                              )
-                            }
-                            className="font-medium text-gray-800 cursor-pointer"
-                          >
-                            {isExpanded
-                              ? order.service
-                              : shortenService(order.service)}
-                          </span>
-
-                          {order.service &&
-                            order.service.length > 25 && (
-                              <span className="text-blue-500 text-xs font-bold">
-                                {isExpanded ? "^" : ">"}
-                              </span>
-                            )}
+                        <div
+                          onClick={() =>
+                            setExpandedService(isExpanded ? null : order._id)
+                          }
+                          className="cursor-pointer"
+                        >
+                          {isExpanded
+                            ? order.service
+                            : shortenService(order.service)}
                         </div>
                       </td>
 
-                      {/* ✅ LINK (SHOW REAL URL) */}
                       <td className="px-4 py-3 max-w-xs truncate">
                         <a
                           href={order.link}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline"
-                          title={order.link}
                         >
                           {shortenLink(order.link)}
                         </a>
@@ -236,6 +305,10 @@ const Orders = () => {
                         {statusBadge(order.status)}
                       </td>
 
+                      <td className="px-4 py-3">
+                        {renderAction(order)}
+                      </td>
+
                       <td className="px-4 py-3 text-xs">
                         {new Date(order.createdAt).toLocaleString()}
                       </td>
@@ -245,7 +318,7 @@ const Orders = () => {
 
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="text-center p-6 text-gray-500">
+                    <td colSpan="8" className="text-center p-6 text-gray-500">
                       No orders found
                     </td>
                   </tr>
@@ -254,7 +327,6 @@ const Orders = () => {
             </table>
           </div>
 
-          {/* PAGINATION */}
           <div className="flex justify-between mt-6">
             <button
               disabled={page === 1}
