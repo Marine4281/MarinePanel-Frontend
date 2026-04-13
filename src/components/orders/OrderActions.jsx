@@ -43,11 +43,12 @@ const OrderActions = ({ order, onUpdate }) => {
   };
 
   /* ===============================
-     RENDER LOGIC (NO COLLISION 🔥)
+     ✅ SMART RENDER LOGIC (FIXED)
   =============================== */
 
-  // 🔴 CANCEL (pending / processing only)
+  // 🔴 CANCEL (ONLY if allowed)
   if (
+    order.cancelAllowed && // ✅ NEW
     ["pending", "processing"].includes(order.status) &&
     !order.cancelRequested
   ) {
@@ -62,7 +63,7 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🟡 CANCEL STATUS DISPLAY
+  // 🟡 CANCEL STATUS
   if (order.cancelRequested) {
     const map = {
       pending: "Cancel requested",
@@ -78,8 +79,11 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🟢 REFILL (completed only)
-  if (order.status === "completed") {
+  // 🟢 REFILL (ONLY if allowed)
+  if (
+    order.refillAllowed && // ✅ NEW
+    order.status === "completed"
+  ) {
     return (
       <button
         onClick={handleRefill}
