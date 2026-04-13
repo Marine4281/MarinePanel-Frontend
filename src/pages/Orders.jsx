@@ -57,7 +57,6 @@ const Orders = () => {
     fetchOrders();
   }, [page, search, status, fromDate, toDate]);
 
-  /* 🔥 FILTER TRIGGER */
   const handleSearch = () => {
     setPage(1);
   };
@@ -89,6 +88,11 @@ const Orders = () => {
   =============================== */
   const shortenService = (service) =>
     service?.split(" ").slice(0, 2).join(" ") || "Service";
+
+  const shortenLink = (link) => {
+    if (!link) return "";
+    return link.length > 35 ? link.slice(0, 35) + "..." : link;
+  };
 
   const statusBadge = (status) => {
     const map = {
@@ -128,7 +132,7 @@ const Orders = () => {
             </Link>
           </div>
 
-          {/* ✅ FILTERS */}
+          {/* FILTERS */}
           <UserOrdersFilters
             search={search}
             setSearch={setSearch}
@@ -141,7 +145,7 @@ const Orders = () => {
             onSearch={handleSearch}
           />
 
-          {/* ✅ STATS */}
+          {/* STATS */}
           <UserOrdersStats fromDate={fromDate} toDate={toDate} />
 
           {/* TABLE */}
@@ -176,10 +180,17 @@ const Orders = () => {
                         #{order.customOrderId || "—"}
                       </td>
 
-                      {/* ✅ SERVICE WITH TOGGLE */}
+                      {/* ✅ SERVICE */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-800">
+                          <span
+                            onClick={() =>
+                              setExpandedService(
+                                isExpanded ? null : order._id
+                              )
+                            }
+                            className="font-medium text-gray-800 cursor-pointer"
+                          >
                             {isExpanded
                               ? order.service
                               : shortenService(order.service)}
@@ -187,30 +198,24 @@ const Orders = () => {
 
                           {order.service &&
                             order.service.length > 25 && (
-                              <button
-                                onClick={() =>
-                                  setExpandedService(
-                                    isExpanded ? null : order._id
-                                  )
-                                }
-                                className="text-blue-500 text-sm font-bold hover:underline"
-                              >
+                              <span className="text-blue-500 text-xs font-bold">
                                 {isExpanded ? "^" : ">"}
-                              </button>
+                              </span>
                             )}
                         </div>
                       </td>
 
-                      {/* ✅ LINK (IMPROVED) */}
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() =>
-                            window.open(order.link, "_blank", "noopener,noreferrer")
-                          }
-                          className="text-blue-600 hover:underline font-medium"
+                      {/* ✅ LINK (SHOW REAL URL) */}
+                      <td className="px-4 py-3 max-w-xs truncate">
+                        <a
+                          href={order.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                          title={order.link}
                         >
-                          View
-                        </button>
+                          {shortenLink(order.link)}
+                        </a>
                       </td>
 
                       <td className="px-4 py-3">
@@ -249,7 +254,7 @@ const Orders = () => {
             </table>
           </div>
 
-          {/* ✅ PAGINATION */}
+          {/* PAGINATION */}
           <div className="flex justify-between mt-6">
             <button
               disabled={page === 1}
