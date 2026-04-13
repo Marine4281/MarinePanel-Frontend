@@ -27,6 +27,9 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  /* ✅ EXPAND SERVICE */
+  const [expandedService, setExpandedService] = useState(null);
+
   /* ===============================
      FETCH ORDERS
   =============================== */
@@ -57,7 +60,6 @@ const Orders = () => {
   /* 🔥 FILTER TRIGGER */
   const handleSearch = () => {
     setPage(1);
-    
   };
 
   /* ===============================
@@ -140,10 +142,7 @@ const Orders = () => {
           />
 
           {/* ✅ STATS */}
-          <UserOrdersStats
-            fromDate={fromDate}
-            toDate={toDate}
-          />
+          <UserOrdersStats fromDate={fromDate} toDate={toDate} />
 
           {/* TABLE */}
           <div className="overflow-x-auto">
@@ -169,24 +168,49 @@ const Orders = () => {
                     100
                   );
 
+                  const isExpanded = expandedService === order._id;
+
                   return (
-                    <tr key={order._id}>
+                    <tr key={order._id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-bold text-blue-600">
                         #{order.customOrderId || "—"}
                       </td>
 
+                      {/* ✅ SERVICE WITH TOGGLE */}
                       <td className="px-4 py-3">
-                        {shortenService(order.service)}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-800">
+                            {isExpanded
+                              ? order.service
+                              : shortenService(order.service)}
+                          </span>
+
+                          {order.service &&
+                            order.service.length > 25 && (
+                              <button
+                                onClick={() =>
+                                  setExpandedService(
+                                    isExpanded ? null : order._id
+                                  )
+                                }
+                                className="text-blue-500 text-sm font-bold hover:underline"
+                              >
+                                {isExpanded ? "^" : ">"}
+                              </button>
+                            )}
+                        </div>
                       </td>
 
+                      {/* ✅ LINK (IMPROVED) */}
                       <td className="px-4 py-3">
-                        <a
-                          href={order.link}
-                          target="_blank"
-                          className="text-blue-500"
+                        <button
+                          onClick={() =>
+                            window.open(order.link, "_blank", "noopener,noreferrer")
+                          }
+                          className="text-blue-600 hover:underline font-medium"
                         >
                           View
-                        </a>
+                        </button>
                       </td>
 
                       <td className="px-4 py-3">
@@ -213,6 +237,14 @@ const Orders = () => {
                     </tr>
                   );
                 })}
+
+                {orders.length === 0 && (
+                  <tr>
+                    <td colSpan="7" className="text-center p-6 text-gray-500">
+                      No orders found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
