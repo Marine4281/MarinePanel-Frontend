@@ -1,5 +1,6 @@
 import FreeServiceFields from "./FreeServiceFields";
 import ProviderFields from "./ProviderFields";
+import RefillPolicyFields from "./RefillPolicyFields";
 
 const AdminServiceForm = ({
   form,
@@ -58,6 +59,8 @@ const AdminServiceForm = ({
           </label>
         ))}
       </div>
+
+      <RefillPolicyFields form={form} handleChange={handleChange} />
 
       <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
         {selectedService ? "Update Service" : "Add Service"}
