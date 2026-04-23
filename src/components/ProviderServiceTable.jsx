@@ -206,8 +206,8 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             platform: getPlatformFromCategory(cat.category),
             description: service.description || "",
 
-            refill: service.refill ?? true,
-            cancel: service.cancel ?? true,
+            refill: s.refill ?? true,
+            cancel: s.cancel ?? true,
           },
         ],
         provider: providerProfile.name,
@@ -252,8 +252,8 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
           platform: getPlatformFromCategory(s._category),
           description: s.description || "",
 
-          refill: service.refill ?? true,
-          cancel: service.cancel ?? true,
+          refill: s.refill ?? true,
+          cancel: s.cancel ?? true,
         })),
         provider: providerProfile.name,
       });
