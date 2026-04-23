@@ -205,6 +205,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
             service: service.service,
             platform: getPlatformFromCategory(cat.category),
             description: service.description || "",
+
+            refill: service.refill ?? true,
+            cancel: service.cancel ?? true,
           },
         ],
         provider: providerProfile.name,
@@ -248,6 +251,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
           service: s.service,
           platform: getPlatformFromCategory(s._category),
           description: s.description || "",
+
+          refill: service.refill ?? true,
+          cancel: service.cancel ?? true,
         })),
         provider: providerProfile.name,
       });
@@ -288,6 +294,9 @@ const ProviderServiceTable = ({ categories, providerProfile }) => {
           service: s.service,
           platform: getPlatformFromCategory(catObj.category),
           description: s.description || "",
+
+          refill: service.refill ?? true,
+          cancel: service.cancel ?? true,
         })),
         provider: providerProfile.name,
       });
