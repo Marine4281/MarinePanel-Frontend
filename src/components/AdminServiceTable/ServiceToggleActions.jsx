@@ -18,7 +18,7 @@ const ServiceToggleActions = () => {
   } = useQuery({
     queryKey: ["service-settings"],
     queryFn: async () => {
-      const res = await API.get("/admin/service-settings");
+      const res = await API.get("/admin/services/service-settings");
       return res.data;
     },
   });
