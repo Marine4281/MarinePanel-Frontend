@@ -9,6 +9,7 @@ import BulkActionBar from "./AdminServiceTable/BulkActionBar";
 import SearchBar from "./AdminServiceTable/SearchBar";
 import ServiceTable from "./AdminServiceTable/ServiceTable";
 import DescriptionModal from "./AdminServiceTable/DescriptionModal";
+import ServiceToggleActions from "../components/ServiceToggleActions";
 
 const AdminServiceTable = ({
   onEdit,
@@ -78,6 +79,11 @@ const AdminServiceTable = ({
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
+
+      <ServiceToggleActions
+         service={service}
+         onRefresh={fetchServices}
+      />
 
       <RateChangesPanel services={services} />
 
