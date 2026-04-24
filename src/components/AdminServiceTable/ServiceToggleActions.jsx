@@ -4,86 +4,114 @@ import API from "../../api/axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const ServiceToggleActions = () => {
-  const [loading, setLoading] = useState(false);
+  const [loadingRefill, setLoadingRefill] = useState(false);
+  const [loadingCancel, setLoadingCancel] = useState(false);
   const queryClient = useQueryClient();
 
-  // ✅ fetch services (NOT settings)
-  const { data: services = [] } = useQuery({
-    queryKey: ["services"],
+  /* ===============================
+     GLOBAL SETTINGS (SINGLE SOURCE)
+  =============================== */
+  const {
+    data: settings,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["service-settings"],
     queryFn: async () => {
-      const res = await API.get("/admin/services");
+      const res = await API.get("/admin/service-settings");
       return res.data;
     },
   });
 
-  // ✅ derive global state
-  const globalRefillEnabled = services.length
-    ? services.every((s) => s.refillAllowed)
-    : false;
+  /* ===============================
+     SAFE LOADING STATES
+  =============================== */
+  if (isLoading) {
+    return (
+      <div className="p-3 text-sm text-gray-400">
+        Loading settings...
+      </div>
+    );
+  }
 
-  const globalCancelEnabled = services.length
-    ? services.every((s) => s.cancelAllowed)
-    : false;
+  if (isError || !settings) {
+    return (
+      <div className="p-3 text-sm text-red-500">
+        Failed to load settings
+      </div>
+    );
+  }
 
-  // ================= TOGGLE REFILL =================
+  const globalRefillEnabled = settings.globalRefillEnabled;
+  const globalCancelEnabled = settings.globalCancelEnabled;
+
+  /* ===============================
+     TOGGLE REFILL
+  =============================== */
   const toggleRefill = async () => {
     try {
-      setLoading(true);
+      setLoadingRefill(true);
 
       await API.patch("/admin/services/toggle-refill-global");
 
+      queryClient.invalidateQueries({ queryKey: ["service-settings"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
 
     } catch (err) {
+      console.error("Refill toggle error:", err);
       alert("Failed to toggle refill");
     } finally {
-      setLoading(false);
+      setLoadingRefill(false);
     }
   };
 
-  // ================= TOGGLE CANCEL =================
+  /* ===============================
+     TOGGLE CANCEL
+  =============================== */
   const toggleCancel = async () => {
     try {
-      setLoading(true);
+      setLoadingCancel(true);
 
       await API.patch("/admin/services/toggle-cancel-global");
 
+      queryClient.invalidateQueries({ queryKey: ["service-settings"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
 
     } catch (err) {
+      console.error("Cancel toggle error:", err);
       alert("Failed to toggle cancel");
     } finally {
-      setLoading(false);
+      setLoadingCancel(false);
     }
   };
 
   return (
     <div className="flex gap-3 p-3 bg-gray-100 rounded-lg">
 
-      {/* REFILL */}
+      {/* ================= REFILL ================= */}
       <button
         onClick={toggleRefill}
-        disabled={loading}
-        className={`px-3 py-2 rounded text-sm ${
+        disabled={loadingRefill}
+        className={`px-3 py-2 rounded text-sm transition ${
           globalRefillEnabled ? "bg-green-500" : "bg-gray-400"
         }`}
       >
-        {loading
+        {loadingRefill
           ? "..."
           : globalRefillEnabled
           ? "Disable ALL Refill"
           : "Enable ALL Refill"}
       </button>
 
-      {/* CANCEL */}
+      {/* ================= CANCEL ================= */}
       <button
         onClick={toggleCancel}
-        disabled={loading}
-        className={`px-3 py-2 rounded text-sm ${
+        disabled={loadingCancel}
+        className={`px-3 py-2 rounded text-sm transition ${
           globalCancelEnabled ? "bg-red-500" : "bg-gray-400"
         }`}
       >
-        {loading
+        {loadingCancel
           ? "..."
           : globalCancelEnabled
           ? "Disable ALL Cancel"
