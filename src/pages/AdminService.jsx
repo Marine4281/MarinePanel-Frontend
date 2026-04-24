@@ -1,10 +1,12 @@
-//src/pages/AdminService.jsx
-import { useEffect, useState } from "react";
+// src/pages/AdminService.jsx
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import AdminServiceTable from "../components/AdminServiceTable";
 import AdminServiceForm from "../components/AdminServiceForm";
+import { QUERY_KEYS } from "../constants/queryKeys";
 
 const initialForm = {
   platform: "",
@@ -30,38 +32,32 @@ const initialForm = {
 };
 
 const AdminService = () => {
-  const [services, setServices] = useState([]);
-  const [providers, setProviders] = useState([]);
+  const queryClient = useQueryClient();
+
   const [selectedService, setSelectedService] = useState(null);
   const [form, setForm] = useState(initialForm);
 
   const isAddingNewProvider = form.providerProfileId === "new";
 
-  // ================= FETCH SERVICES =================
-  const fetchServices = async () => {
-    try {
+  /* ================= FETCH SERVICES ================= */
+  const { data: services = [], isLoading } = useQuery({
+    queryKey: [QUERY_KEYS.SERVICES],
+    queryFn: async () => {
       const res = await API.get("/admin/services");
-      setServices(res.data);
-    } catch {
-      toast.error("Failed to fetch services");
-    }
-  };
+      return res.data;
+    },
+  });
 
-  // ================= FETCH PROVIDERS =================
-  const fetchProviders = async () => {
-    try {
+  /* ================= FETCH PROVIDERS ================= */
+  const { data: providers = [] } = useQuery({
+    queryKey: ["providers"],
+    queryFn: async () => {
       const res = await API.get("/provider/profiles");
-      setProviders(res.data);
-    } catch {
-      toast.error("Failed to fetch providers");
-    }
-  };
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    fetchServices();
-    fetchProviders();
-  }, []);
-
+  /* ================= FORM HANDLER ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -71,6 +67,7 @@ const AdminService = () => {
     }));
   };
 
+  /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -121,14 +118,17 @@ const AdminService = () => {
 
       setForm(initialForm);
       setSelectedService(null);
-      fetchServices();
-      fetchProviders();
+
+      // 🔥 React Query refresh
+      queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
+      queryClient.invalidateQueries(["providers"]);
 
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save");
     }
   };
 
+  /* ================= EDIT ================= */
   const handleEdit = (service) => {
     setSelectedService(service);
 
@@ -141,23 +141,27 @@ const AdminService = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  /* ================= DELETE ================= */
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this service?")) return;
 
     try {
       await API.delete(`/admin/services/${id}`);
       toast.success("Deleted");
-      fetchServices();
+
+      queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
     } catch {
       toast.error("Delete failed");
     }
   };
 
+  /* ================= TOGGLE STATUS ================= */
   const handleToggleStatus = async (id) => {
     try {
       await API.patch(`/admin/services/${id}/toggle`);
       toast.success("Updated");
-      fetchServices();
+
+      queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
     } catch {
       toast.error("Failed to update");
     }
@@ -183,15 +187,13 @@ const AdminService = () => {
           selectedService={selectedService}
         />
 
-        {/* ================= TABLE (IMPORTANT FIX) ================= */}
+        {/* ================= TABLE ================= */}
         <AdminServiceTable
           services={services}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
-
-          // 🔥 ADD THIS (CRITICAL FOR TOGGLES)
-          onRefresh={fetchServices}
+          isLoading={isLoading}
         />
 
       </div>
