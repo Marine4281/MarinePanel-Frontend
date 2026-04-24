@@ -1,78 +1,74 @@
 // src/components/AdminServiceTable/ServiceToggleActions.jsx
 import { useState } from "react";
 import API from "../../api/axios";
-import { useQueryClient } from "@tanstack/react-query";
-import { QUERY_KEYS } from "../../constants/queryKeys";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const ServiceToggleActions = ({ service }) => {
+const ServiceToggleActions = () => {
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  // ================= TOGGLE REFILL =================
+  // 🔥 fetch global settings
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const res = await API.get("/admin/settings");
+      return res.data;
+    },
+  });
+
   const toggleRefill = async () => {
     try {
       setLoading(true);
 
-      await API.patch(`/admin/services/${service._id}/toggle-refill`);
+      await API.patch("/admin/settings/toggle-refill");
 
-      // 🔥 auto refresh services
-      queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
+      queryClient.invalidateQueries(["settings"]);
+      queryClient.invalidateQueries(["services"]);
 
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update refill");
+      alert("Failed to toggle refill");
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= TOGGLE CANCEL =================
   const toggleCancel = async () => {
     try {
       setLoading(true);
 
-      await API.patch(`/admin/services/${service._id}/toggle-cancel`);
+      await API.patch("/admin/settings/toggle-cancel");
 
-      // 🔥 auto refresh services
-      queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
+      queryClient.invalidateQueries(["settings"]);
+      queryClient.invalidateQueries(["services"]);
 
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update cancel");
+      alert("Failed to toggle cancel");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-3 p-3 bg-gray-100 rounded-lg">
 
-      {/* ================= REFILL TOGGLE ================= */}
       <button
         onClick={toggleRefill}
         disabled={loading}
-        className={`px-2 py-1 text-xs rounded transition ${
-          service.refillAllowed ? "bg-green-500" : "bg-gray-400"
+        className={`px-3 py-2 rounded text-sm ${
+          settings?.globalRefillEnabled ? "bg-green-500" : "bg-gray-400"
         }`}
       >
-        {loading
-          ? "..."
-          : service.refillAllowed
-          ? "Disable Refill"
-          : "Enable Refill"}
+        {settings?.globalRefillEnabled ? "Disable ALL Refill" : "Enable ALL Refill"}
       </button>
 
-      {/* ================= CANCEL TOGGLE ================= */}
       <button
         onClick={toggleCancel}
         disabled={loading}
-        className={`px-2 py-1 text-xs rounded transition ${
-          service.cancelAllowed ? "bg-red-500" : "bg-gray-400"
+        className={`px-3 py-2 rounded text-sm ${
+          settings?.globalCancelEnabled ? "bg-red-500" : "bg-gray-400"
         }`}
       >
-        {loading
-          ? "..."
-          : service.cancelAllowed
-          ? "Disable Cancel"
-          : "Enable Cancel"}
+        {settings?.globalCancelEnabled ? "Disable ALL Cancel" : "Enable ALL Cancel"}
       </button>
 
     </div>
