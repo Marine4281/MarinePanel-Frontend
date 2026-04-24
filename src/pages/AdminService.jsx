@@ -1,9 +1,11 @@
+//src/pages/AdminService.jsx
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import AdminServiceTable from "../components/AdminServiceTable";
 import AdminServiceForm from "../components/AdminServiceForm";
+import ServiceToggleActions from "../components/ServiceToggleActions";
 
 const initialForm = {
   platform: "",
@@ -167,6 +169,11 @@ const AdminService = () => {
         <h2 className="text-3xl font-bold mb-8">
           {selectedService ? "Edit Service" : "Add New Service"}
         </h2>
+
+        <ServiceToggleActions
+           service={service}
+           onRefresh={fetchServices}
+         />
 
         <AdminServiceForm
           form={form}
