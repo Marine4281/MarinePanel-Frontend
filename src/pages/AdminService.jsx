@@ -37,6 +37,7 @@ const AdminService = () => {
 
   const isAddingNewProvider = form.providerProfileId === "new";
 
+  // ================= FETCH SERVICES =================
   const fetchServices = async () => {
     try {
       const res = await API.get("/admin/services");
@@ -46,6 +47,7 @@ const AdminService = () => {
     }
   };
 
+  // ================= FETCH PROVIDERS =================
   const fetchProviders = async () => {
     try {
       const res = await API.get("/provider/profiles");
@@ -121,6 +123,7 @@ const AdminService = () => {
       setSelectedService(null);
       fetchServices();
       fetchProviders();
+
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save");
     }
@@ -165,11 +168,12 @@ const AdminService = () => {
       <Sidebar />
 
       <div className="flex-1 p-6">
+
         <h2 className="text-3xl font-bold mb-8">
           {selectedService ? "Edit Service" : "Add New Service"}
         </h2>
 
-
+        {/* ================= FORM ================= */}
         <AdminServiceForm
           form={form}
           handleChange={handleChange}
@@ -179,12 +183,17 @@ const AdminService = () => {
           selectedService={selectedService}
         />
 
+        {/* ================= TABLE (IMPORTANT FIX) ================= */}
         <AdminServiceTable
           services={services}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
+
+          // 🔥 ADD THIS (CRITICAL FOR TOGGLES)
+          onRefresh={fetchServices}
         />
+
       </div>
     </div>
   );
