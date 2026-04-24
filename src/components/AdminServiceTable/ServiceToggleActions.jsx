@@ -9,41 +9,20 @@ const ServiceToggleActions = () => {
   const queryClient = useQueryClient();
 
   /* ===============================
-     GLOBAL SETTINGS (SINGLE SOURCE)
+     GLOBAL SETTINGS (SAFE)
   =============================== */
-  const {
-    data: settings,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: settings } = useQuery({
     queryKey: ["service-settings"],
     queryFn: async () => {
       const res = await API.get("/admin/services/service-settings");
       return res.data;
     },
+    retry: 1,
   });
 
-  /* ===============================
-     SAFE LOADING STATES
-  =============================== */
-  if (isLoading) {
-    return (
-      <div className="p-3 text-sm text-gray-400">
-        Loading settings...
-      </div>
-    );
-  }
-
-  if (isError || !settings) {
-    return (
-      <div className="p-3 text-sm text-red-500">
-        Failed to load settings
-      </div>
-    );
-  }
-
-  const globalRefillEnabled = settings.globalRefillEnabled;
-  const globalCancelEnabled = settings.globalCancelEnabled;
+  // ✅ SAFE FALLBACKS
+  const globalRefillEnabled = settings?.globalRefillEnabled ?? true;
+  const globalCancelEnabled = settings?.globalCancelEnabled ?? true;
 
   /* ===============================
      TOGGLE REFILL
@@ -54,6 +33,7 @@ const ServiceToggleActions = () => {
 
       await API.patch("/admin/services/toggle-refill-global");
 
+      // 🔥 Refresh everywhere
       queryClient.invalidateQueries({ queryKey: ["service-settings"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
 
