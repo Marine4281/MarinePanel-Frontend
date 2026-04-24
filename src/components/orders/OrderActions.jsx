@@ -17,7 +17,6 @@ const OrderActions = ({ order, onUpdate }) => {
         cancelRequested: true,
         cancelStatus: "pending",
       });
-
     } catch (err) {
       alert(err.response?.data?.message || "Cancel failed");
     } finally {
@@ -34,7 +33,10 @@ const OrderActions = ({ order, onUpdate }) => {
 
       await API.post(`/orders/${order._id}/refill`);
 
-      alert("Refill request sent");
+      onUpdate(order._id, {
+        refillRequested: true,
+        refillStatus: "pending",
+      });
     } catch (err) {
       alert(err.response?.data?.message || "Refill failed");
     } finally {
@@ -43,12 +45,12 @@ const OrderActions = ({ order, onUpdate }) => {
   };
 
   /* ===============================
-     ✅ SMART RENDER LOGIC (FIXED)
+     RENDER LOGIC
   =============================== */
 
-  // 🔴 CANCEL (ONLY if allowed)
+  // 🔴 CANCEL BUTTON
   if (
-    order.cancelAllowed && // ✅ NEW
+    order.cancelAllowed &&
     ["pending", "processing"].includes(order.status) &&
     !order.cancelRequested
   ) {
@@ -79,10 +81,11 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🟢 REFILL (ONLY if allowed)
+  // 🟢 REFILL BUTTON
   if (
-    order.refillAllowed && // ✅ NEW
-    order.status === "completed"
+    order.refillAllowed &&
+    order.status === "completed" &&
+    !order.refillRequested
   ) {
     return (
       <button
@@ -92,6 +95,22 @@ const OrderActions = ({ order, onUpdate }) => {
       >
         {loading ? "..." : "Refill"}
       </button>
+    );
+  }
+
+  // 🔵 REFILL STATUS
+  if (order.refillRequested) {
+    const map = {
+      pending: "Refill requested",
+      processing: "Refilling...",
+      success: "Refilled",
+      failed: "Refill failed",
+    };
+
+    return (
+      <span className="text-xs text-gray-600">
+        {map[order.refillStatus] || "Processing..."}
+      </span>
     );
   }
 
