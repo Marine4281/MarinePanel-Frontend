@@ -1,8 +1,24 @@
+//src/components/orders/OrderActions.jsx
 import { useState } from "react";
 import API from "../../api/axios";
+import { useQuery } from "@tanstack/react-query";
 
 const OrderActions = ({ order, onUpdate }) => {
   const [loading, setLoading] = useState(false);
+
+  /* ===============================
+     GLOBAL SETTINGS (NEW)
+  =============================== */
+  const { data: settings } = useQuery({
+    queryKey: ["service-settings"],
+    queryFn: async () => {
+      const res = await API.get("/admin/service-settings");
+      return res.data;
+    },
+  });
+
+  const refillEnabled = settings?.globalRefillEnabled ?? true;
+  const cancelEnabled = settings?.globalCancelEnabled ?? true;
 
   /* ===============================
      CANCEL ORDER
@@ -45,11 +61,10 @@ const OrderActions = ({ order, onUpdate }) => {
   };
 
   /* ===============================
-     RENDER LOGIC
+     CANCEL BUTTON
   =============================== */
-
-  // 🔴 CANCEL BUTTON
   if (
+    cancelEnabled &&
     order.cancelAllowed &&
     ["pending", "processing"].includes(order.status) &&
     !order.cancelRequested
@@ -65,7 +80,9 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🟡 CANCEL STATUS
+  /* ===============================
+     CANCEL STATUS
+  =============================== */
   if (order.cancelRequested) {
     const map = {
       pending: "Cancel requested",
@@ -81,8 +98,11 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🟢 REFILL BUTTON
+  /* ===============================
+     REFILL BUTTON
+  =============================== */
   if (
+    refillEnabled &&
     order.refillAllowed &&
     order.status === "completed" &&
     !order.refillRequested
@@ -98,7 +118,9 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🔵 REFILL STATUS
+  /* ===============================
+     REFILL STATUS
+  =============================== */
   if (order.refillRequested) {
     const map = {
       pending: "Refill requested",
