@@ -7,6 +7,7 @@ import Sidebar from "../components/Sidebar";
 import AdminServiceTable from "../components/AdminServiceTable";
 import AdminServiceForm from "../components/AdminServiceForm";
 import { QUERY_KEYS } from "../constants/queryKeys";
+import ServiceToggleActions from "../components/AdminServiceTable/ServiceToggleActions";
 
 const initialForm = {
   platform: "",
@@ -186,6 +187,9 @@ const AdminService = () => {
           isAddingNewProvider={isAddingNewProvider}
           selectedService={selectedService}
         />
+
+        {/* 🔥 GLOBAL TOGGLES */}
+        <ServiceToggleActions />
 
         {/* ================= TABLE ================= */}
         <AdminServiceTable
