@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import AdminServiceTable from "../components/AdminServiceTable";
 import AdminServiceForm from "../components/AdminServiceForm";
-import ServiceToggleActions from "../components/ServiceToggleActions";
 
 const initialForm = {
   platform: "",
@@ -170,10 +169,6 @@ const AdminService = () => {
           {selectedService ? "Edit Service" : "Add New Service"}
         </h2>
 
-        <ServiceToggleActions
-           service={service}
-           onRefresh={fetchServices}
-         />
 
         <AdminServiceForm
           form={form}
