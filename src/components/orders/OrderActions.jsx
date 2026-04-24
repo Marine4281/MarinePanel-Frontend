@@ -1,9 +1,27 @@
-//src/components/orders/OrderActions.jsx
+// src/components/orders/OrderActions.jsx
 import { useState } from "react";
 import API from "../../api/axios";
+import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const OrderActions = ({ order, onUpdate }) => {
   const [loading, setLoading] = useState(false);
+
+  /* ===============================
+     GLOBAL SETTINGS (SAFE)
+  =============================== */
+  const { data: settings, isLoading: settingsLoading } = useQuery({
+    queryKey: ["service-settings"],
+    queryFn: async () => {
+      const res = await API.get("/admin/services/service-settings"); // ✅ FIXED PATH
+      return res.data;
+    },
+    retry: 1, // prevent infinite retries
+  });
+
+  // ✅ SAFE FALLBACKS (VERY IMPORTANT)
+  const refillEnabled = settings?.globalRefillEnabled ?? true;
+  const cancelEnabled = settings?.globalCancelEnabled ?? true;
 
   /* ===============================
      CANCEL ORDER
@@ -14,12 +32,15 @@ const OrderActions = ({ order, onUpdate }) => {
 
       await API.post(`/orders/${order._id}/cancel`);
 
+      // Optimistic update
       onUpdate(order._id, {
         cancelRequested: true,
         cancelStatus: "pending",
       });
+
+      toast.success("Cancel request sent");
     } catch (err) {
-      alert(err.response?.data?.message || "Cancel failed");
+      toast.error(err.response?.data?.message || "Cancel failed");
     } finally {
       setLoading(false);
     }
@@ -34,31 +55,34 @@ const OrderActions = ({ order, onUpdate }) => {
 
       await API.post(`/orders/${order._id}/refill`);
 
+      // Optimistic update
       onUpdate(order._id, {
         refillRequested: true,
         refillStatus: "pending",
       });
+
+      toast.success("Refill request sent");
     } catch (err) {
-      alert(err.response?.data?.message || "Refill failed");
+      toast.error(err.response?.data?.message || "Refill failed");
     } finally {
       setLoading(false);
     }
   };
 
   /* ===============================
-     RENDER LOGIC
+     CANCEL BUTTON
   =============================== */
-
-  // 🔴 CANCEL BUTTON
   if (
-    order.cancelAllowed &&
-    ["pending", "processing"].includes(order.status) &&
-    !order.cancelRequested
+    cancelEnabled &&
+    order?.cancelAllowed &&
+    !order?.cancelRequested &&
+    order?.status !== "completed" &&
+    order?.status !== "cancelled"
   ) {
     return (
       <button
         onClick={handleCancel}
-        disabled={loading}
+        disabled={loading || order?.cancelRequested}
         className="text-xs bg-red-500 text-white px-3 py-1 rounded"
       >
         {loading ? "..." : "Cancel"}
@@ -66,8 +90,10 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🟡 CANCEL STATUS
-  if (order.cancelRequested) {
+  /* ===============================
+     CANCEL STATUS
+  =============================== */
+  if (order?.cancelRequested) {
     const map = {
       pending: "Cancel requested",
       processing: "Cancelling...",
@@ -82,16 +108,19 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🟢 REFILL BUTTON
+  /* ===============================
+     REFILL BUTTON
+  =============================== */
   if (
-    order.refillAllowed &&
-    order.status === "completed" &&
-    !order.refillRequested
+    refillEnabled &&
+    order?.refillAllowed &&
+    !order?.refillRequested &&
+    ["completed", "partial"].includes(order?.status)
   ) {
     return (
       <button
         onClick={handleRefill}
-        disabled={loading}
+        disabled={loading || order?.refillRequested}
         className="text-xs bg-green-600 text-white px-3 py-1 rounded"
       >
         {loading ? "..." : "Refill"}
@@ -99,8 +128,10 @@ const OrderActions = ({ order, onUpdate }) => {
     );
   }
 
-  // 🔵 REFILL STATUS
-  if (order.refillRequested) {
+  /* ===============================
+     REFILL STATUS
+  =============================== */
+  if (order?.refillRequested) {
     const map = {
       pending: "Refill requested",
       processing: "Refilling...",
