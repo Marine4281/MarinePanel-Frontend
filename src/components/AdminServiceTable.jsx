@@ -1,8 +1,5 @@
 // src/components/AdminServiceTable.jsx
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import API from "../api/axios";
-import { QUERY_KEYS } from "../constants/queryKeys";
 
 import RateChangesPanel from "./AdminServiceTable/RateChangesPanel";
 import BulkActionBar from "./AdminServiceTable/BulkActionBar";
@@ -11,21 +8,12 @@ import ServiceTable from "./AdminServiceTable/ServiceTable";
 import DescriptionModal from "./AdminServiceTable/DescriptionModal";
 
 const AdminServiceTable = ({
+  services = [],
+  isLoading,
   onEdit,
   onDelete,
   onToggleStatus,
 }) => {
-
-  // ================= FETCH SERVICES =================
-  const { data, isLoading, isError } = useQuery({
-    queryKey: QUERY_KEYS.SERVICES,
-    queryFn: async () => {
-      const res = await API.get("/admin/services");
-      return res.data;
-    },
-  });
-
-  const services = data || [];
 
   const [search, setSearch] = useState("");
   const [selectedDescription, setSelectedDescription] = useState(null);
@@ -64,15 +52,6 @@ const AdminServiceTable = ({
     return (
       <div className="bg-white rounded-2xl shadow-lg p-6 text-center text-gray-500">
         Loading services...
-      </div>
-    );
-  }
-
-  // ===== ERROR STATE =====
-  if (isError) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg p-6 text-center text-red-500">
-        Failed to load services
       </div>
     );
   }
