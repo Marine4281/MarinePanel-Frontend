@@ -1,13 +1,13 @@
 // src/components/AdminServiceTable/RateChangesPanel.jsx
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-
-const QUERY_KEY = ["services"];
+import { QUERY_KEYS } from "../../constants/queryKeys";
 
 const RateChangesPanel = ({ services = [] }) => {
   const queryClient = useQueryClient();
+  const [activeId, setActiveId] = useState(null); // 🔥 track single loading
 
   // ================= RATE HELPERS =================
   const getProviderRate = (s) =>
@@ -34,28 +34,6 @@ const RateChangesPanel = ({ services = [] }) => {
       .filter(Boolean);
   }, [services]);
 
-  // Helper to update cache regardless of structure
-  const updateServicesCache = (updater) => {
-    queryClient.setQueryData(QUERY_KEY, (oldData) => {
-      if (!oldData) return oldData;
-
-      // Paginated or wrapped data: { data: [...] }
-      if (Array.isArray(oldData?.data)) {
-        return {
-          ...oldData,
-          data: updater(oldData.data),
-        };
-      }
-
-      // Simple array
-      if (Array.isArray(oldData)) {
-        return updater(oldData);
-      }
-
-      return oldData;
-    });
-  };
-
   // ================= SINGLE SYNC =================
   const syncMutation = useMutation({
     mutationFn: ({ id, rate }) =>
@@ -64,67 +42,46 @@ const RateChangesPanel = ({ services = [] }) => {
         lastSyncedRate: rate,
       }),
 
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       toast.success("Rate synced");
-
-      updateServicesCache((services) =>
-        services.map((s) =>
-          s._id === variables.id
-            ? { ...s, rate: variables.rate, lastSyncedRate: variables.rate }
-            : s
-        )
-      );
     },
 
     onError: (error) => {
-      toast.error(
-        error?.response?.data?.message || "Failed to sync rate"
-      );
+      toast.error(error?.response?.data?.message || "Failed to sync");
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      setActiveId(null);
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.SERVICES],
+      });
     },
   });
 
   // ================= BULK SYNC =================
   const updateAllMutation = useMutation({
     mutationFn: async () => {
-      return Promise.all(
-        rateChanges.map((s) =>
-          API.put(`/admin/services/${s._id}`, {
-            rate: s.providerRate,
-            lastSyncedRate: s.providerRate,
-          })
-        )
-      );
+      // 🔥 safer: sequential instead of Promise.all
+      for (const s of rateChanges) {
+        await API.put(`/admin/services/${s._id}`, {
+          rate: s.providerRate,
+          lastSyncedRate: s.providerRate,
+        });
+      }
     },
 
     onSuccess: () => {
       toast.success("All rates synced");
-
-      updateServicesCache((services) =>
-        services.map((s) => {
-          const match = rateChanges.find((r) => r._id === s._id);
-          if (!match) return s;
-
-          return {
-            ...s,
-            rate: match.providerRate,
-            lastSyncedRate: match.providerRate,
-          };
-        })
-      );
     },
 
-    onError: (error) => {
-      toast.error(
-        error?.response?.data?.message || "Bulk update failed"
-      );
+    onError: () => {
+      toast.error("Bulk update failed");
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.SERVICES],
+      });
     },
   });
 
@@ -133,7 +90,8 @@ const RateChangesPanel = ({ services = [] }) => {
 
   return (
     <div className="mb-6 border rounded-xl p-4 bg-yellow-50">
-      {/* Header */}
+
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-3">
         <h2 className="font-semibold text-yellow-800">
           ⚠ Rate Changes ({rateChanges.length})
@@ -148,27 +106,26 @@ const RateChangesPanel = ({ services = [] }) => {
         </button>
       </div>
 
-      {/* Scrollable List */}
+      {/* LIST */}
       <div className="max-h-60 overflow-y-auto space-y-2">
         {rateChanges.map((s) => (
           <div
             key={s._id}
             className="flex justify-between items-center bg-white p-3 rounded border text-sm"
           >
-            {/* Service Name */}
             <div className="font-medium">{s.name}</div>
 
-            {/* Rates */}
             <div className="flex gap-3 items-center">
               <span className="text-gray-500">
                 Your: {s.yourRate.toFixed(4)}
               </span>
+
               <span>→</span>
+
               <span className="font-semibold">
                 Provider: {s.providerRate.toFixed(4)}
               </span>
 
-              {/* Difference */}
               <span
                 className={`text-xs font-semibold ${
                   s.diff > 0 ? "text-red-500" : "text-green-600"
@@ -178,18 +135,18 @@ const RateChangesPanel = ({ services = [] }) => {
                 {s.diff.toFixed(4)}
               </span>
 
-              {/* Sync Button */}
               <button
-                onClick={() =>
+                onClick={() => {
+                  setActiveId(s._id);
                   syncMutation.mutate({
                     id: s._id,
                     rate: s.providerRate,
-                  })
-                }
-                disabled={syncMutation.isPending}
+                  });
+                }}
+                disabled={activeId === s._id}
                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs disabled:opacity-50"
               >
-                {syncMutation.isPending ? "Syncing..." : "Sync"}
+                {activeId === s._id ? "Syncing..." : "Sync"}
               </button>
             </div>
           </div>
