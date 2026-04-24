@@ -11,7 +11,7 @@ const ServiceToggleActions = () => {
   const { data: settings } = useQuery({
     queryKey: ["settings"],
     queryFn: async () => {
-      const res = await API.get("/admin/settings");
+      const res = await API.get("/admin/service");
       return res.data;
     },
   });
@@ -20,7 +20,7 @@ const ServiceToggleActions = () => {
     try {
       setLoading(true);
 
-      await API.patch("/admin/settings/toggle-refill");
+      await API.patch("/admin/services/toggle-refill-global");
 
       queryClient.invalidateQueries(["settings"]);
       queryClient.invalidateQueries(["services"]);
@@ -36,7 +36,7 @@ const ServiceToggleActions = () => {
     try {
       setLoading(true);
 
-      await API.patch("/admin/settings/toggle-cancel");
+      await API.patch("/admin/services/toggle-cancel-global");
 
       queryClient.invalidateQueries(["settings"]);
       queryClient.invalidateQueries(["services"]);
