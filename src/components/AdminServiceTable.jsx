@@ -9,13 +9,13 @@ import BulkActionBar from "./AdminServiceTable/BulkActionBar";
 import SearchBar from "./AdminServiceTable/SearchBar";
 import ServiceTable from "./AdminServiceTable/ServiceTable";
 import DescriptionModal from "./AdminServiceTable/DescriptionModal";
-import ServiceToggleActions from "./AdminServiceTable/ServiceToggleActions";
 
 const AdminServiceTable = ({
   onEdit,
   onDelete,
   onToggleStatus,
 }) => {
+
   // ================= FETCH SERVICES =================
   const { data, isLoading, isError } = useQuery({
     queryKey: QUERY_KEYS.SERVICES,
@@ -80,20 +80,19 @@ const AdminServiceTable = ({
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
 
-      <ServiceToggleActions
-         service={service}
-         onRefresh={fetchServices}
-      />
-
+      {/* ================= RATE PANEL ================= */}
       <RateChangesPanel services={services} />
 
+      {/* ================= BULK ACTIONS ================= */}
       <BulkActionBar
         selectedIds={selectedIds}
         setSelectedIds={setSelectedIds}
       />
 
+      {/* ================= SEARCH ================= */}
       <SearchBar search={search} setSearch={setSearch} />
 
+      {/* ================= TABLE ================= */}
       <ServiceTable
         groupedServices={groupedServices}
         selectedIds={selectedIds}
@@ -104,10 +103,12 @@ const AdminServiceTable = ({
         setSelectedDescription={setSelectedDescription}
       />
 
+      {/* ================= MODAL ================= */}
       <DescriptionModal
         description={selectedDescription}
         onClose={() => setSelectedDescription(null)}
       />
+
     </div>
   );
 };
