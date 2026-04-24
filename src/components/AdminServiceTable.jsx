@@ -9,7 +9,7 @@ import BulkActionBar from "./AdminServiceTable/BulkActionBar";
 import SearchBar from "./AdminServiceTable/SearchBar";
 import ServiceTable from "./AdminServiceTable/ServiceTable";
 import DescriptionModal from "./AdminServiceTable/DescriptionModal";
-import ServiceToggleActions from "../components/ServiceToggleActions";
+import ServiceToggleActions from "./AdminServiceTable/ServiceToggleActions";
 
 const AdminServiceTable = ({
   onEdit,
