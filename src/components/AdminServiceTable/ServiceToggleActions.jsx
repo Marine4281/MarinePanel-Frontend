@@ -4,56 +4,55 @@ import API from "../../api/axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const ServiceToggleActions = () => {
-  const [loading, setLoading] = useState(false);
+  const [loadingRefill, setLoadingRefill] = useState(false);
+  const [loadingCancel, setLoadingCancel] = useState(false);
   const queryClient = useQueryClient();
 
-  // ✅ fetch services (NOT settings)
-  const { data: services = [] } = useQuery({
-    queryKey: ["services"],
+  // ✅ SINGLE SOURCE OF TRUTH
+  const { data: settings } = useQuery({
+    queryKey: ["service-settings"],
     queryFn: async () => {
-      const res = await API.get("/admin/services");
+      const res = await API.get("/admin/service-settings");
       return res.data;
     },
   });
 
-  // ✅ derive global state
-  const globalRefillEnabled = services.length
-    ? services.every((s) => s.refillAllowed)
-    : false;
+  if (!settings) return null; // prevent flicker
 
-  const globalCancelEnabled = services.length
-    ? services.every((s) => s.cancelAllowed)
-    : false;
+  const globalRefillEnabled = settings.globalRefillEnabled;
+  const globalCancelEnabled = settings.globalCancelEnabled;
 
   // ================= TOGGLE REFILL =================
   const toggleRefill = async () => {
     try {
-      setLoading(true);
+      setLoadingRefill(true);
 
       await API.patch("/admin/services/toggle-refill-global");
 
+      queryClient.invalidateQueries({ queryKey: ["service-settings"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
 
-    } catch (err) {
+    } catch {
       alert("Failed to toggle refill");
     } finally {
-      setLoading(false);
+      setLoadingRefill(false);
     }
   };
 
   // ================= TOGGLE CANCEL =================
   const toggleCancel = async () => {
     try {
-      setLoading(true);
+      setLoadingCancel(true);
 
       await API.patch("/admin/services/toggle-cancel-global");
 
+      queryClient.invalidateQueries({ queryKey: ["service-settings"] });
       queryClient.invalidateQueries({ queryKey: ["services"] });
 
-    } catch (err) {
+    } catch {
       alert("Failed to toggle cancel");
     } finally {
-      setLoading(false);
+      setLoadingCancel(false);
     }
   };
 
@@ -63,12 +62,12 @@ const ServiceToggleActions = () => {
       {/* REFILL */}
       <button
         onClick={toggleRefill}
-        disabled={loading}
+        disabled={loadingRefill}
         className={`px-3 py-2 rounded text-sm ${
           globalRefillEnabled ? "bg-green-500" : "bg-gray-400"
         }`}
       >
-        {loading
+        {loadingRefill
           ? "..."
           : globalRefillEnabled
           ? "Disable ALL Refill"
@@ -78,12 +77,12 @@ const ServiceToggleActions = () => {
       {/* CANCEL */}
       <button
         onClick={toggleCancel}
-        disabled={loading}
+        disabled={loadingCancel}
         className={`px-3 py-2 rounded text-sm ${
           globalCancelEnabled ? "bg-red-500" : "bg-gray-400"
         }`}
       >
-        {loading
+        {loadingCancel
           ? "..."
           : globalCancelEnabled
           ? "Disable ALL Cancel"
