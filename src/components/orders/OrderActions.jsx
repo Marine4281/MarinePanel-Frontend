@@ -1,15 +1,16 @@
-//src/components/orders/OrderActions.jsx
+// src/components/orders/OrderActions.jsx
 import { useState } from "react";
 import API from "../../api/axios";
 import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const OrderActions = ({ order, onUpdate }) => {
   const [loading, setLoading] = useState(false);
 
   /* ===============================
-     GLOBAL SETTINGS (NEW)
+     GLOBAL SETTINGS
   =============================== */
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ["service-settings"],
     queryFn: async () => {
       const res = await API.get("/admin/service-settings");
@@ -17,8 +18,11 @@ const OrderActions = ({ order, onUpdate }) => {
     },
   });
 
-  const refillEnabled = settings?.globalRefillEnabled ?? true;
-  const cancelEnabled = settings?.globalCancelEnabled ?? true;
+  // 🚫 Prevent UI flicker
+  if (settingsLoading || !settings) return null;
+
+  const refillEnabled = settings.globalRefillEnabled;
+  const cancelEnabled = settings.globalCancelEnabled;
 
   /* ===============================
      CANCEL ORDER
@@ -29,12 +33,15 @@ const OrderActions = ({ order, onUpdate }) => {
 
       await API.post(`/orders/${order._id}/cancel`);
 
+      // Optimistic update
       onUpdate(order._id, {
         cancelRequested: true,
         cancelStatus: "pending",
       });
+
+      toast.success("Cancel request sent");
     } catch (err) {
-      alert(err.response?.data?.message || "Cancel failed");
+      toast.error(err.response?.data?.message || "Cancel failed");
     } finally {
       setLoading(false);
     }
@@ -49,12 +56,15 @@ const OrderActions = ({ order, onUpdate }) => {
 
       await API.post(`/orders/${order._id}/refill`);
 
+      // Optimistic update
       onUpdate(order._id, {
         refillRequested: true,
         refillStatus: "pending",
       });
+
+      toast.success("Refill request sent");
     } catch (err) {
-      alert(err.response?.data?.message || "Refill failed");
+      toast.error(err.response?.data?.message || "Refill failed");
     } finally {
       setLoading(false);
     }
@@ -66,13 +76,14 @@ const OrderActions = ({ order, onUpdate }) => {
   if (
     cancelEnabled &&
     order.cancelAllowed &&
-    ["pending", "processing"].includes(order.status) &&
-    !order.cancelRequested
+    !order.cancelRequested &&
+    order.status !== "completed" &&
+    order.status !== "cancelled"
   ) {
     return (
       <button
         onClick={handleCancel}
-        disabled={loading}
+        disabled={loading || order.cancelRequested}
         className="text-xs bg-red-500 text-white px-3 py-1 rounded"
       >
         {loading ? "..." : "Cancel"}
@@ -104,13 +115,13 @@ const OrderActions = ({ order, onUpdate }) => {
   if (
     refillEnabled &&
     order.refillAllowed &&
-    order.status === "completed" &&
-    !order.refillRequested
+    !order.refillRequested &&
+    ["completed", "partial"].includes(order.status)
   ) {
     return (
       <button
         onClick={handleRefill}
-        disabled={loading}
+        disabled={loading || order.refillRequested}
         className="text-xs bg-green-600 text-white px-3 py-1 rounded"
       >
         {loading ? "..." : "Refill"}
