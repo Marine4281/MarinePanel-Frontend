@@ -306,7 +306,7 @@ export default function ResellerOrders() {
                           </td>
 
                           <td className="px-4 py-3">
-                            {formatEmail(o.user?.email)}
+                            {formatEmail(o.userId?.email)}
                           </td>
 
                           <td className="px-4 py-3">{o.service}</td>
