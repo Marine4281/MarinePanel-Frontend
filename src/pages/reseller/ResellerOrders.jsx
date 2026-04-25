@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 import { FiMenu, FiLogOut, FiArrowLeft } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useServices } from "../../context/ServicesContext";
 
 import UserOrdersFilters from "../../components/orders/UserOrdersFilters";
 
@@ -15,15 +14,13 @@ export default function ResellerOrders() {
   const [brandName, setBrandName] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const { services } = useServices();
-
   // FILTER STATES
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  // ✅ PAGINATION STATES
+  // PAGINATION STATES
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
 
@@ -55,30 +52,31 @@ export default function ResellerOrders() {
      FILTER LOGIC
   =============================== */
   const filteredOrders = useMemo(() => {
-  const searchLower = search.toLowerCase();
+    const searchLower = search.toLowerCase();
 
-  return orders.filter((o) => {
-    const matchSearch =
-      !search ||
-      o._id?.toLowerCase().includes(searchLower) ||
-      o.customOrderId?.toString().toLowerCase().includes(searchLower) ||
-      o.service?.toLowerCase().includes(searchLower) ||
-      o.link?.toLowerCase().includes(searchLower);
+    return orders.filter((o) => {
+      const matchSearch =
+        !search ||
+        o._id?.toLowerCase().includes(searchLower) ||
+        o.customOrderId?.toString().toLowerCase().includes(searchLower) ||
+        o.service?.toLowerCase().includes(searchLower) ||
+        o.link?.toLowerCase().includes(searchLower);
 
-    const matchStatus =
-      !status || o.status?.toLowerCase() === status.toLowerCase();
+      const matchStatus =
+        !status || o.status?.toLowerCase() === status.toLowerCase();
 
-    const date = new Date(o.createdAt);
-    const from = fromDate ? new Date(fromDate) : null;
-    const to = toDate ? new Date(toDate) : null;
+      const date = new Date(o.createdAt);
+      const from = fromDate ? new Date(fromDate) : null;
+      const to = toDate ? new Date(toDate) : null;
 
-    const matchDate =
-      (!from || date >= from) &&
-      (!to || date <= new Date(to?.setHours(23, 59, 59)));
+      const matchDate =
+        (!from || date >= from) &&
+        (!to || date <= new Date(to?.setHours(23, 59, 59)));
 
-    return matchSearch && matchStatus && matchDate;
-  });
-}, [orders, search, status, fromDate, toDate]);
+      return matchSearch && matchStatus && matchDate;
+    });
+  }, [orders, search, status, fromDate, toDate]);
+
   /* ===============================
      PAGINATION LOGIC
   =============================== */
@@ -89,7 +87,6 @@ export default function ResellerOrders() {
     return filteredOrders.slice(start, start + ordersPerPage);
   }, [filteredOrders, currentPage, ordersPerPage]);
 
-  // reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [search, status, fromDate, toDate]);
@@ -126,18 +123,11 @@ export default function ResellerOrders() {
     }
   };
 
-  const getServiceMeta = (order) => {
-    const match = services.find(
-      (s) =>
-        s.name === order.service ||
-        s.name?.toLowerCase() === order.service?.toLowerCase()
-    );
-
-    return {
-      serviceId: match?.serviceId || "—",
-      category: match?.category || "—",
-    };
-  };
+  // Read serviceId and category directly from order snapshot — no lookup
+  const getServiceMeta = (order) => ({
+    serviceId: order.serviceId || "—",
+    category: order.categorySnapshot || "—",
+  });
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -162,7 +152,10 @@ export default function ResellerOrders() {
           </Link>
           <Link to="/reseller/branding">Branding</Link>
 
-          <button onClick={logout} className="text-red-500 mt-6 flex items-center gap-2">
+          <button
+            onClick={logout}
+            className="text-red-500 mt-6 flex items-center gap-2"
+          >
             <FiLogOut /> Logout
           </button>
         </nav>
@@ -218,7 +211,7 @@ export default function ResellerOrders() {
                 onSearch={handleSearch}
               />
 
-              {/* MOBILE */}
+              {/* MOBILE CARDS */}
               <div className="md:hidden space-y-4">
                 {paginatedOrders.map((o) => {
                   const progress = Math.min(
@@ -228,12 +221,17 @@ export default function ResellerOrders() {
                   const meta = getServiceMeta(o);
 
                   return (
-                    <div key={o._id} className="bg-gray-50 p-4 rounded-xl shadow-sm space-y-2">
+                    <div
+                      key={o._id}
+                      className="bg-gray-50 p-4 rounded-xl shadow-sm space-y-2"
+                    >
                       <div className="flex justify-between">
                         <span className="font-bold">
                           #{o.customOrderId || o._id.slice(-6)}
                         </span>
-                        <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}
+                        >
                           {o.status}
                         </span>
                       </div>
@@ -248,7 +246,12 @@ export default function ResellerOrders() {
                         {formatEmail(o.userId?.email)}
                       </p>
 
-                      <a href={o.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs">
+                      <a
+                        href={o.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 text-xs"
+                      >
                         {shortenLink(o.link)}
                       </a>
 
@@ -257,7 +260,10 @@ export default function ResellerOrders() {
                           {o.quantityDelivered || 0}/{o.quantity}
                         </div>
                         <div className="w-full bg-gray-200 h-2 rounded mt-1">
-                          <div className="h-2 bg-blue-500" style={{ width: `${progress}%` }} />
+                          <div
+                            className="h-2 bg-blue-500"
+                            style={{ width: `${progress}%` }}
+                          />
                         </div>
                       </div>
 
@@ -272,7 +278,7 @@ export default function ResellerOrders() {
                 })}
               </div>
 
-              {/* DESKTOP */}
+              {/* DESKTOP TABLE */}
               <div className="hidden md:block overflow-x-auto border rounded-lg">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-xs uppercase">
@@ -304,27 +310,41 @@ export default function ResellerOrders() {
                           <td className="px-4 py-3 font-bold">
                             #{o.customOrderId || o._id.slice(-6)}
                           </td>
-                          <td className="px-4 py-3">{formatEmail(o.userId?.email)}</td>
+                          <td className="px-4 py-3">
+                            {formatEmail(o.userId?.email)}
+                          </td>
                           <td className="px-4 py-3">{o.service}</td>
                           <td className="px-4 py-3">{meta.serviceId}</td>
                           <td className="px-4 py-3">{meta.category}</td>
                           <td className="px-4 py-3">
-                            <a href={o.link} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                            <a
+                              href={o.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500"
+                            >
                               {shortenLink(o.link)}
                             </a>
                           </td>
                           <td className="px-4 py-3">
                             {o.quantityDelivered || 0}/{o.quantity}
                             <div className="w-full bg-gray-200 h-2 mt-1 rounded">
-                              <div className="h-2 bg-orange-500" style={{ width: `${progress}%` }} />
+                              <div
+                                className="h-2 bg-orange-500"
+                                style={{ width: `${progress}%` }}
+                              />
                             </div>
                           </td>
-                          <td className="px-4 py-3">${formatAmount(o.charge)}</td>
+                          <td className="px-4 py-3">
+                            ${formatAmount(o.charge)}
+                          </td>
                           <td className="px-4 py-3 text-orange-500">
                             ${formatAmount(o.resellerCommission)}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}
+                            >
                               {o.status}
                             </span>
                           </td>
@@ -373,11 +393,10 @@ export default function ResellerOrders() {
                   </button>
                 </div>
               </div>
-
             </div>
           )}
         </main>
       </div>
     </div>
   );
-        }
+            }
