@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { FiMenu, FiLogOut, FiArrowLeft } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useServices } from "../../context/ServicesContext";
 
 import UserOrdersFilters from "../../components/orders/UserOrdersFilters";
 
@@ -13,6 +14,9 @@ export default function ResellerOrders() {
   const [orders, setOrders] = useState([]);
   const [brandName, setBrandName] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // ✅ SERVICES (for serviceId + category)
+  const { services } = useServices();
 
   // ✅ FILTER STATES
   const [search, setSearch] = useState("");
@@ -33,7 +37,6 @@ export default function ResellerOrders() {
 
         const ordersRes = await API.get("/reseller/orders");
         setOrders(ordersRes.data || []);
-
       } catch (err) {
         console.error(err);
         toast.error("Failed to load reseller orders");
@@ -85,7 +88,7 @@ export default function ResellerOrders() {
 
   const shortenLink = (link) => {
     if (!link) return "";
-    return link.length > 30 ? link.slice(0, 30) + "..." : link;
+    return link.length > 30 ? link.slice(0, 30) + "...";
   };
 
   const getStatusStyle = (status) => {
@@ -101,6 +104,22 @@ export default function ResellerOrders() {
       default:
         return "bg-gray-100 text-gray-600";
     }
+  };
+
+  /* ===============================
+     MATCH SERVICE (ID + CATEGORY)
+  =============================== */
+  const getServiceMeta = (order) => {
+    const match = services.find(
+      (s) =>
+        s.name === order.service ||
+        s.name?.toLowerCase() === order.service?.toLowerCase()
+    );
+
+    return {
+      serviceId: match?.serviceId || "—",
+      category: match?.category || "—",
+    };
   };
 
   return (
@@ -195,15 +214,23 @@ export default function ResellerOrders() {
                     100
                   );
 
+                  const meta = getServiceMeta(o);
+
                   return (
                     <div key={o._id} className="bg-gray-50 p-4 rounded-xl shadow-sm space-y-2">
 
                       <div className="flex justify-between">
-                        <span className="font-bold">#{o._id.slice(-6)}</span>
+                        <span className="font-bold">
+                          #{o.customOrderId || o._id.slice(-6)}
+                        </span>
                         <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
                           {o.status}
                         </span>
                       </div>
+
+                      <p className="text-xs text-gray-500">
+                        ID: {meta.serviceId} • {meta.category}
+                      </p>
 
                       <p className="text-sm">{o.service}</p>
 
@@ -233,9 +260,9 @@ export default function ResellerOrders() {
                       </div>
 
                       <div className="flex justify-between text-sm">
-                        <span>${formatAmount(o.charge)}</span>
+                        <span>Charge: ${formatAmount(o.charge)}</span>
                         <span className="text-orange-500">
-                          ${formatAmount(o.resellerCommission)}
+                          Commission: ${formatAmount(o.resellerCommission)}
                         </span>
                       </div>
 
@@ -252,10 +279,12 @@ export default function ResellerOrders() {
                       <th className="px-4 py-3">Order</th>
                       <th className="px-4 py-3">User</th>
                       <th className="px-4 py-3">Service</th>
+                      <th className="px-4 py-3">Service ID</th>
+                      <th className="px-4 py-3">Category</th>
                       <th className="px-4 py-3">Link</th>
                       <th className="px-4 py-3">Progress</th>
-                      <th className="px-4 py-3">Amount</th>
-                      <th className="px-4 py-3">Commission</th>
+                      <th className="px-4 py-3">Charge ($)</th>
+                      <th className="px-4 py-3">Commission ($)</th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Date</th>
                     </tr>
@@ -268,10 +297,12 @@ export default function ResellerOrders() {
                         100
                       );
 
+                      const meta = getServiceMeta(o);
+
                       return (
                         <tr key={o._id} className="border-b hover:bg-gray-50">
                           <td className="px-4 py-3 font-bold">
-                            #{o._id.slice(-6)}
+                            #{o.customOrderId || o._id.slice(-6)}
                           </td>
 
                           <td className="px-4 py-3">
@@ -279,6 +310,10 @@ export default function ResellerOrders() {
                           </td>
 
                           <td className="px-4 py-3">{o.service}</td>
+
+                          <td className="px-4 py-3">{meta.serviceId}</td>
+
+                          <td className="px-4 py-3">{meta.category}</td>
 
                           <td className="px-4 py-3">
                             <a
@@ -327,9 +362,8 @@ export default function ResellerOrders() {
 
             </div>
           )}
-
         </main>
       </div>
     </div>
   );
-            }
+        }
