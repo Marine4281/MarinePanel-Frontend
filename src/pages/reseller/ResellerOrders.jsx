@@ -23,7 +23,7 @@ export default function ResellerOrders() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  // PAGINATION STATES ✅
+  // ✅ PAGINATION STATES
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
 
@@ -58,7 +58,7 @@ export default function ResellerOrders() {
     return orders.filter((o) => {
       const matchSearch =
         !search ||
-        o._id.toLowerCase().includes(search.toLowerCase()) ||
+        o._id?.toLowerCase().includes(search.toLowerCase()) ||
         o.service?.toLowerCase().includes(search.toLowerCase()) ||
         o.link?.toLowerCase().includes(search.toLowerCase());
 
@@ -71,26 +71,28 @@ export default function ResellerOrders() {
 
       const matchDate =
         (!from || date >= from) &&
-        (!to || date <= new Date(to.setHours(23, 59, 59)));
+        (!to || date <= new Date(to?.setHours(23, 59, 59)));
 
       return matchSearch && matchStatus && matchDate;
     });
   }, [orders, search, status, fromDate, toDate]);
 
   /* ===============================
-     PAGINATION LOGIC ✅
+     PAGINATION LOGIC
   =============================== */
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage) || 1;
 
   const paginatedOrders = useMemo(() => {
     const start = (currentPage - 1) * ordersPerPage;
     return filteredOrders.slice(start, start + ordersPerPage);
   }, [filteredOrders, currentPage, ordersPerPage]);
 
-  // Reset page when filters change
+  // reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [search, status, fromDate, toDate]);
+
+  const handleSearch = () => {};
 
   /* ===============================
      HELPERS
@@ -166,6 +168,31 @@ export default function ResellerOrders() {
 
       {/* MAIN */}
       <div className="flex-1 flex flex-col">
+        {/* MOBILE HEADER */}
+        <header className="lg:hidden flex items-center justify-between bg-white p-4 shadow-md">
+          <button onClick={() => setMenuOpen(!menuOpen)}>
+            <FiMenu size={22} />
+          </button>
+
+          <h1 className="font-bold text-orange-500">Orders</h1>
+
+          <button onClick={logout}>
+            <FiLogOut />
+          </button>
+        </header>
+
+        {/* MOBILE MENU */}
+        {menuOpen && (
+          <aside className="lg:hidden absolute z-50 bg-white w-64 h-full p-6 shadow-md">
+            <nav className="flex flex-col gap-4">
+              <Link to="/reseller/dashboard">Dashboard</Link>
+              <Link to="/reseller/users">Users</Link>
+              <Link to="/reseller/orders">Orders</Link>
+              <Link to="/reseller/branding">Branding</Link>
+            </nav>
+          </aside>
+        )}
+
         <main className="p-4 md:p-6 flex-1 overflow-auto pb-24">
           {loading ? (
             <div className="text-center py-20 text-gray-500 animate-pulse">
@@ -173,12 +200,10 @@ export default function ResellerOrders() {
             </div>
           ) : (
             <div className="bg-white shadow-lg rounded-xl p-4 md:p-6">
-
               <h2 className="text-lg md:text-xl font-bold mb-4">
                 Reseller Orders ({filteredOrders.length})
               </h2>
 
-              {/* FILTERS */}
               <UserOrdersFilters
                 search={search}
                 setSearch={setSearch}
@@ -188,57 +213,143 @@ export default function ResellerOrders() {
                 setFromDate={setFromDate}
                 toDate={toDate}
                 setToDate={setToDate}
+                onSearch={handleSearch}
               />
 
-              {/* TABLE */}
-              <div className="overflow-x-auto border rounded-lg">
+              {/* MOBILE */}
+              <div className="md:hidden space-y-4">
+                {paginatedOrders.map((o) => {
+                  const progress = Math.min(
+                    ((o.quantityDelivered || 0) / (o.quantity || 1)) * 100,
+                    100
+                  );
+                  const meta = getServiceMeta(o);
+
+                  return (
+                    <div key={o._id} className="bg-gray-50 p-4 rounded-xl shadow-sm space-y-2">
+                      <div className="flex justify-between">
+                        <span className="font-bold">
+                          #{o.customOrderId || o._id.slice(-6)}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
+                          {o.status}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-gray-500">
+                        ID: {meta.serviceId} • {meta.category}
+                      </p>
+
+                      <p className="text-sm">{o.service}</p>
+
+                      <p className="text-xs text-gray-500">
+                        {formatEmail(o.userId?.email)}
+                      </p>
+
+                      <a href={o.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs">
+                        {shortenLink(o.link)}
+                      </a>
+
+                      <div>
+                        <div className="text-xs">
+                          {o.quantityDelivered || 0}/{o.quantity}
+                        </div>
+                        <div className="w-full bg-gray-200 h-2 rounded mt-1">
+                          <div className="h-2 bg-blue-500" style={{ width: `${progress}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between text-sm">
+                        <span>Charge: ${formatAmount(o.charge)}</span>
+                        <span className="text-orange-500">
+                          Commission: ${formatAmount(o.resellerCommission)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* DESKTOP */}
+              <div className="hidden md:block overflow-x-auto border rounded-lg">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-xs uppercase">
                     <tr>
                       <th className="px-4 py-3">Order</th>
+                      <th className="px-4 py-3">User</th>
                       <th className="px-4 py-3">Service</th>
-                      <th className="px-4 py-3">Charge</th>
+                      <th className="px-4 py-3">Service ID</th>
+                      <th className="px-4 py-3">Category</th>
+                      <th className="px-4 py-3">Link</th>
+                      <th className="px-4 py-3">Progress</th>
+                      <th className="px-4 py-3">Charge ($)</th>
+                      <th className="px-4 py-3">Commission ($)</th>
                       <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Date</th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {paginatedOrders.map((o) => (
-                      <tr key={o._id} className="border-b">
-                        <td className="px-4 py-3">
-                          #{o.customOrderId || o._id.slice(-6)}
-                        </td>
-                        <td className="px-4 py-3">{o.service}</td>
-                        <td className="px-4 py-3">
-                          ${formatAmount(o.charge)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
-                            {o.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {paginatedOrders.map((o) => {
+                      const progress = Math.min(
+                        ((o.quantityDelivered || 0) / (o.quantity || 1)) * 100,
+                        100
+                      );
+                      const meta = getServiceMeta(o);
+
+                      return (
+                        <tr key={o._id} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 font-bold">
+                            #{o.customOrderId || o._id.slice(-6)}
+                          </td>
+                          <td className="px-4 py-3">{formatEmail(o.userId?.email)}</td>
+                          <td className="px-4 py-3">{o.service}</td>
+                          <td className="px-4 py-3">{meta.serviceId}</td>
+                          <td className="px-4 py-3">{meta.category}</td>
+                          <td className="px-4 py-3">
+                            <a href={o.link} target="_blank" rel="noopener noreferrer" className="text-blue-500">
+                              {shortenLink(o.link)}
+                            </a>
+                          </td>
+                          <td className="px-4 py-3">
+                            {o.quantityDelivered || 0}/{o.quantity}
+                            <div className="w-full bg-gray-200 h-2 mt-1 rounded">
+                              <div className="h-2 bg-orange-500" style={{ width: `${progress}%` }} />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">${formatAmount(o.charge)}</td>
+                          <td className="px-4 py-3 text-orange-500">
+                            ${formatAmount(o.resellerCommission)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
+                              {o.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500">
+                            {new Date(o.createdAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
-              {/* PAGINATION CONTROLS ✅ */}
-              <div className="flex items-center justify-between mt-4 flex-wrap gap-2">
+              {/* PAGINATION */}
+              <div className="flex justify-between items-center mt-4 flex-wrap gap-3">
+                <select
+                  value={ordersPerPage}
+                  onChange={(e) => setOrdersPerPage(Number(e.target.value))}
+                  className="border px-2 py-1 rounded"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
 
-                <div>
-                  <select
-                    value={ordersPerPage}
-                    onChange={(e) => setOrdersPerPage(Number(e.target.value))}
-                    className="border px-2 py-1 rounded"
-                  >
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                  </select>
-                </div>
-
-                <div className="flex gap-2 items-center">
+                <div className="flex items-center gap-2">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((p) => p - 1)}
@@ -248,7 +359,7 @@ export default function ResellerOrders() {
                   </button>
 
                   <span>
-                    Page {currentPage} of {totalPages || 1}
+                    Page {currentPage} of {totalPages}
                   </span>
 
                   <button
@@ -267,4 +378,4 @@ export default function ResellerOrders() {
       </div>
     </div>
   );
-    }
+        }
