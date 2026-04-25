@@ -1,3 +1,4 @@
+// src/components/ServiceDescriptionModal.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -15,8 +16,13 @@ const ServiceDescriptionModal = ({ service, onClose }) => {
   const placeOrder = () => {
     navigate("/home", {
       state: {
-        category: service.category,
-        serviceName: service.name,
+        prefill: {
+          platform: service.platform || "All",
+          category: service.category || "",
+          service: service.name || "",
+          link: "",
+          quantity: "",
+        },
       },
     });
   };
