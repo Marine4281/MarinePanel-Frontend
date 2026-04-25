@@ -13,7 +13,7 @@ const OrderActions = ({ order, onUpdate }) => {
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ["service-settings"],
     queryFn: async () => {
-      const res = await API.get("/admin/services/service-settings"); // ✅ FIXED PATH
+      const res = await API.get("/services/service-settings"); // ✅ FIXED PATH
       return res.data;
     },
     retry: 1, // prevent infinite retries
