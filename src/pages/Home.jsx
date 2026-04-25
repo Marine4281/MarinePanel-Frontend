@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+// src/pages/Home.jsx
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useServices } from "../context/ServicesContext";
 
@@ -18,6 +20,9 @@ const Home = () => {
   const { services, loading, getGlobalDefault, getPlatformDefault } =
     useServices();
 
+  const location = useLocation();
+  const prefillApplied = useRef(false); // ✅ prevent override
+
   const [selectedPlatform, setSelectedPlatform] = useState("");
   const [category, setCategory] = useState("");
   const [service, setService] = useState("");
@@ -26,7 +31,7 @@ const Home = () => {
   const [charge, setCharge] = useState(0);
 
   const categoriesGrid = [
-    { name: "All",},
+    { name: "All" },
     { name: "TikTok", icon: "tiktok" },
     { name: "Instagram", icon: "instagram" },
     { name: "YouTube", icon: "youtube" },
@@ -40,8 +45,28 @@ const Home = () => {
     { name: "Free", icon: "gift" },
   ];
 
+  /* =============================
+     PREFILL (REPLACE ORDER)
+  ============================= */
   useEffect(() => {
-    if (!services.length) return;
+    const prefill = location.state?.prefill;
+
+    if (!prefill || !services.length || prefillApplied.current) return;
+
+    prefillApplied.current = true;
+
+    setSelectedPlatform(prefill.platform || "All");
+    setCategory(prefill.category || "");
+    setService(prefill.service || "");
+    setLink(prefill.link || "");
+    setQuantity(prefill.quantity || "");
+  }, [location.state, services]);
+
+  /* =============================
+     DEFAULT PLATFORM
+  ============================= */
+  useEffect(() => {
+    if (!services.length || prefillApplied.current) return;
 
     const globalDefault = getGlobalDefault();
 
@@ -62,8 +87,11 @@ const Home = () => {
     return [...new Set(platformServices.map((s) => s.category))];
   }, [platformServices]);
 
+  /* =============================
+     DEFAULT CATEGORY
+  ============================= */
   useEffect(() => {
-    if (!selectedPlatform) return;
+    if (!selectedPlatform || prefillApplied.current) return;
 
     if (selectedPlatform === "All") {
       setCategory(categories[0] || "");
@@ -83,11 +111,11 @@ const Home = () => {
     return platformServices.filter((s) => s.category === category);
   }, [platformServices, category]);
 
+  /* =============================
+     DEFAULT SERVICE
+  ============================= */
   useEffect(() => {
-    if (!servicesList.length) {
-      setService("");
-      return;
-    }
+    if (!servicesList.length || prefillApplied.current) return;
 
     const defaultService =
       servicesList.find((s) => s.isDefault) || servicesList[0];
@@ -99,9 +127,9 @@ const Home = () => {
     return servicesList.find((s) => s.name === service) || null;
   }, [service, servicesList]);
 
-  // =============================
-  // CHARGE CALCULATION
-  // =============================
+  /* =============================
+     CHARGE CALCULATION
+  ============================= */
   const calculateChargeBackend = async (qty, serviceName) => {
     if (!qty || !serviceName) {
       setCharge(0);
@@ -152,9 +180,9 @@ const Home = () => {
     };
   }
 
-  // =============================
-  // SUBMIT ORDER
-  // =============================
+  /* =============================
+     SUBMIT ORDER
+  ============================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -210,6 +238,7 @@ const Home = () => {
             setSelectedPlatform(platform);
             setCategory("");
             setService("");
+            prefillApplied.current = false; // ✅ allow manual change
           }}
         />
 
@@ -220,7 +249,10 @@ const Home = () => {
         <form onSubmit={handleSubmit}>
           <CategorySelect
             category={category}
-            setCategory={setCategory}
+            setCategory={(val) => {
+              setCategory(val);
+              prefillApplied.current = false;
+            }}
             filteredCategories={categories}
             services={services}
             selectedPlatform={selectedPlatform}
@@ -228,12 +260,14 @@ const Home = () => {
 
           <ServiceSelect
             service={service}
-            setService={setService}
+            setService={(val) => {
+              setService(val);
+              prefillApplied.current = false;
+            }}
             servicesList={servicesList}
             selectedServiceData={selectedServiceData}
           />
 
-          {/* 🔥 FREE BADGE */}
           {selectedServiceData?.isFree && (
             <div className="mb-4">
               <span className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-bold shadow">
