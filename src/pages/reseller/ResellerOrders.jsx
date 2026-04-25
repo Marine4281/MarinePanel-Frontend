@@ -235,7 +235,7 @@ export default function ResellerOrders() {
                       <p className="text-sm">{o.service}</p>
 
                       <p className="text-xs text-gray-500">
-                        {formatEmail(o.user?.email)}
+                        {formatEmail(o.userId?.email)}
                       </p>
 
                       <a
