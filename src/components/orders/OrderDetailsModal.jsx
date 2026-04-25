@@ -1,19 +1,7 @@
 // src/components/orders/OrderDetailsModal.jsx
-import { useServices } from "../../context/ServicesContext";
 
 const OrderDetailsModal = ({ order, onClose }) => {
-  const { services } = useServices();
-
   if (!order) return null;
-
-  // 🔍 Find matching service
-  const matchedService = services.find(
-    (s) => s.name === order.service
-  );
-
-  const serviceId = matchedService?.serviceId || "—";
-  const rate = matchedService?.rate;
-  const category = matchedService?.category || "—"; // ✅ NEW
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -22,29 +10,37 @@ const OrderDetailsModal = ({ order, onClose }) => {
         <h2 className="text-xl font-bold mb-4">Order Details</h2>
 
         <div className="space-y-2 text-sm">
-          <p><strong>Order ID:</strong> #{order.customOrderId}</p>
-
           <p>
-            <strong>Service ID:</strong> {serviceId}
+            <strong>Order ID:</strong>{" "}
+            #{order.customOrderId || order._id?.slice(-6)}
           </p>
 
           <p>
-            <strong>Category:</strong> {category}
+            <strong>Service ID:</strong>{" "}
+            {order.serviceId || "—"}
           </p>
 
           <p>
-            <strong>Service Name:</strong> {order.service}
+            <strong>Category:</strong>{" "}
+            {order.category || "—"}
+          </p>
+
+          <p>
+            <strong>Service Name:</strong>{" "}
+            {order.service || "—"}
           </p>
 
           <p>
             <strong>Rate / 1K:</strong>{" "}
-            {rate ? `$${Number(rate).toFixed(4)}` : "—"}
+            {order.rate !== undefined && order.rate !== null
+              ? `$${Number(order.rate).toFixed(4)}`
+              : "—"}
           </p>
         </div>
 
         <button
           onClick={onClose}
-          className="mt-5 w-full bg-gray-200 py-2 rounded-lg"
+          className="mt-5 w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300"
         >
           Close
         </button>
