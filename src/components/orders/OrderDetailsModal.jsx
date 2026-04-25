@@ -13,6 +13,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   const serviceId = matchedService?.serviceId || "—";
   const rate = matchedService?.rate;
+  const category = matchedService?.category || "—"; // ✅ NEW
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -25,6 +26,10 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
           <p>
             <strong>Service ID:</strong> {serviceId}
+          </p>
+
+          <p>
+            <strong>Category:</strong> {category}
           </p>
 
           <p>
