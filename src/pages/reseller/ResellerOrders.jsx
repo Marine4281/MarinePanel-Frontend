@@ -88,7 +88,7 @@ export default function ResellerOrders() {
 
   const shortenLink = (link) => {
     if (!link) return "";
-    return link.length > 30 ? link.slice(0, 30) + "...";
+    return link.length > 30 ? link.slice(0, 30) + "..." : Link;
   };
 
   const getStatusStyle = (status) => {
@@ -330,7 +330,7 @@ export default function ResellerOrders() {
                             {o.quantityDelivered || 0}/{o.quantity}
                             <div className="w-full bg-gray-200 h-2 mt-1 rounded">
                               <div
-                                className="h-2 bg-blue-500"
+                                className="h-2 bg-orange-500"
                                 style={{ width: `${progress}%` }}
                               />
                             </div>
