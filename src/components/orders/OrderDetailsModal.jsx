@@ -1,6 +1,18 @@
 // src/components/orders/OrderDetailsModal.jsx
+import { useServices } from "../../context/ServicesContext";
+
 const OrderDetailsModal = ({ order, onClose }) => {
+  const { services } = useServices();
+
   if (!order) return null;
+
+  // 🔍 Find matching service
+  const matchedService = services.find(
+    (s) => s.name === order.service
+  );
+
+  const serviceId = matchedService?.serviceId || "—";
+  const rate = matchedService?.rate;
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -10,11 +22,18 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
         <div className="space-y-2 text-sm">
           <p><strong>Order ID:</strong> #{order.customOrderId}</p>
-          <p><strong>Service ID:</strong> {order.serviceId || "—"}</p>
-          <p><strong>Service Name:</strong> {order.service}</p>
+
+          <p>
+            <strong>Service ID:</strong> {serviceId}
+          </p>
+
+          <p>
+            <strong>Service Name:</strong> {order.service}
+          </p>
+
           <p>
             <strong>Rate / 1K:</strong>{" "}
-            {order.rate ? `$${Number(order.rate).toFixed(4)}` : "—"}
+            {rate ? `$${Number(rate).toFixed(4)}` : "—"}
           </p>
         </div>
 
