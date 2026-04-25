@@ -83,7 +83,7 @@ const AdminUserOrdersList = ({
           </p>
 
           <p>
-            <strong>Category:</strong> {order.categorySnapshot || "—"}
+            <strong>Category:</strong> {order.category || "—"}
           </p>
 
           <p>
