@@ -58,7 +58,7 @@ export default function ResellerOrders() {
     return orders.filter((o) => {
       const matchSearch =
         !search ||
-        o.customOrderId?.toString().toLowerCase().includes(searchLower) ||
+        o.customOrderId?.toString().toLowerCase().includes(searchLower)) ||
         o.service?.toLowerCase().includes(search.toLowerCase()) ||
         o.link?.toLowerCase().includes(search.toLowerCase());
 
