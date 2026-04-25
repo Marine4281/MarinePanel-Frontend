@@ -55,28 +55,30 @@ export default function ResellerOrders() {
      FILTER LOGIC
   =============================== */
   const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
-      const matchSearch =
-        !search ||
-        o.customOrderId?.toString().toLowerCase().includes(searchLower)) ||
-        o.service?.toLowerCase().includes(search.toLowerCase()) ||
-        o.link?.toLowerCase().includes(search.toLowerCase());
+  const searchLower = search.toLowerCase();
 
-      const matchStatus =
-        !status || o.status?.toLowerCase() === status.toLowerCase();
+  return orders.filter((o) => {
+    const matchSearch =
+      !search ||
+      o._id?.toLowerCase().includes(searchLower) ||
+      o.customOrderId?.toString().toLowerCase().includes(searchLower) ||
+      o.service?.toLowerCase().includes(searchLower) ||
+      o.link?.toLowerCase().includes(searchLower);
 
-      const date = new Date(o.createdAt);
-      const from = fromDate ? new Date(fromDate) : null;
-      const to = toDate ? new Date(toDate) : null;
+    const matchStatus =
+      !status || o.status?.toLowerCase() === status.toLowerCase();
 
-      const matchDate =
-        (!from || date >= from) &&
-        (!to || date <= new Date(to?.setHours(23, 59, 59)));
+    const date = new Date(o.createdAt);
+    const from = fromDate ? new Date(fromDate) : null;
+    const to = toDate ? new Date(toDate) : null;
 
-      return matchSearch && matchStatus && matchDate;
-    });
-  }, [orders, search, status, fromDate, toDate]);
+    const matchDate =
+      (!from || date >= from) &&
+      (!to || date <= new Date(to?.setHours(23, 59, 59)));
 
+    return matchSearch && matchStatus && matchDate;
+  });
+}, [orders, search, status, fromDate, toDate]);
   /* ===============================
      PAGINATION LOGIC
   =============================== */
