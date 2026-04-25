@@ -126,7 +126,7 @@ export default function ResellerOrders() {
   // Read serviceId and category directly from order snapshot — no lookup
   const getServiceMeta = (order) => ({
     serviceId: order.serviceId || "—",
-    category: order.categorySnapshot || "—",
+    category: order.category || "—",
   });
 
   return (
