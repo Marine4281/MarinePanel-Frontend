@@ -28,18 +28,20 @@ const AdminUserOrdersList = ({
     );
 
   return orders.map((order) => {
-    const created = order.createdAt
-      ? new Date(order.createdAt)
-      : null;
+    const created = order.createdAt ? new Date(order.createdAt) : null;
 
     const progress =
-      ((order.quantityDelivered || 0) /
-        (order.quantity || 1)) *
-      100;
+      ((order.quantityDelivered || 0) / (order.quantity || 1)) * 100;
 
     const locked =
-      order.status === "refunded" ||
-      order.status === "completed";
+      order.status === "refunded" || order.status === "completed";
+
+    const ratePerK =
+      order.rate != null
+        ? Number(order.rate).toFixed(4)
+        : order.charge != null && order.quantity
+        ? ((Number(order.charge) / Number(order.quantity)) * 1000).toFixed(4)
+        : null;
 
     return (
       <div
@@ -77,8 +79,20 @@ const AdminUserOrdersList = ({
           </p>
 
           <p>
-            <strong>Provider:</strong>{" "}
-            {order.provider || "N/A"}
+            <strong>Service ID:</strong> {order.serviceId || "—"}
+          </p>
+
+          <p>
+            <strong>Category:</strong> {order.categorySnapshot || "—"}
+          </p>
+
+          <p>
+            <strong>Rate/K:</strong>{" "}
+            {ratePerK != null ? `$${ratePerK}` : "—"}
+          </p>
+
+          <p>
+            <strong>Provider:</strong> {order.provider || "N/A"}
           </p>
 
           <p>
@@ -100,9 +114,7 @@ const AdminUserOrdersList = ({
           <p>
             <strong>Created:</strong>{" "}
             {created
-              ? created.toLocaleDateString() +
-                " " +
-                created.toLocaleTimeString()
+              ? created.toLocaleDateString() + " " + created.toLocaleTimeString()
               : "N/A"}
           </p>
         </div>
@@ -197,8 +209,7 @@ const AdminUserOrdersList = ({
 
         {/* FOOTER */}
         <p className="mt-4 text-xs text-gray-400">
-          {created?.toLocaleDateString()}{" "}
-          {created?.toLocaleTimeString()}
+          {created?.toLocaleDateString()} {created?.toLocaleTimeString()}
         </p>
       </div>
     );
