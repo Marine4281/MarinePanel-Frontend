@@ -1,3 +1,4 @@
+// src/pages/Orders.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
@@ -7,7 +8,7 @@ import API from "../api/axios";
 
 import UserOrdersFilters from "../components/orders/UserOrdersFilters";
 import UserOrdersStats from "../components/orders/UserOrdersStats";
-import OrderActions from "../components/orders/OrderActions"; // ✅ NEW
+import OrderActions from "../components/orders/OrderActions";
 
 const baseURL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
@@ -18,17 +19,14 @@ const socket = io(baseURL, { transports: ["websocket"] });
 const Orders = () => {
   const [orders, setOrders] = useState([]);
 
-  /* ✅ FILTER STATES */
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  /* ✅ PAGINATION */
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  /* ✅ EXPAND SERVICE */
   const [expandedService, setExpandedService] = useState(null);
 
   /* ===============================
@@ -58,9 +56,7 @@ const Orders = () => {
     fetchOrders();
   }, [page, search, status, fromDate, toDate]);
 
-  const handleSearch = () => {
-    setPage(1);
-  };
+  const handleSearch = () => setPage(1);
 
   /* ===============================
      SOCKET
@@ -88,9 +84,6 @@ const Orders = () => {
     return () => socket.off("orderUpdated");
   }, []);
 
-  /* ===============================
-     UPDATE ORDER (for actions)
-  =============================== */
   const updateOrder = (orderId, updates) => {
     setOrders((prev) =>
       prev.map((o) =>
@@ -105,10 +98,8 @@ const Orders = () => {
   const shortenService = (service) =>
     service?.split(" ").slice(0, 2).join(" ") || "Service";
 
-  const shortenLink = (link) => {
-    if (!link) return "";
-    return link.length > 35 ? link.slice(0, 35) + "..." : link;
-  };
+  const shortenLink = (link) =>
+    link?.length > 35 ? link.slice(0, 35) + "..." : link || "";
 
   const statusBadge = (status) => {
     const map = {
@@ -135,7 +126,8 @@ const Orders = () => {
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
 
-      <main className="max-w-6xl mx-auto mt-6 flex-1 px-4 w-full">
+      {/* ✅ FIX: added pb-24 to prevent footer overlap */}
+      <main className="max-w-6xl mx-auto mt-6 flex-1 px-4 w-full pb-24">
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
           {/* HEADER */}
@@ -176,7 +168,7 @@ const Orders = () => {
                   <th className="px-4 py-3">Progress</th>
                   <th className="px-4 py-3">Charge</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Action</th> {/* ✅ NEW */}
+                  <th className="px-4 py-3">Action</th>
                   <th className="px-4 py-3">Date</th>
                 </tr>
               </thead>
@@ -193,12 +185,14 @@ const Orders = () => {
                   const isExpanded = expandedService === order._id;
 
                   return (
-                    <tr key={order._id} className="hover:bg-gray-50">
+                    <tr
+                      key={order._id}
+                      className="hover:bg-gray-50 border-b border-gray-200" // ✅ LINE ADDED
+                    >
                       <td className="px-4 py-3 font-bold text-blue-600">
                         #{order.customOrderId || "—"}
                       </td>
 
-                      {/* SERVICE */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span
@@ -214,16 +208,14 @@ const Orders = () => {
                               : shortenService(order.service)}
                           </span>
 
-                          {order.service &&
-                            order.service.length > 25 && (
-                              <span className="text-blue-500 text-xs font-bold">
-                                {isExpanded ? "^" : ">"}
-                              </span>
-                            )}
+                          {order.service?.length > 25 && (
+                            <span className="text-blue-500 text-xs font-bold">
+                              {isExpanded ? "^" : ">"}
+                            </span>
+                          )}
                         </div>
                       </td>
 
-                      {/* LINK */}
                       <td className="px-4 py-3 max-w-xs truncate">
                         <a
                           href={order.link}
@@ -236,7 +228,6 @@ const Orders = () => {
                         </a>
                       </td>
 
-                      {/* PROGRESS */}
                       <td className="px-4 py-3">
                         {order.quantityDelivered || 0}/{order.quantity}
                         <div className="w-full bg-gray-200 h-2 mt-1 rounded">
@@ -247,17 +238,14 @@ const Orders = () => {
                         </div>
                       </td>
 
-                      {/* CHARGE */}
                       <td className="px-4 py-3">
                         ${Number(order.charge).toFixed(4)}
                       </td>
 
-                      {/* STATUS */}
                       <td className="px-4 py-3">
                         {statusBadge(order.status)}
                       </td>
 
-                      {/* ✅ ACTIONS */}
                       <td className="px-4 py-3">
                         <OrderActions
                           order={order}
@@ -265,7 +253,6 @@ const Orders = () => {
                         />
                       </td>
 
-                      {/* DATE */}
                       <td className="px-4 py-3 text-xs">
                         {new Date(order.createdAt).toLocaleString()}
                       </td>
