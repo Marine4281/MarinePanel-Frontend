@@ -131,6 +131,7 @@ export default function ResellerOrders() {
                 setFromDate={setFromDate}
                 toDate={toDate}
                 setToDate={setToDate}
+                onSearch={() => {}}
               />
               <OrdersCards  orders={paginatedOrders} helpers={helpers} />
               <OrdersTable  orders={paginatedOrders} helpers={helpers} />
