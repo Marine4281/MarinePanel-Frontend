@@ -1,158 +1,198 @@
 // src/components/reseller/ResellerServiceTable.jsx
-import React from "react";
-import formatNumber from "../../utils/formatNumber";
+import { useState } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import ServiceDescriptionModal from "./ServiceDescriptionModal";
 
-const ResellerServiceTable = ({
-  services = [],
+export default function ResellerServiceTable({
+  services,
+  commission,
   toggleVisibility,
   updateService,
-}) => {
+}) {
+  const [editingId, setEditingId] = useState(null);
+  const [editValues, setEditValues] = useState({});
+  const [selectedService, setSelectedService] = useState(null);
 
-  if (!services.length) {
-    return (
-      <div className="text-center text-gray-500 py-4 text-sm">
-        No services available
-      </div>
-    );
-  }
+  const startEdit = (service) => {
+    setEditingId(service._id);
+    setEditValues({
+      name: service.name || "",
+      categoryName: service.category || "",
+    });
+  };
 
-  // Sort services by category then name
-  const sortedServices = [...services].sort((a, b) => {
-    if ((a.category || "") < (b.category || "")) return -1;
-    if ((a.category || "") > (b.category || "")) return 1;
+  const saveEdit = async (service) => {
+    await updateService(service._id, editValues.name, editValues.categoryName);
+    setEditingId(null);
+    setEditValues({});
+  };
 
-    if ((a.name || "") < (b.name || "")) return -1;
-    if ((a.name || "") > (b.name || "")) return 1;
-
-    return 0;
-  });
-
-  let lastCategory = null;
+  const openDescription = (service) => setSelectedService(service);
+  const closeDescription = () => setSelectedService(null);
 
   return (
-    <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
-      <div className="w-full overflow-x-auto">
+    <>
+      <table className="min-w-full text-sm bg-white rounded-xl shadow overflow-hidden">
+        <thead>
+          <tr className="bg-orange-500 text-white text-left text-xs uppercase tracking-wide">
+            <th className="px-3 py-3">#</th>
+            <th className="px-3 py-3">ID</th>
+            <th className="px-3 py-3">Service Name</th>
+            <th className="px-3 py-3">Category</th>
+            <th className="px-3 py-3">System Rate</th>
+            <th className="px-3 py-3">Reseller Rate</th>
+            <th className="px-3 py-3">Visible</th>
+            <th className="px-3 py-3 text-center">Info</th>
+            <th className="px-3 py-3 text-center">Action</th>
+          </tr>
+        </thead>
 
-        <table className="w-full table-auto text-[11px] border border-gray-200">
-
-          {/* HEADER */}
-          <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
+        <tbody>
+          {services.length === 0 ? (
             <tr>
-              <th className="px-3 py-2 text-left">ID</th>
-              <th className="px-3 py-2 text-left min-w-[220px]">Service</th>
-              <th className="px-3 py-2 text-left">Normal Rate</th>
-              <th className="px-3 py-2 text-left">Reseller Rate</th>
-              <th className="px-3 py-2 text-left">End-User Rate</th>
-              <th className="px-3 py-2 text-left">Min</th>
-              <th className="px-3 py-2 text-left">Max</th>
-              <th className="px-3 py-2 text-left">Visible</th>
+              <td colSpan={9} className="text-center py-10 text-gray-400 text-sm">
+                No services found.
+              </td>
             </tr>
-          </thead>
-
-          <tbody>
-            {sortedServices.map((service, index) => {
-
-              const showCategory = service.category !== lastCategory;
-              lastCategory = service.category;
-
-              // Use backend-provided rates directly
-              const normalRate = Number(service.systemRate || 0);
-              const resellerRate = Number(service.resellerRate || normalRate);
-              const endUserRate = Number(service.finalRate || resellerRate);
+          ) : (
+            services.map((service, idx) => {
+              const isEditing = editingId === service._id;
+              const systemRate = Number(service.systemRate || 0);
+              const resellerRate = Number(service.resellerRate ?? systemRate);
 
               return (
-                <React.Fragment key={service._id || service.serviceId}>
+                <tr
+                  key={service._id}
+                  className={`border-b last:border-none transition-colors ${
+                    isEditing
+                      ? "bg-orange-50"
+                      : idx % 2 === 0
+                      ? "bg-white"
+                      : "bg-gray-50"
+                  } hover:bg-orange-50/40`}
+                >
+                  {/* # */}
+                  <td className="px-3 py-2 text-gray-400 text-xs">{idx + 1}</td>
 
-                  {/* CATEGORY ROW */}
-                  {showCategory && (
-                    <tr className="bg-orange-50 border-t border-orange-200">
-                      <td colSpan="8" className="px-3 py-2 font-semibold text-orange-700">
-                        <input
-                          type="text"
-                          defaultValue={service.category || "General"}
-                          onBlur={(e) => {
-                            const newCategory = e.target.value.trim();
-                            if (newCategory && newCategory !== service.category) {
-                              updateService(service._id, null, newCategory);
-                            }
-                          }}
-                          className="bg-transparent border-b border-orange-300 focus:outline-none w-full"
-                        />
-                      </td>
-                    </tr>
-                  )}
+                  {/* ID */}
+                  <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">
+                    {service.serviceId || service._id}
+                  </td>
 
-                  {/* SERVICE ROW */}
-                  <tr className={`border-t hover:bg-gray-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
-
-                    {/* ID */}
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      {service.serviceId || service._id}
-                    </td>
-
-                    {/* SERVICE NAME */}
-                    <td className="px-3 py-2 text-gray-800">
+                  {/* Service Name */}
+                  <td className="px-3 py-2 min-w-[160px]">
+                    {isEditing ? (
                       <input
                         type="text"
-                        defaultValue={service.name || ""}
-                        onBlur={(e) => {
-                          const newName = e.target.value.trim();
-                          if (newName && newName !== service.name) {
-                            updateService(service._id, newName, null);
-                          }
-                        }}
-                        className="border rounded px-2 py-[2px] w-full text-[11px]"
-                      />
-                    </td>
-
-                    {/* NORMAL RATE */}
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      ${normalRate.toFixed(4)}
-                    </td>
-
-                    {/* RESELLER RATE */}
-                    <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
-                      ${resellerRate.toFixed(4)}
-                    </td>
-
-                    {/* END-USER RATE */}
-                    <td className="px-3 py-2 whitespace-nowrap font-medium text-blue-600">
-                      ${endUserRate.toFixed(4)}
-                    </td>
-
-                    {/* MIN */}
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      {formatNumber(service.min || 0)}
-                    </td>
-
-                    {/* MAX */}
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-700">
-                      {formatNumber(service.max || 0)}
-                    </td>
-
-                    {/* VISIBILITY */}
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(service.visible)}
+                        value={editValues.name}
                         onChange={(e) =>
-                          toggleVisibility(service._id, e.target.checked)
+                          setEditValues((v) => ({ ...v, name: e.target.value }))
                         }
+                        className="border border-orange-300 rounded px-2 py-1 text-xs w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
                       />
-                    </td>
+                    ) : (
+                      <span className="text-gray-800 font-medium text-xs">
+                        {service.name}
+                      </span>
+                    )}
+                  </td>
 
-                  </tr>
+                  {/* Category */}
+                  <td className="px-3 py-2 min-w-[130px]">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editValues.categoryName}
+                        onChange={(e) =>
+                          setEditValues((v) => ({
+                            ...v,
+                            categoryName: e.target.value,
+                          }))
+                        }
+                        className="border border-orange-300 rounded px-2 py-1 text-xs w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      />
+                    ) : (
+                      <span className="text-gray-600 text-xs">
+                        {service.category || "—"}
+                      </span>
+                    )}
+                  </td>
 
-                </React.Fragment>
+                  {/* System Rate */}
+                  <td className="px-3 py-2 text-gray-700 text-xs whitespace-nowrap">
+                    ${systemRate.toFixed(6)}
+                  </td>
+
+                  {/* Reseller Rate */}
+                  <td className="px-3 py-2 text-orange-500 font-semibold text-xs whitespace-nowrap">
+                    ${resellerRate.toFixed(6)}
+                  </td>
+
+                  {/* Visible toggle */}
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => toggleVisibility(service._id, !service.visible)}
+                      title={service.visible ? "Hide service" : "Show service"}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition ${
+                        service.visible
+                          ? "bg-green-100 text-green-700 hover:bg-green-200"
+                          : "bg-red-100 text-red-600 hover:bg-red-200"
+                      }`}
+                    >
+                      {service.visible ? (
+                        <>
+                          <FiEye size={11} /> On
+                        </>
+                      ) : (
+                        <>
+                          <FiEyeOff size={11} /> Off
+                        </>
+                      )}
+                    </button>
+                  </td>
+
+                  {/* INFO */}
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      onClick={() => openDescription(service)}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-[3px] rounded text-[10px] transition"
+                    >
+                      Info
+                    </button>
+                  </td>
+
+                  {/* ACTION — Edit / Save */}
+                  <td className="px-3 py-2 text-center">
+                    {isEditing ? (
+                      <button
+                        onClick={() => saveEdit(service)}
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-[3px] rounded text-[10px] font-medium transition"
+                      >
+                        Save
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => startEdit(service)}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-[3px] rounded text-[10px] font-medium transition"
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </td>
+                </tr>
               );
-            })}
-          </tbody>
+            })
+          )}
+        </tbody>
+      </table>
 
-        </table>
-
-      </div>
-    </div>
+      {/* MODAL */}
+      {selectedService && (
+        <ServiceDescriptionModal
+          service={selectedService}
+          onClose={closeDescription}
+        />
+      )}
+    </>
   );
-};
-
-export default ResellerServiceTable;
+                            }
