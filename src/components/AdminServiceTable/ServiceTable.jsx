@@ -74,6 +74,7 @@ const ServiceTable = ({
             <th className="px-4 py-3">Provider</th>
             <th className="px-4 py-3">Provider ID</th>
             <th className="px-4 py-3">Provider Rate</th>
+            <th className="px-4 py-3">Rate</th>
             <th className="px-4 py-3">Description</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Actions</th>
