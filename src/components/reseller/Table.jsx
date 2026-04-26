@@ -31,15 +31,15 @@ export default function Table({ title, data, type }) {
   const displayed = sortedData.slice(0, visible);
 
   const isAtEnd = visible >= data.length;
-  const canViewLess = visible > INITIAL;
+  
 
   const handleViewMore = () => {
     setVisible((prev) => Math.min(prev + STEP, data.length));
   };
 
   const handleViewLess = () => {
-    setVisible((prev) => Math.max(prev - STEP, INITIAL));
-  };
+    setVisible(INITIAL);
+  },
 
   return (
     <div className="bg-white p-5 rounded-xl shadow-md mb-6 overflow-x-auto">
