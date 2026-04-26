@@ -1,5 +1,5 @@
 // src/pages/AdminService.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import API from "../api/axios";
 import toast from "react-hot-toast";
@@ -40,6 +40,15 @@ const AdminService = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // ================= COMMISSION =================
+  const [commission, setCommission] = useState(null);
+
+  useEffect(() => {
+    API.get("/admin/settings/commission")
+      .then((res) => setCommission(res.data.commission))
+      .catch(console.error);
+  }, []);
 
   const isAddingNewProvider = form.providerProfileId === "new";
 
@@ -208,6 +217,7 @@ const AdminService = () => {
         {/* TABLE */}
         <AdminServiceTable
           services={paginatedServices}
+          commission={commission}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
