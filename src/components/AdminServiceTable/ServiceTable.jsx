@@ -11,6 +11,7 @@ const ServiceTable = ({
   onToggleStatus,
   setSelectedDescription,
   commission,
+  pageOffset = 0, // ← ADDED
 }) => {
 
   // ================= SELECT =================
@@ -54,9 +55,9 @@ const ServiceTable = ({
     );
   }
 
-  // ================= GLOBAL OFFSET per category =================
-  // So # continues across categories: cat1 has 5 items → cat2 starts at 6
-  let globalOffset = 0;
+  // ================= GLOBAL OFFSET =================
+  // Starts from pageOffset so # is continuous across pages
+  let globalOffset = pageOffset; // ← CHANGED from 0
 
   return (
     <div className="overflow-x-auto">
