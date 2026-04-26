@@ -7,18 +7,18 @@ const ServiceRow = ({
   onToggleStatus,
   setSelectedDescription,
 }) => {
-  // ================= RATE HELPERS (same logic) =================
+  // ================= RATE HELPERS =================
   const getProviderRate = (s) => {
-    return Number(
-      s.newRate ??
-      s.lastSyncedRate ??
-      s.rate ??
-      0
-    );
+    return Number(s.newRate ?? s.lastSyncedRate ?? s.rate ?? 0);
   };
 
   const getYourRate = (s) => {
     return Number(s.rate ?? 0);
+  };
+
+  const getAddRate = (s) => {
+    // Rate after admin commission deducted
+    return Number(s.addRate ?? s.clientRate ?? s.sellingRate ?? 0);
   };
 
   const getDiffValue = (s) => {
@@ -32,11 +32,26 @@ const ServiceRow = ({
   };
 
   const providerRate = getProviderRate(s);
+  const addRate = getAddRate(s);
   const diff = getDiffFormatted(s);
+
+  // ================= DATE HELPER =================
+  const formatDate = (dateStr) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "2-digit",
+    }); // e.g. "24 Apr 25"
+  };
+
+  const dateAdded = formatDate(s.createdAt ?? s.dateAdded ?? s.addedAt);
 
   return (
     <tr className="hover:bg-gray-50">
-      
+
       {/* ✅ SELECT */}
       <td className="px-4 py-3">
         <input
@@ -46,9 +61,14 @@ const ServiceRow = ({
         />
       </td>
 
-      {/* 🆔 SYSTEM ID */}
+      {/* 🆔 SYSTEM ID + DATE */}
       <td className="px-4 py-3 text-xs">
-        {s.serviceId || s._id?.slice(-6)}
+        <span>{s.serviceId || s._id?.slice(-6)}</span>
+        {dateAdded && (
+          <div className="text-[10px] text-gray-400 mt-0.5 leading-none">
+            {dateAdded}
+          </div>
+        )}
       </td>
 
       {/* 📱 PLATFORM */}
@@ -63,16 +83,13 @@ const ServiceRow = ({
       {/* 🔗 PROVIDER ID */}
       <td className="px-4 py-3">{s.providerServiceId}</td>
 
-      {/* 💰 RATE */}
+      {/* 💰 PROVIDER RATE */}
       <td className="px-4 py-3">
         {providerRate.toFixed(4)}
-
         {diff && (
           <span
             className={`ml-2 text-xs ${
-              diff.startsWith("+")
-                ? "text-red-500"
-                : "text-green-600"
+              diff.startsWith("+") ? "text-red-500" : "text-green-600"
             }`}
           >
             ({diff})
@@ -80,14 +97,17 @@ const ServiceRow = ({
         )}
       </td>
 
+      {/* 💵 ADD RATE (after admin commission) */}
+      <td className="px-4 py-3 text-xs font-medium text-indigo-600">
+        {addRate > 0 ? addRate.toFixed(4) : (
+          <span className="text-gray-400">—</span>
+        )}
+      </td>
+
       {/* 📄 DESCRIPTION */}
       <td className="px-4 py-3">
         <button
-          onClick={() =>
-            setSelectedDescription(
-              s.description || "No description"
-            )
-          }
+          onClick={() => setSelectedDescription(s.description || "No description")}
           className="bg-gray-800 text-white px-2 py-1 rounded text-xs"
         >
           View
@@ -113,14 +133,12 @@ const ServiceRow = ({
         >
           Edit
         </button>
-
         <button
           onClick={() => onToggleStatus(s._id)}
           className="bg-yellow-500 text-white px-2 py-1 rounded text-xs"
         >
           {s.status ? "Hide" : "Show"}
         </button>
-
         <button
           onClick={() => onDelete(s._id)}
           className="bg-red-500 text-white px-2 py-1 rounded text-xs"
