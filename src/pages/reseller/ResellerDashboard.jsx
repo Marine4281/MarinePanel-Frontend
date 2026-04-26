@@ -1,7 +1,17 @@
+// src/pages/reseller/ResellerDashboard.jsx
+
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import { FiMenu, FiLogOut, FiCopy, FiUsers, FiShoppingCart, FiCreditCard, FiDollarSign } from "react-icons/fi";
+import {
+  FiMenu,
+  FiLogOut,
+  FiCopy,
+  FiUsers,
+  FiShoppingCart,
+  FiCreditCard,
+  FiDollarSign,
+} from "react-icons/fi";
 
 import Sidebar from "../../components/reseller/Sidebar";
 import StatCard from "../../components/reseller/StatCard";
@@ -15,6 +25,7 @@ export default function ResellerDashboard() {
   const [loading, setLoading] = useState(true);
 
   const copyLink = () => {
+    if (!dashboardData?.domain) return;
     navigator.clipboard.writeText(`https://${dashboardData.domain}`);
     toast.success("Reseller link copied");
   };
@@ -42,10 +53,10 @@ export default function ResellerDashboard() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-
+    <div className="flex min-h-screen w-full max-w-full bg-gray-100 overflow-x-hidden">
+      
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:flex lg:w-64 flex-shrink-0">
         <Sidebar brandName={dashboardData?.brandName} />
       </div>
 
@@ -58,28 +69,34 @@ export default function ResellerDashboard() {
         />
       )}
 
-      <div className="flex-1 flex flex-col">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden">
 
         {/* Mobile Header */}
-        <header className="lg:hidden flex justify-between items-center bg-white p-4 shadow">
+        <header className="lg:hidden flex justify-between items-center bg-white p-4 shadow w-full">
           <button onClick={() => setMenuOpen(true)}>
-            <FiMenu />
+            <FiMenu size={20} />
           </button>
           <h1 className="font-bold text-orange-500">Dashboard</h1>
-          <FiLogOut />
+          <FiLogOut size={20} />
         </header>
 
-        <main className="p-4 md:p-6">
+        <main className="p-4 md:p-6 w-full max-w-full overflow-x-hidden">
 
           {/* Link */}
           {!loading && dashboardData?.domain && (
-            <div className="bg-white p-4 md:p-5 rounded-xl shadow mb-6">
+            <div className="bg-white p-4 md:p-5 rounded-xl shadow mb-6 w-full max-w-full">
               <h2 className="font-semibold mb-2">Your Reseller Link</h2>
-              <div className="flex justify-between items-center bg-gray-100 p-3 rounded-lg">
+
+              <div className="flex items-center justify-between gap-2 bg-gray-100 p-3 rounded-lg w-full overflow-hidden">
                 <span className="text-sm truncate">
                   https://{dashboardData.domain}
                 </span>
-                <button onClick={copyLink}>
+
+                <button
+                  onClick={copyLink}
+                  className="flex-shrink-0"
+                >
                   <FiCopy />
                 </button>
               </div>
@@ -87,7 +104,7 @@ export default function ResellerDashboard() {
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-6 w-full">
             <StatCard title="Users" value={dashboardData?.users} icon={<FiUsers />} />
             <StatCard title="Orders" value={dashboardData?.orders} icon={<FiShoppingCart />} />
             <StatCard title="Revenue" value={`$${dashboardData?.revenue || 0}`} icon={<FiCreditCard />} />
@@ -96,11 +113,20 @@ export default function ResellerDashboard() {
           </div>
 
           {/* Tables */}
-          <Table title="Reseller Users" data={users} type="users" />
-          <Table title="Reseller Orders" data={orders} type="orders" />
+          <div className="space-y-6 w-full max-w-full">
+            
+            <div className="w-full overflow-x-auto">
+              <Table title="Reseller Users" data={users} type="users" />
+            </div>
+
+            <div className="w-full overflow-x-auto">
+              <Table title="Reseller Orders" data={orders} type="orders" />
+            </div>
+
+          </div>
 
         </main>
       </div>
     </div>
   );
-          }
+}
