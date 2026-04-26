@@ -1,5 +1,4 @@
 // src/pages/reseller/ResellerServices.jsx
-
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -7,6 +6,8 @@ import { FiMenu, FiLogOut } from "react-icons/fi";
 
 import Sidebar from "../../components/reseller/Sidebar";
 import ResellerServiceTable from "../../components/reseller/ResellerServiceTable";
+
+const SERVICES_PER_PAGE = 20;
 
 export default function ResellerServices() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -17,6 +18,7 @@ export default function ResellerServices() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchServices = async () => {
     try {
@@ -54,6 +56,11 @@ export default function ResellerServices() {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  // Reset page on search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   const toggleVisibility = async (serviceId, visible) => {
     try {
@@ -103,6 +110,9 @@ export default function ResellerServices() {
     }
   };
 
+  /* ===============================
+     FILTER
+  =============================== */
   const filteredServices = useMemo(() => {
     if (!debouncedSearch.trim()) return services;
 
@@ -124,6 +134,34 @@ export default function ResellerServices() {
       );
     });
   }, [services, debouncedSearch]);
+
+  /* ===============================
+     PAGINATION
+  =============================== */
+  const totalPages = Math.ceil(filteredServices.length / SERVICES_PER_PAGE) || 1;
+
+  const paginatedServices = useMemo(() => {
+    const start = (currentPage - 1) * SERVICES_PER_PAGE;
+    return filteredServices.slice(start, start + SERVICES_PER_PAGE);
+  }, [filteredServices, currentPage]);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      const left = Math.max(1, currentPage - 2);
+      const right = Math.min(totalPages, currentPage + 2);
+
+      if (left > 1) pages.push(1, "...");
+      for (let i = left; i <= right; i++) pages.push(i);
+      if (right < totalPages) pages.push("...", totalPages);
+    }
+
+    return pages;
+  };
 
   return (
     <div className="flex min-h-screen w-full max-w-full bg-gray-100 overflow-x-hidden">
@@ -154,7 +192,7 @@ export default function ResellerServices() {
           <FiLogOut size={20} />
         </header>
 
-        <main className="flex-1 p-4 md:p-6 w-full max-w-full overflow-x-hidden">
+        <main className="flex-1 p-4 md:p-6 w-full max-w-full overflow-x-hidden pb-24">
 
           {loading ? (
             <div className="text-gray-500">Loading services...</div>
@@ -198,19 +236,72 @@ export default function ResellerServices() {
                 />
               </div>
 
-              {/* TABLE FIX */}
+              {/* Count */}
+              <p className="text-sm text-gray-500 mb-3">
+                Showing {paginatedServices.length} of {filteredServices.length} services
+              </p>
+
+              {/* TABLE */}
               <div className="w-full max-w-full overflow-x-auto">
                 <ResellerServiceTable
-                  services={filteredServices}
+                  services={paginatedServices}
                   commission={commission}
                   toggleVisibility={toggleVisibility}
                   updateService={updateService}
                 />
               </div>
+
+              {/* PAGINATION */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
+                  <button
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg bg-white border text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Prev
+                  </button>
+
+                  {getPageNumbers().map((p, idx) =>
+                    p === "..." ? (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 py-1.5 text-sm text-gray-400"
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                          currentPage === p
+                            ? "bg-orange-500 text-white border-orange-500"
+                            : "bg-white hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg bg-white border text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+
+                  <span className="text-xs text-gray-400 ml-2">
+                    {filteredServices.length} total · Page {currentPage} of {totalPages}
+                  </span>
+                </div>
+              )}
             </>
           )}
         </main>
       </div>
     </div>
   );
-}
+                      }
