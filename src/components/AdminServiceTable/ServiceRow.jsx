@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 const ServiceRow = ({
   service: s,
   selectedIds,
@@ -7,6 +9,7 @@ const ServiceRow = ({
   onToggleStatus,
   setSelectedDescription,
   index,
+  commission, // ← pass this from parent (fetch once at page level)
 }) => {
   // ================= RATE HELPERS =================
   const getProviderRate = (s) => {
@@ -27,19 +30,16 @@ const ServiceRow = ({
     return `${diff > 0 ? "+" : ""}${diff.toFixed(4)}`;
   };
 
-  // ================= FINAL RATE (admin only — no reseller logic) =================
-  const calculateRate = (service) => {
-    if (service?.systemRate !== undefined && service?.systemRate !== null) {
-      return Number(service.systemRate).toFixed(4);
-    }
-    if (service?.rate !== undefined && service?.rate !== null) {
-      return Number(service.rate).toFixed(4);
-    }
-    return "0.0000";
+  // ================= FINAL RATE (providerRate + admin commission %) =================
+  const calculateFinalRate = (service, commissionPct) => {
+    const base = getProviderRate(service);
+    const pct = Number(commissionPct ?? 0);
+    const final = base + (base * pct) / 100;
+    return final.toFixed(4);
   };
 
   const providerRate = getProviderRate(s);
-  const finalRate = calculateRate(s);
+  const finalRate = calculateFinalRate(s, commission);
   const diff = getDiffFormatted(s);
 
   // ================= DATE HELPER =================
@@ -107,9 +107,14 @@ const ServiceRow = ({
         )}
       </td>
 
-      {/* 💵 FINAL RATE (systemRate → rate fallback) */}
+      {/* 💵 FINAL RATE (provider rate + commission %) */}
       <td className="px-4 py-3 text-xs font-medium text-indigo-600">
-        ${finalRate}
+        <span>${finalRate}</span>
+        {commission != null && (
+          <div className="text-[10px] text-gray-400 mt-0.5 leading-none">
+            +{commission}% fee
+          </div>
+        )}
       </td>
 
       {/* 📄 DESCRIPTION */}
