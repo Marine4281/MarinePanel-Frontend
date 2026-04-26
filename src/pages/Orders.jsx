@@ -26,6 +26,7 @@ const Orders = () => {
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
 
   const [expandedService, setExpandedService] = useState(null);
 
@@ -35,18 +36,12 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       const res = await API.get("/orders/my-orders", {
-        params: {
-          search,
-          status,
-          fromDate,
-          toDate,
-          page,
-          limit: 10,
-        },
+        params: { search, status, fromDate, toDate, page, limit: 10 },
       });
 
       setOrders(res.data.orders || []);
       setTotalPages(res.data.totalPages || 1);
+      setTotalOrders(res.data.total || 0);
     } catch {
       console.error("Failed to load orders");
     }
@@ -71,11 +66,7 @@ const Orders = () => {
       setOrders((prev) =>
         prev.map((o) =>
           o._id === data.orderId
-            ? {
-                ...o,
-                status: data.status,
-                quantityDelivered: data.delivered,
-              }
+            ? { ...o, status: data.status, quantityDelivered: data.delivered }
             : o
         )
       );
@@ -86,10 +77,29 @@ const Orders = () => {
 
   const updateOrder = (orderId, updates) => {
     setOrders((prev) =>
-      prev.map((o) =>
-        o._id === orderId ? { ...o, ...updates } : o
-      )
+      prev.map((o) => (o._id === orderId ? { ...o, ...updates } : o))
     );
+  };
+
+  /* ===============================
+     PAGINATION NUMBERS
+  =============================== */
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      const left = Math.max(1, page - 2);
+      const right = Math.min(totalPages, page + 2);
+
+      if (left > 1) pages.push(1, "...");
+      for (let i = left; i <= right; i++) pages.push(i);
+      if (right < totalPages) pages.push("...", totalPages);
+    }
+
+    return pages;
   };
 
   /* ===============================
@@ -126,7 +136,6 @@ const Orders = () => {
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
 
-      {/* ✅ FIX: added pb-24 to prevent footer overlap */}
       <main className="max-w-6xl mx-auto mt-6 flex-1 px-4 w-full pb-24">
         <div className="bg-white rounded-2xl shadow-lg p-6">
 
@@ -176,9 +185,7 @@ const Orders = () => {
               <tbody>
                 {orders.map((order) => {
                   const progress = Math.min(
-                    ((order.quantityDelivered || 0) /
-                      (order.quantity || 1)) *
-                      100,
+                    ((order.quantityDelivered || 0) / (order.quantity || 1)) * 100,
                     100
                   );
 
@@ -187,7 +194,7 @@ const Orders = () => {
                   return (
                     <tr
                       key={order._id}
-                      className="hover:bg-gray-50 border-b border-gray-200" // ✅ LINE ADDED
+                      className="hover:bg-gray-50 border-b border-gray-200"
                     >
                       <td className="px-4 py-3 font-bold text-blue-600">
                         #{order.customOrderId || "—"}
@@ -197,9 +204,7 @@ const Orders = () => {
                         <div className="flex items-center gap-2">
                           <span
                             onClick={() =>
-                              setExpandedService(
-                                isExpanded ? null : order._id
-                              )
+                              setExpandedService(isExpanded ? null : order._id)
                             }
                             className="font-medium text-gray-800 cursor-pointer"
                           >
@@ -242,15 +247,10 @@ const Orders = () => {
                         ${Number(order.charge).toFixed(4)}
                       </td>
 
-                      <td className="px-4 py-3">
-                        {statusBadge(order.status)}
-                      </td>
+                      <td className="px-4 py-3">{statusBadge(order.status)}</td>
 
                       <td className="px-4 py-3">
-                        <OrderActions
-                          order={order}
-                          onUpdate={updateOrder}
-                        />
+                        <OrderActions order={order} onUpdate={updateOrder} />
                       </td>
 
                       <td className="px-4 py-3 text-xs">
@@ -272,27 +272,52 @@ const Orders = () => {
           </div>
 
           {/* PAGINATION */}
-          <div className="flex justify-between mt-6">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
+              <button
+                onClick={() => setPage((p) => p - 1)}
+                disabled={page === 1}
+                className="px-3 py-1.5 rounded-lg bg-white border text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Prev
+              </button>
 
-            <span className="text-sm">
-              Page {page} / {totalPages}
-            </span>
+              {getPageNumbers().map((p, idx) =>
+                p === "..." ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-2 py-1.5 text-sm text-gray-400"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                      page === p
+                        ? "bg-orange-500 text-white border-orange-500"
+                        : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
 
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page === totalPages}
+                className="px-3 py-1.5 rounded-lg bg-white border text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+
+              <span className="text-xs text-gray-400 ml-2">
+                {totalOrders} total · Page {page} of {totalPages}
+              </span>
+            </div>
+          )}
 
         </div>
       </main>
