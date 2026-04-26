@@ -57,7 +57,6 @@ export default function ResellerServices() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Reset page on search change
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch]);
@@ -138,7 +137,8 @@ export default function ResellerServices() {
   /* ===============================
      PAGINATION
   =============================== */
-  const totalPages = Math.ceil(filteredServices.length / SERVICES_PER_PAGE) || 1;
+  const totalPages =
+    Math.ceil(filteredServices.length / SERVICES_PER_PAGE) || 1;
 
   const paginatedServices = useMemo(() => {
     const start = (currentPage - 1) * SERVICES_PER_PAGE;
@@ -215,7 +215,6 @@ export default function ResellerServices() {
                     onChange={(e) => setNewCommission(e.target.value)}
                     className="border p-2 rounded w-32 max-w-full"
                   />
-
                   <button
                     onClick={updateCommission}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
@@ -294,7 +293,8 @@ export default function ResellerServices() {
                   </button>
 
                   <span className="text-xs text-gray-400 ml-2">
-                    {filteredServices.length} total · Page {currentPage} of {totalPages}
+                    {filteredServices.length} total · Page {currentPage} of{" "}
+                    {totalPages}
                   </span>
                 </div>
               )}
@@ -304,4 +304,4 @@ export default function ResellerServices() {
       </div>
     </div>
   );
-                      }
+                               }
