@@ -32,15 +32,14 @@ export default function Table({ title, data, type }) {
 
   const isAtEnd = visible >= data.length;
   const canViewLess = visible > INITIAL;
-  
 
   const handleViewMore = () => {
     setVisible((prev) => Math.min(prev + STEP, data.length));
   };
 
   const handleViewLess = () => {
-    setVisible(INITIAL);
-  },
+    setVisible(INITIAL); // ✅ Reset directly to INITIAL
+  };
 
   return (
     <div className="bg-white p-5 rounded-xl shadow-md mb-6 overflow-x-auto">
@@ -122,7 +121,6 @@ export default function Table({ title, data, type }) {
             </tbody>
           </table>
 
-          {/* ✅ Controls */}
           <div className="flex justify-center gap-3 mt-4">
             {!isAtEnd && (
               <button
@@ -133,7 +131,7 @@ export default function Table({ title, data, type }) {
               </button>
             )}
 
-            {isAtEnd && canViewLess && (
+            {canViewLess && (
               <button
                 onClick={handleViewLess}
                 className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
@@ -146,4 +144,4 @@ export default function Table({ title, data, type }) {
       )}
     </div>
   );
-}
+                      }
