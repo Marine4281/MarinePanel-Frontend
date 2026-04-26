@@ -99,7 +99,9 @@ export default function ResellerOrders() {
             <FiMenu />
           </button>
           <h1 className="text-orange-500 font-bold">Orders</h1>
-          <FiLogOut onClick={logout} />
+          <button onClick={logout}>
+            <FiLogOut />
+          </button>
         </header>
 
         <main className="p-4 md:p-6">
