@@ -6,6 +6,7 @@ const ServiceRow = ({
   onDelete,
   onToggleStatus,
   setSelectedDescription,
+  index,
 }) => {
   // ================= RATE HELPERS =================
   const getProviderRate = (s) => {
@@ -14,10 +15,6 @@ const ServiceRow = ({
 
   const getYourRate = (s) => {
     return Number(s.rate ?? 0);
-  };
-
-  const getAddRate = (s) => {
-    return Number(s.addRate ?? s.clientRate ?? s.sellingRate ?? 0);
   };
 
   const getDiffValue = (s) => {
@@ -30,8 +27,19 @@ const ServiceRow = ({
     return `${diff > 0 ? "+" : ""}${diff.toFixed(4)}`;
   };
 
+  // ================= FINAL RATE (admin only — no reseller logic) =================
+  const calculateRate = (service) => {
+    if (service?.systemRate !== undefined && service?.systemRate !== null) {
+      return Number(service.systemRate).toFixed(4);
+    }
+    if (service?.rate !== undefined && service?.rate !== null) {
+      return Number(service.rate).toFixed(4);
+    }
+    return "0.0000";
+  };
+
   const providerRate = getProviderRate(s);
-  const addRate = getAddRate(s);
+  const finalRate = calculateRate(s);
   const diff = getDiffFormatted(s);
 
   // ================= DATE HELPER =================
@@ -48,8 +56,11 @@ const ServiceRow = ({
 
   const dateAdded = formatDate(s.createdAt ?? s.dateAdded ?? s.addedAt);
 
+  // ================= ZEBRA =================
+  const isEven = index % 2 === 0;
+
   return (
-    <tr className="hover:bg-gray-50">
+    <tr className={`${isEven ? "bg-white" : "bg-gray-50"} hover:bg-blue-50 transition-colors`}>
 
       {/* ✅ SELECT */}
       <td className="px-4 py-3">
@@ -71,19 +82,19 @@ const ServiceRow = ({
       </td>
 
       {/* 📱 PLATFORM */}
-      <td className="px-4 py-3">{s.platform}</td>
+      <td className="px-4 py-3 text-xs">{s.platform}</td>
 
       {/* 🧾 NAME */}
-      <td className="px-4 py-3">{s.name}</td>
+      <td className="px-4 py-3 text-xs">{s.name}</td>
 
       {/* 🏢 PROVIDER */}
-      <td className="px-4 py-3">{s.provider}</td>
+      <td className="px-4 py-3 text-xs">{s.provider}</td>
 
       {/* 🔗 PROVIDER ID */}
-      <td className="px-4 py-3">{s.providerServiceId}</td>
+      <td className="px-4 py-3 text-xs">{s.providerServiceId}</td>
 
       {/* 💰 PROVIDER RATE */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 text-xs">
         {providerRate.toFixed(4)}
         {diff && (
           <span
@@ -96,11 +107,9 @@ const ServiceRow = ({
         )}
       </td>
 
-      {/* Final  RATE */}
+      {/* 💵 FINAL RATE (systemRate → rate fallback) */}
       <td className="px-4 py-3 text-xs font-medium text-indigo-600">
-       ${calculateRate(service)}
-          <span className="text-green-500">—</span>
-        )}
+        ${finalRate}
       </td>
 
       {/* 📄 DESCRIPTION */}
