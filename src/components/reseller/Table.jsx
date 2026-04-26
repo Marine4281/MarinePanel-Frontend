@@ -31,6 +31,7 @@ export default function Table({ title, data, type }) {
   const displayed = sortedData.slice(0, visible);
 
   const isAtEnd = visible >= data.length;
+  const canViewLess = visible > INITIAL;
   
 
   const handleViewMore = () => {
