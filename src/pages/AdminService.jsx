@@ -222,6 +222,7 @@ const AdminService = () => {
           onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
           isLoading={isLoading}
+          pageOffset={(currentPage - 1) * SERVICES_PER_PAGE} // ← ADDED
         />
 
         {/* PAGINATION */}
@@ -237,7 +238,10 @@ const AdminService = () => {
 
             {getPageNumbers().map((page, idx) =>
               page === "..." ? (
-                <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-sm text-gray-400">
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="px-2 py-1.5 text-sm text-gray-400"
+                >
                   ...
                 </span>
               ) : (
