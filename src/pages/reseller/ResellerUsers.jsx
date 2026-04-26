@@ -2,9 +2,10 @@
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import { FiMenu, FiLogOut, FiArrowLeft } from "react-icons/fi";
+import { FiMenu, FiLogOut } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+
+import Sidebar from "../../components/reseller/Sidebar";
 
 const USERS_PER_PAGE = 20;
 
@@ -16,10 +17,6 @@ export default function ResellerUsers() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { logout, user } = useAuth();
-  const currentUserId = user?._id || user?.id;
-  const navigate = useNavigate();
-
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -30,11 +27,9 @@ export default function ResellerUsers() {
 
         const usersRes = await API.get("/reseller/users");
 
-        const sorted = [...usersRes.data].sort((a, b) => {
-          if (a._id === currentUserId) return -1;
-          if (b._id === currentUserId) return 1;
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        });
+        const sorted = [...usersRes.data].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
 
         setUsers(sorted);
       } catch (err) {
@@ -48,14 +43,10 @@ export default function ResellerUsers() {
     fetchUsers();
   }, []);
 
-  // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
 
-  /* ===============================
-     FILTER
-  =============================== */
   const filteredUsers = useMemo(() => {
     if (!search) return users;
     const lower = search.toLowerCase();
@@ -67,9 +58,6 @@ export default function ResellerUsers() {
     );
   }, [search, users]);
 
-  /* ===============================
-     PAGINATION
-  =============================== */
   const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE) || 1;
 
   const paginatedUsers = useMemo(() => {
@@ -98,71 +86,36 @@ export default function ResellerUsers() {
   return (
     <div className="flex min-h-screen bg-gray-100">
 
-      {/* Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-64 bg-white shadow-md p-6">
-        <h1 className="text-xl font-bold text-orange-500 mb-6">
-          {brandName || "Reseller Panel"}
-        </h1>
-        <nav className="flex flex-col gap-4">
-          <button
-            onClick={() => navigate("/home")}
-            className="flex items-center gap-2 text-gray-700 hover:text-orange-500"
-          >
-            <FiArrowLeft /> Back
-          </button>
-          <Link to="/reseller/dashboard" className="font-semibold text-gray-700 hover:text-orange-500">
-            Dashboard
-          </Link>
-          <Link to="/reseller/users" className="font-semibold text-orange-500">
-            Users
-          </Link>
-          <Link to="/reseller/orders" className="font-semibold text-gray-700 hover:text-orange-500">
-            Orders
-          </Link>
-          <Link to="/reseller/branding" className="font-semibold text-gray-700 hover:text-orange-500">
-            Branding
-          </Link>
-          <button onClick={logout} className="flex items-center gap-2 text-red-500 mt-6">
-            <FiLogOut /> Logout
-          </button>
-        </nav>
-      </aside>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar brandName={brandName} />
+      </div>
 
-      {/* Main */}
+      {/* Mobile Sidebar */}
+      {menuOpen && (
+        <Sidebar
+          brandName={brandName}
+          mobile
+          close={() => setMenuOpen(false)}
+        />
+      )}
+
       <div className="flex-1 flex flex-col">
 
-        {/* Mobile Navbar */}
+        {/* Mobile Header */}
         <header className="lg:hidden flex items-center justify-between bg-white p-4 shadow-md">
-          <button onClick={() => setMenuOpen(!menuOpen)} className="text-orange-500 text-2xl">
+          <button onClick={() => setMenuOpen(true)} className="text-orange-500 text-2xl">
             <FiMenu />
           </button>
           <h1 className="text-lg font-bold text-orange-500">Reseller Users</h1>
-          <button onClick={logout}><FiLogOut /></button>
+          <FiLogOut />
         </header>
 
-        {/* Mobile Sidebar */}
-        {menuOpen && (
-          <aside className="lg:hidden absolute z-50 bg-white shadow-md w-64 h-full p-6">
-            <nav className="flex flex-col gap-4">
-              <button
-                onClick={() => navigate("/home")}
-                className="flex items-center gap-2 text-gray-700 hover:text-orange-500"
-              >
-                <FiArrowLeft /> Back
-              </button>
-              <Link to="/reseller/dashboard">Dashboard</Link>
-              <Link to="/reseller/users">Users</Link>
-              <Link to="/reseller/orders">Orders</Link>
-              <Link to="/reseller/branding">Branding</Link>
-              <button onClick={logout} className="text-red-500">Logout</button>
-            </nav>
-          </aside>
-        )}
-
         <main className="p-6 flex-1 overflow-auto pb-24">
-
           {loading ? (
-            <div className="text-center py-20 text-gray-500">Loading reseller users...</div>
+            <div className="text-center py-20 text-gray-500">
+              Loading reseller users...
+            </div>
           ) : (
             <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
 
@@ -170,7 +123,6 @@ export default function ResellerUsers() {
                 All Reseller Users ({filteredUsers.length})
               </h2>
 
-              {/* Search */}
               <input
                 type="text"
                 placeholder="Search by email, phone or country..."
@@ -194,45 +146,32 @@ export default function ResellerUsers() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedUsers.map((u) => {
-                        const isCurrentUser = u._id === currentUserId;
-                        return (
-                          <tr
-                            key={u._id}
-                            className={`border-b hover:bg-gray-50 ${isCurrentUser ? "bg-orange-50" : ""}`}
-                          >
-                            <td className="px-4 py-2">
-                              <span>{u.email}</span>
-                              {isCurrentUser && (
-                                <span className="ml-2 text-xs bg-orange-500 text-white px-1.5 py-0.5 rounded">
-                                  You
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2">{u.phone || "-"}</td>
-                            <td className="px-4 py-2">
-                              {u.countryCode ? (
-                                <div className="flex items-center gap-2">
-                                  <img
-                                    src={`https://flagcdn.com/24x18/${u.countryCode.toLowerCase()}.png`}
-                                    alt={u.country}
-                                    className="w-6 h-4 object-cover"
-                                  />
-                                  <span>{u.country}</span>
-                                </div>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td className="px-4 py-2">${u.balance?.toFixed(2) || 0}</td>
-                            <td className="px-4 py-2">{new Date(u.createdAt).toLocaleDateString()}</td>
-                          </tr>
-                        );
-                      })}
+                      {paginatedUsers.map((u) => (
+                        <tr key={u._id} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-2">{u.email}</td>
+                          <td className="px-4 py-2">{u.phone || "-"}</td>
+                          <td className="px-4 py-2">
+                            {u.countryCode ? (
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={`https://flagcdn.com/24x18/${u.countryCode.toLowerCase()}.png`}
+                                  alt={u.country}
+                                  className="w-6 h-4 object-cover"
+                                />
+                                <span>{u.country}</span>
+                              </div>
+                            ) : "-"}
+                          </td>
+                          <td className="px-4 py-2">${u.balance?.toFixed(2) || 0}</td>
+                          <td className="px-4 py-2">
+                            {new Date(u.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
 
-                  {/* PAGINATION */}
+                  {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
                       <button
@@ -245,10 +184,7 @@ export default function ResellerUsers() {
 
                       {getPageNumbers().map((p, idx) =>
                         p === "..." ? (
-                          <span
-                            key={`ellipsis-${idx}`}
-                            className="px-2 py-1.5 text-sm text-gray-400"
-                          >
+                          <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-sm text-gray-400">
                             ...
                           </span>
                         ) : (
@@ -281,12 +217,10 @@ export default function ResellerUsers() {
                   )}
                 </>
               )}
-
             </div>
           )}
-
         </main>
       </div>
     </div>
   );
-                }
+    }
