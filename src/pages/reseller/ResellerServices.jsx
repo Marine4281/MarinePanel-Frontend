@@ -207,7 +207,6 @@ export default function ResellerServices() {
                 <label className="block font-semibold mb-2 text-orange-500">
                   Global Commission (%)
                 </label>
-
                 <div className="flex flex-wrap gap-2">
                   <input
                     type="number"
@@ -247,6 +246,7 @@ export default function ResellerServices() {
                   commission={commission}
                   toggleVisibility={toggleVisibility}
                   updateService={updateService}
+                  pageOffset={(currentPage - 1) * SERVICES_PER_PAGE} // ← ADDED
                 />
               </div>
 
@@ -304,4 +304,4 @@ export default function ResellerServices() {
       </div>
     </div>
   );
-                               }
+                    }
