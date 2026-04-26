@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import { FiMenu, FiLogOut } from "react-icons/fi";
-import { useAuth } from "../../context/AuthContext";
 
 import Sidebar from "../../components/reseller/Sidebar";
 import UserOrdersFilters from "../../components/orders/UserOrdersFilters";
