@@ -1,7 +1,7 @@
 // src/components/reseller/ResellerServiceTable.jsx
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import ServiceDescriptionModal from "./ServiceDescriptionModal";
+import ServiceDescriptionModal from "../ServiceDescriptionModal";
 
 export default function ResellerServiceTable({
   services,
