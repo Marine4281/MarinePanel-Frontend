@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import ServiceRow from "./ServiceRow";
 import CategoryHeader from "./CategoryHeader";
 
@@ -10,19 +9,8 @@ const ServiceTable = ({
   onDelete,
   onToggleStatus,
   setSelectedDescription,
+  commission, // ← received from AdminService.jsx, no need to fetch again
 }) => {
-  // ================= COMMISSION =================
-  const [commission, setCommission] = useState(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token"); // adjust if you store token differently
-    fetch("/api/admin/settings/commission", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => setCommission(data.commission))
-      .catch(console.error);
-  }, []);
 
   // ================= SELECT =================
   const toggleSelect = (id) => {
