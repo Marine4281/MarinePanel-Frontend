@@ -13,7 +13,8 @@ const AdminServiceTable = ({
   onEdit,
   onDelete,
   onToggleStatus,
-  commission, // ← ADD THIS
+  commission,
+  pageOffset = 0, // ← ADDED
 }) => {
 
   const [search, setSearch] = useState("");
@@ -81,7 +82,8 @@ const AdminServiceTable = ({
         onDelete={onDelete}
         onToggleStatus={onToggleStatus}
         setSelectedDescription={setSelectedDescription}
-        commission={commission} // ← ADD THIS
+        commission={commission}
+        pageOffset={pageOffset} // ← ADDED
       />
 
       {/* ================= MODAL ================= */}
