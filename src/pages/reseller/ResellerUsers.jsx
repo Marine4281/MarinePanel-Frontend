@@ -50,7 +50,8 @@ export default function ResellerUsers() {
         users.filter(
           (u) =>
             u.email.toLowerCase().includes(lowerSearch) ||
-            (u.phone || "").toLowerCase().includes(lowerSearch)
+            (u.phone || "").toLowerCase().includes(lowerSearch) ||
+            (u.country || "").toLowerCase().includes(lowerSearch)
         )
       );
     }
@@ -132,7 +133,7 @@ export default function ResellerUsers() {
               {/* Search */}
               <input
                 type="text"
-                placeholder="Search by email or phone..."
+                placeholder="Search by email, phone or country..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="mb-4 p-2 border rounded w-full"
@@ -146,6 +147,7 @@ export default function ResellerUsers() {
                     <tr>
                       <th className="px-4 py-2 text-left">Email</th>
                       <th className="px-4 py-2 text-left">Phone</th>
+                      <th className="px-4 py-2 text-left">Country</th>
                       <th className="px-4 py-2 text-left">Wallet</th>
                       <th className="px-4 py-2 text-left">Joined</th>
                     </tr>
@@ -155,6 +157,20 @@ export default function ResellerUsers() {
                       <tr key={u._id} className="border-b hover:bg-gray-50">
                         <td className="px-4 py-2">{u.email}</td>
                         <td className="px-4 py-2">{u.phone || "-"}</td>
+                        <td className="px-4 py-3 flex items-center gap-2">
+                          {u.countryCode ? (
+                            <>
+                              <img
+                                src={`https://flagcdn.com/24x18/${u.countryCode.toLowerCase()}.png`}
+                                alt={u.country}
+                                className="w-6 h-4 object-cover"
+                              />
+                              <span>{u.country}</span>
+                            </>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
                         <td className="px-4 py-2">${u.balance?.toFixed(2) || 0}</td>
                         <td className="px-4 py-2">{new Date(u.createdAt).toLocaleDateString()}</td>
                       </tr>
@@ -170,4 +186,4 @@ export default function ResellerUsers() {
       </div>
     </div>
   );
-}
+            }
