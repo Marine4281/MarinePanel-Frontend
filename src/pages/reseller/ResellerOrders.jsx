@@ -1,3 +1,4 @@
+// src/pages/reseller/ResellerOrders.jsx
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -122,6 +123,21 @@ export default function ResellerOrders() {
             </div>
           ) : (
             <div className="bg-white p-5 rounded-xl shadow">
+
+              {/* ✅ Total Orders Header */}
+              <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
+                <h2 className="text-lg font-semibold text-gray-700">
+                  Orders Overview
+                </h2>
+                <div className="text-sm text-gray-600">
+                  Total:{" "}
+                  <span className="font-bold text-orange-500">
+                    {filteredOrders.length}
+                  </span>
+                  {" "} / {orders.length}
+                </div>
+              </div>
+
               <UserOrdersFilters
                 search={search}
                 setSearch={setSearch}
@@ -133,8 +149,10 @@ export default function ResellerOrders() {
                 setToDate={setToDate}
                 onSearch={() => {}}
               />
-              <OrdersCards  orders={paginatedOrders} helpers={helpers} />
-              <OrdersTable  orders={paginatedOrders} helpers={helpers} />
+
+              <OrdersCards orders={paginatedOrders} helpers={helpers} />
+              <OrdersTable orders={paginatedOrders} helpers={helpers} />
+
               <OrdersPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -149,4 +167,4 @@ export default function ResellerOrders() {
       </div>
     </div>
   );
-}
+                   }
