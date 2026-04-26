@@ -10,27 +10,42 @@ const OrdersTable = ({ orders, helpers }) => {
     getServiceMeta,
   } = helpers;
 
-  // Track expanded rows (service/category toggle)
-  const [expandedRows, setExpandedRows] = useState({});
+  // Separate toggle states
+  const [expandedService, setExpandedService] = useState({});
+  const [expandedCategory, setExpandedCategory] = useState({});
 
-  const toggleRow = (id) => {
-    setExpandedRows((prev) => ({
+  const toggleService = (id) => {
+    setExpandedService((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
   };
 
-  // Shorten service/category (remove extra tags like [Refill...] ᴺᴱᵂ etc.)
+  const toggleCategory = (id) => {
+    setExpandedCategory((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // 🔥 Improved short text logic
   const getShortText = (text) => {
     if (!text) return "—";
 
-    // Remove content inside brackets and trim
-    let cleaned = text.split("[")[0].trim();
+    let cleaned = text;
 
-    // Optional: remove unicode styled tags like ᴺᴱᵂ
-    cleaned = cleaned.replace(/[^\x00-\x7F]/g, "").trim();
+    // Remove bracket parts
+    cleaned = cleaned.split("[")[0];
 
-    return cleaned || text;
+    // Split by common separators
+    cleaned = cleaned.split("~")[0];
+    cleaned = cleaned.split("|")[0];
+    cleaned = cleaned.split("-")[0];
+
+    // Remove unicode styled characters
+    cleaned = cleaned.replace(/[^\x00-\x7F]/g, "");
+
+    return cleaned.trim() || text;
   };
 
   return (
@@ -60,7 +75,8 @@ const OrdersTable = ({ orders, helpers }) => {
             );
 
             const meta = getServiceMeta(o);
-            const isExpanded = expandedRows[o._id];
+            const isServiceExpanded = expandedService[o._id];
+            const isCategoryExpanded = expandedCategory[o._id];
 
             return (
               <tr key={o._id} className="border-b hover:bg-gray-50">
@@ -74,20 +90,21 @@ const OrdersTable = ({ orders, helpers }) => {
                   {formatEmail(o.userId?.email)}
                 </td>
 
-                {/* Service (Short + Toggle) */}
+                {/* Service */}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span>
-                      {isExpanded
+                      {isServiceExpanded
                         ? o.service || "—"
                         : getShortText(o.service)}
                     </span>
-                    {o.service && o.service.length > 20 && (
+
+                    {o.service && o.service.length > 25 && (
                       <button
-                        onClick={() => toggleRow(o._id)}
+                        onClick={() => toggleService(o._id)}
                         className="text-blue-500 text-xs hover:underline"
                       >
-                        {isExpanded ? "←" : "→"}
+                        {isServiceExpanded ? "←" : "→"}
                       </button>
                     )}
                   </div>
@@ -96,20 +113,21 @@ const OrdersTable = ({ orders, helpers }) => {
                 {/* Service ID */}
                 <td className="px-4 py-3">{meta.serviceId}</td>
 
-                {/* Category (Short + Toggle) */}
+                {/* Category */}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span>
-                      {isExpanded
+                      {isCategoryExpanded
                         ? meta.category
                         : getShortText(meta.category)}
                     </span>
-                    {meta.category && meta.category.length > 20 && (
+
+                    {meta.category && meta.category.length > 25 && (
                       <button
-                        onClick={() => toggleRow(o._id)}
+                        onClick={() => toggleCategory(o._id)}
                         className="text-blue-500 text-xs hover:underline"
                       >
-                        {isExpanded ? "←" : "→"}
+                        {isCategoryExpanded ? "←" : "→"}
                       </button>
                     )}
                   </div>
