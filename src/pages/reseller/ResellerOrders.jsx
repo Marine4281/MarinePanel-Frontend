@@ -1,39 +1,36 @@
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import { FiMenu, FiLogOut } from "react-icons/fi";
+import { FiMenu, FiLogOut, FiHome } from "react-icons/fi";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 import Sidebar from "../../components/reseller/Sidebar";
 import UserOrdersFilters from "../../components/orders/UserOrdersFilters";
-
 import OrdersCards from "../../components/reseller/orders/OrdersCards";
 import OrdersTable from "../../components/reseller/orders/OrdersTable";
 import OrdersPagination from "../../components/reseller/orders/OrdersPagination";
 
 export default function ResellerOrders() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [orders, setOrders] = useState([]);
-  const [brandName, setBrandName] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-
-  const [currentPage, setCurrentPage] = useState(1);
+  const [menuOpen, setMenuOpen]           = useState(false);
+  const [orders, setOrders]               = useState([]);
+  const [brandName, setBrandName]         = useState("");
+  const [loading, setLoading]             = useState(true);
+  const [search, setSearch]               = useState("");
+  const [status, setStatus]               = useState("");
+  const [fromDate, setFromDate]           = useState("");
+  const [toDate, setToDate]               = useState("");
+  const [currentPage, setCurrentPage]     = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
 
-  const auth = useAuth();
+  const auth   = useAuth();
   const logout = typeof auth?.logout === "function" ? auth.logout : () => {};
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const dashRes = await API.get("/reseller/dashboard");
+        const dashRes   = await API.get("/reseller/dashboard");
         setBrandName(dashRes.data?.brandName || "Reseller Panel");
-
         const ordersRes = await API.get("/reseller/orders");
         setOrders(Array.isArray(ordersRes.data) ? ordersRes.data : []);
       } catch {
@@ -42,16 +39,11 @@ export default function ResellerOrders() {
         setLoading(false);
       }
     };
-
     fetchOrders();
   }, []);
 
-  /* ===============================
-     FILTER LOGIC
-  =============================== */
   const filteredOrders = useMemo(() => {
     const searchLower = search.toLowerCase();
-
     return orders.filter((o) => {
       const matchSearch =
         !search ||
@@ -65,11 +57,11 @@ export default function ResellerOrders() {
 
       const date = new Date(o.createdAt);
       const from = fromDate ? new Date(fromDate) : null;
-      const to = toDate ? new Date(toDate) : null;
+      const to   = toDate   ? new Date(toDate)   : null;
 
       const matchDate =
         (!from || date >= from) &&
-        (!to || date <= new Date(to?.setHours(23, 59, 59)));
+        (!to   || date <= new Date(to.setHours(23, 59, 59)));
 
       return matchSearch && matchStatus && matchDate;
     });
@@ -86,67 +78,61 @@ export default function ResellerOrders() {
     setCurrentPage(1);
   }, [search, status, fromDate, toDate]);
 
-  /* ===============================
-     HELPERS
-  =============================== */
   const helpers = {
-    formatAmount: (v) => Number(v || 0).toFixed(4),
-    formatEmail: (e) => (e ? e.replace("@gmail.com", "") : "—"),
-    shortenLink: (l) => (l?.length > 30 ? l.slice(0, 30) + "..." : l),
+    formatAmount:   (v) => Number(v || 0).toFixed(4),
+    formatEmail:    (e) => (e ? e.replace("@gmail.com", "") : "—"),
+    shortenLink:    (l) => (l?.length > 30 ? l.slice(0, 30) + "..." : l),
     getStatusStyle: (s) =>
-      s === "completed"
-        ? "bg-green-100 text-green-600"
-        : s === "pending"
-        ? "bg-yellow-100 text-yellow-600"
-        : "bg-gray-100 text-gray-600",
+      s === "completed" ? "bg-green-100 text-green-600"
+      : s === "pending" ? "bg-yellow-100 text-yellow-600"
+      : "bg-gray-100 text-gray-600",
     getServiceMeta: (o) => ({
       serviceId: o.serviceId || "—",
-      category: o.category || "—",
+      category:  o.category  || "—",
     }),
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
 
-      {/* DESKTOP SIDEBAR */}
-      <div className="hidden lg:block">
-        <Sidebar brandName={brandName} />
-      </div>
+      <Sidebar
+        brandName={brandName}
+        mobileOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+      />
 
-      {/* MOBILE SIDEBAR (SAFE RENDER) */}
-      {menuOpen && (
-        <div className="lg:hidden">
-          <Sidebar
-            brandName={brandName}
-            mobile
-            close={() => setMenuOpen(false)}
-          />
-        </div>
-      )}
+      <div className="flex-1 flex flex-col min-w-0">
 
-      {/* MAIN */}
-      <div className="flex-1 flex flex-col">
-
-        {/* MOBILE HEADER */}
-        <header className="lg:hidden flex justify-between p-4 bg-white shadow">
-          <button onClick={() => setMenuOpen(true)}>
-            <FiMenu />
+        <header className="lg:hidden flex items-center justify-between bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+          >
+            <FiMenu size={20} />
           </button>
 
-          <h1 className="text-orange-500 font-bold">Orders</h1>
+          <span className="font-bold text-orange-500 text-sm">Orders</span>
 
-          <button onClick={logout}>
-            <FiLogOut />
-          </button>
+          <div className="flex items-center gap-1">
+            <Link to="/home" className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
+              <FiHome size={18} />
+            </Link>
+            <button
+              onClick={logout}
+              className="p-2 rounded-lg text-red-400 hover:bg-red-50 transition"
+            >
+              <FiLogOut size={18} />
+            </button>
+          </div>
         </header>
 
-        <main className="p-4 md:p-6">
-
+        <main className="p-4 md:p-6 flex-1 overflow-auto">
           {loading ? (
-            <div className="text-center py-20">Loading...</div>
+            <div className="flex items-center justify-center py-20 text-gray-400 text-sm">
+              Loading orders...
+            </div>
           ) : (
-            <div className="bg-white p-5 rounded-xl shadow">
-
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-100">
               <UserOrdersFilters
                 search={search}
                 setSearch={setSearch}
@@ -157,10 +143,8 @@ export default function ResellerOrders() {
                 toDate={toDate}
                 setToDate={setToDate}
               />
-
-              <OrdersCards orders={paginatedOrders} helpers={helpers} />
-              <OrdersTable orders={paginatedOrders} helpers={helpers} />
-
+              <OrdersCards  orders={paginatedOrders} helpers={helpers} />
+              <OrdersTable  orders={paginatedOrders} helpers={helpers} />
               <OrdersPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -168,11 +152,10 @@ export default function ResellerOrders() {
                 ordersPerPage={ordersPerPage}
                 setOrdersPerPage={setOrdersPerPage}
               />
-
             </div>
           )}
-
         </main>
+
       </div>
     </div>
   );
