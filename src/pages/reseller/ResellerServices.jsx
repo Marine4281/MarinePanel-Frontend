@@ -1,4 +1,5 @@
 // src/pages/reseller/ResellerServices.jsx
+
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -8,13 +9,13 @@ import Sidebar from "../../components/reseller/Sidebar";
 import ResellerServiceTable from "../../components/reseller/ResellerServiceTable";
 
 export default function ResellerServices() {
-  const [menuOpen, setMenuOpen]         = useState(false);
-  const [brandName, setBrandName]       = useState("");
-  const [services, setServices]         = useState([]);
-  const [commission, setCommission]     = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [brandName, setBrandName] = useState("");
+  const [services, setServices] = useState([]);
+  const [commission, setCommission] = useState(0);
   const [newCommission, setNewCommission] = useState(0);
-  const [loading, setLoading]           = useState(true);
-  const [searchTerm, setSearchTerm]     = useState("");
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const fetchServices = async () => {
@@ -25,8 +26,9 @@ export default function ResellerServices() {
       setBrandName(dashRes.data?.brandName || "Reseller Panel");
 
       const res = await API.get("/reseller/services");
-      const servicesData    = res.data.services || [];
-      const commissionData  = Number(res.data.commission || 0);
+
+      const servicesData = res.data.services || [];
+      const commissionData = Number(res.data.commission || 0);
 
       const servicesWithFinalRate = servicesData.map((s) => ({
         ...s,
@@ -68,7 +70,11 @@ export default function ResellerServices() {
 
   const updateService = async (serviceId, newName, newCategoryName) => {
     try {
-      await API.patch("/reseller/services/update", { serviceId, newName, newCategoryName });
+      await API.patch("/reseller/services/update", {
+        serviceId,
+        newName,
+        newCategoryName,
+      });
       toast.success("Updated successfully");
       fetchServices();
     } catch (error) {
@@ -80,11 +86,15 @@ export default function ResellerServices() {
   const updateCommission = async () => {
     try {
       const value = Number(newCommission);
-      const res   = await API.patch("/reseller/services/commission", { commission: value });
+      const res = await API.patch("/reseller/services/commission", {
+        commission: value,
+      });
+
       const updatedCommission = Number(res.data.commission ?? value);
 
       setCommission(updatedCommission);
       setNewCommission(updatedCommission);
+
       toast.success("Commission updated");
       fetchServices();
     } catch (error) {
@@ -95,13 +105,16 @@ export default function ResellerServices() {
 
   const filteredServices = useMemo(() => {
     if (!debouncedSearch.trim()) return services;
+
     const lower = debouncedSearch.toLowerCase();
+
     return services.filter((s) => {
-      const name        = s.name?.toLowerCase() || "";
-      const category    = s.category?.toLowerCase() || "";
-      const id          = s.serviceId?.toString() || s._id?.toString() || "";
-      const systemRate  = Number(s.systemRate || 0);
+      const name = s.name?.toLowerCase() || "";
+      const category = s.category?.toLowerCase() || "";
+      const id = s.serviceId?.toString() || s._id?.toString() || "";
+      const systemRate = Number(s.systemRate || 0);
       const resellerRate = Number(s.resellerRate ?? systemRate);
+
       return (
         name.includes(lower) ||
         category.includes(lower) ||
@@ -113,10 +126,10 @@ export default function ResellerServices() {
   }, [services, debouncedSearch]);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen w-full max-w-full bg-gray-100 overflow-x-hidden">
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:flex lg:w-64 flex-shrink-0">
         <Sidebar brandName={brandName} />
       </div>
 
@@ -129,18 +142,19 @@ export default function ResellerServices() {
         />
       )}
 
-      <div className="flex-1 flex flex-col">
+      {/* Main */}
+      <div className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden">
 
         {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between bg-white p-4 shadow-md">
-          <button onClick={() => setMenuOpen(true)} className="text-orange-500 text-2xl">
-            <FiMenu />
+        <header className="lg:hidden flex items-center justify-between bg-white p-4 shadow-md w-full">
+          <button onClick={() => setMenuOpen(true)}>
+            <FiMenu size={20} />
           </button>
           <h1 className="text-lg font-bold text-orange-500">Services</h1>
-          <FiLogOut />
+          <FiLogOut size={20} />
         </header>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6 w-full max-w-full overflow-x-hidden">
 
           {loading ? (
             <div className="text-gray-500">Loading services...</div>
@@ -151,17 +165,19 @@ export default function ResellerServices() {
               </h1>
 
               {/* Commission */}
-              <div className="bg-white p-4 rounded shadow mb-6 border-l-4 border-orange-500">
+              <div className="bg-white p-4 rounded shadow mb-6 border-l-4 border-orange-500 w-full max-w-full">
                 <label className="block font-semibold mb-2 text-orange-500">
                   Global Commission (%)
                 </label>
-                <div className="flex gap-2">
+
+                <div className="flex flex-wrap gap-2">
                   <input
                     type="number"
                     value={newCommission}
                     onChange={(e) => setNewCommission(e.target.value)}
-                    className="border p-2 rounded w-32"
+                    className="border p-2 rounded w-32 max-w-full"
                   />
+
                   <button
                     onClick={updateCommission}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
@@ -172,7 +188,7 @@ export default function ResellerServices() {
               </div>
 
               {/* Search */}
-              <div className="mb-4 max-w-md">
+              <div className="mb-4 w-full max-w-md">
                 <input
                   type="text"
                   placeholder="Search by name, category, ID, system price, reseller price"
@@ -182,16 +198,17 @@ export default function ResellerServices() {
                 />
               </div>
 
-              {/* Table */}
-              <ResellerServiceTable
-                services={filteredServices}
-                commission={commission}
-                toggleVisibility={toggleVisibility}
-                updateService={updateService}
-              />
+              {/* TABLE FIX */}
+              <div className="w-full max-w-full overflow-x-auto">
+                <ResellerServiceTable
+                  services={filteredServices}
+                  commission={commission}
+                  toggleVisibility={toggleVisibility}
+                  updateService={updateService}
+                />
+              </div>
             </>
           )}
-
         </main>
       </div>
     </div>
