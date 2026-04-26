@@ -33,7 +33,7 @@ export default function ResellerUsers() {
         const sorted = [...usersRes.data].sort((a, b) => {
           if (a._id === currentUserId) return -1;
           if (b._id === currentUserId) return 1;
-          return 0;
+          return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
         setUsers(sorted);
