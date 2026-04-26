@@ -1,4 +1,4 @@
-//src/components/Sidebar.jsx
+// src/components/Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -30,9 +30,9 @@ const Sidebar = () => {
     <aside
       className={`${
         isCollapsed ? "w-20" : "w-56"
-      } sticky top-0 h-screen bg-gray-900 text-gray-300 shadow-2xl flex flex-col transition-all duration-300 overflow-y-auto`}
+      } fixed top-0 left-0 h-screen bg-gray-900 text-gray-300 shadow-2xl flex flex-col transition-all duration-300`}
     >
-      {/* LOGO SECTION */}
+      {/* LOGO */}
       <div className="px-6 py-6 border-b border-gray-800 flex justify-between items-center">
         {!isCollapsed && (
           <div>
@@ -51,8 +51,8 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* NAVIGATION */}
-      <nav className="flex-1 mt-4 space-y-1 px-2">
+      {/* NAV */}
+      <nav className="flex-1 mt-4 space-y-1 px-2 overflow-y-auto">
         {links.map((link) => (
           <NavLink
             key={link.name}
@@ -71,7 +71,9 @@ const Sidebar = () => {
                 {isActive && (
                   <span className="absolute left-0 top-0 h-full w-1 bg-orange-500 rounded-r-lg"></span>
                 )}
+
                 <i className={`${link.icon} text-sm w-5`}></i>
+
                 {!isCollapsed && (
                   <span className="text-sm font-medium">{link.name}</span>
                 )}
@@ -81,12 +83,13 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* PROFILE SECTION */}
+      {/* PROFILE */}
       <div className="px-4 py-4 border-t border-gray-800">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold">
             A
           </div>
+
           {!isCollapsed && (
             <div className="flex-1">
               <p className="text-sm text-white font-medium">Admin</p>
