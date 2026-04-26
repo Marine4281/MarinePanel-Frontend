@@ -2,10 +2,10 @@
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import { FiMenu, FiLogOut, FiArrowLeft } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { FiMenu, FiLogOut } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 
+import Sidebar from "../../components/reseller/Sidebar";
 import UserOrdersFilters from "../../components/orders/UserOrdersFilters";
 
 export default function ResellerOrders() {
@@ -25,7 +25,6 @@ export default function ResellerOrders() {
   const [ordersPerPage, setOrdersPerPage] = useState(10);
 
   const { logout } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -91,8 +90,6 @@ export default function ResellerOrders() {
     setCurrentPage(1);
   }, [search, status, fromDate, toDate]);
 
-  const handleSearch = () => {};
-
   /* ===============================
      HELPERS
   =============================== */
@@ -123,7 +120,6 @@ export default function ResellerOrders() {
     }
   };
 
-  // Read serviceId and category directly from order snapshot — no lookup
   const getServiceMeta = (order) => ({
     serviceId: order.serviceId || "—",
     category: order.category || "—",
@@ -131,41 +127,27 @@ export default function ResellerOrders() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* SIDEBAR */}
-      <aside className="hidden lg:flex lg:flex-col w-64 bg-white shadow-md p-6">
-        <h1 className="text-xl font-bold text-orange-500 mb-6">
-          {brandName || "Reseller Panel"}
-        </h1>
 
-        <nav className="flex flex-col gap-4">
-          <button
-            onClick={() => navigate("/home")}
-            className="flex items-center gap-2 text-gray-700 hover:text-orange-500"
-          >
-            <FiArrowLeft /> Back
-          </button>
+      {/* DESKTOP SIDEBAR */}
+      <div className="hidden lg:block">
+        <Sidebar brandName={brandName} />
+      </div>
 
-          <Link to="/reseller/dashboard">Dashboard</Link>
-          <Link to="/reseller/users">Users</Link>
-          <Link to="/reseller/orders" className="text-orange-500 font-semibold">
-            Orders
-          </Link>
-          <Link to="/reseller/branding">Branding</Link>
-
-          <button
-            onClick={logout}
-            className="text-red-500 mt-6 flex items-center gap-2"
-          >
-            <FiLogOut /> Logout
-          </button>
-        </nav>
-      </aside>
+      {/* MOBILE SIDEBAR */}
+      {menuOpen && (
+        <Sidebar
+          brandName={brandName}
+          mobile
+          close={() => setMenuOpen(false)}
+        />
+      )}
 
       {/* MAIN */}
       <div className="flex-1 flex flex-col">
+
         {/* MOBILE HEADER */}
         <header className="lg:hidden flex items-center justify-between bg-white p-4 shadow-md">
-          <button onClick={() => setMenuOpen(!menuOpen)}>
+          <button onClick={() => setMenuOpen(true)}>
             <FiMenu size={22} />
           </button>
 
@@ -175,18 +157,6 @@ export default function ResellerOrders() {
             <FiLogOut />
           </button>
         </header>
-
-        {/* MOBILE MENU */}
-        {menuOpen && (
-          <aside className="lg:hidden absolute z-50 bg-white w-64 h-full p-6 shadow-md">
-            <nav className="flex flex-col gap-4">
-              <Link to="/reseller/dashboard">Dashboard</Link>
-              <Link to="/reseller/users">Users</Link>
-              <Link to="/reseller/orders">Orders</Link>
-              <Link to="/reseller/branding">Branding</Link>
-            </nav>
-          </aside>
-        )}
 
         <main className="p-4 md:p-6 flex-1 overflow-auto pb-24">
           {loading ? (
@@ -208,7 +178,6 @@ export default function ResellerOrders() {
                 setFromDate={setFromDate}
                 toDate={toDate}
                 setToDate={setToDate}
-                onSearch={handleSearch}
               />
 
               {/* MOBILE CARDS */}
@@ -221,17 +190,12 @@ export default function ResellerOrders() {
                   const meta = getServiceMeta(o);
 
                   return (
-                    <div
-                      key={o._id}
-                      className="bg-gray-50 p-4 rounded-xl shadow-sm space-y-2"
-                    >
+                    <div key={o._id} className="bg-gray-50 p-4 rounded-xl shadow-sm space-y-2">
                       <div className="flex justify-between">
                         <span className="font-bold">
                           #{o.customOrderId || o._id.slice(-6)}
                         </span>
-                        <span
-                          className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}
-                        >
+                        <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
                           {o.status}
                         </span>
                       </div>
@@ -246,12 +210,7 @@ export default function ResellerOrders() {
                         {formatEmail(o.userId?.email)}
                       </p>
 
-                      <a
-                        href={o.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 text-xs"
-                      >
+                      <a href={o.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs">
                         {shortenLink(o.link)}
                       </a>
 
@@ -260,10 +219,7 @@ export default function ResellerOrders() {
                           {o.quantityDelivered || 0}/{o.quantity}
                         </div>
                         <div className="w-full bg-gray-200 h-2 rounded mt-1">
-                          <div
-                            className="h-2 bg-blue-500"
-                            style={{ width: `${progress}%` }}
-                          />
+                          <div className="h-2 bg-blue-500" style={{ width: `${progress}%` }} />
                         </div>
                       </div>
 
@@ -317,34 +273,22 @@ export default function ResellerOrders() {
                           <td className="px-4 py-3">{meta.serviceId}</td>
                           <td className="px-4 py-3">{meta.category}</td>
                           <td className="px-4 py-3">
-                            <a
-                              href={o.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500"
-                            >
+                            <a href={o.link} target="_blank" rel="noopener noreferrer" className="text-blue-500">
                               {shortenLink(o.link)}
                             </a>
                           </td>
                           <td className="px-4 py-3">
                             {o.quantityDelivered || 0}/{o.quantity}
                             <div className="w-full bg-gray-200 h-2 mt-1 rounded">
-                              <div
-                                className="h-2 bg-orange-500"
-                                style={{ width: `${progress}%` }}
-                              />
+                              <div className="h-2 bg-orange-500" style={{ width: `${progress}%` }} />
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            ${formatAmount(o.charge)}
-                          </td>
+                          <td className="px-4 py-3">${formatAmount(o.charge)}</td>
                           <td className="px-4 py-3 text-orange-500">
                             ${formatAmount(o.resellerCommission)}
                           </td>
                           <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}
-                            >
+                            <span className={`px-2 py-1 rounded text-xs ${getStatusStyle(o.status)}`}>
                               {o.status}
                             </span>
                           </td>
@@ -393,10 +337,11 @@ export default function ResellerOrders() {
                   </button>
                 </div>
               </div>
+
             </div>
           )}
         </main>
       </div>
     </div>
   );
-            }
+                          }
