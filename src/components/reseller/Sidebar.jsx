@@ -1,14 +1,3 @@
-import {
-  FiGrid,
-  FiUsers,
-  FiShoppingCart,
-  FiCreditCard,
-  FiLogOut,
-  FiHome,
-} from "react-icons/fi";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-
 export default function Sidebar({ brandName, mobile, close }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -18,6 +7,10 @@ export default function Sidebar({ brandName, mobile, close }) {
     location.pathname === path
       ? "bg-orange-100 text-orange-600 font-semibold"
       : "text-gray-700 hover:bg-orange-50 hover:text-orange-500";
+
+  const handleClose = () => {
+    if (typeof close === "function") close();
+  };
 
   return (
     <aside
@@ -34,30 +27,30 @@ export default function Sidebar({ brandName, mobile, close }) {
         <button
           onClick={() => {
             navigate("/home");
-            if (close) close();
+            handleClose();
           }}
           className="flex items-center gap-2 px-3 py-2 rounded hover:bg-orange-50"
         >
           <FiHome /> Home
         </button>
 
-        <Link to="/reseller/dashboard" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/dashboard")}`}>
+        <Link to="/reseller/dashboard" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/dashboard")}`} onClick={handleClose}>
           <FiGrid /> Dashboard
         </Link>
 
-        <Link to="/reseller/users" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/users")}`}>
+        <Link to="/reseller/users" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/users")}`} onClick={handleClose}>
           <FiUsers /> Users
         </Link>
 
-        <Link to="/reseller/orders" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/orders")}`}>
+        <Link to="/reseller/orders" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/orders")}`} onClick={handleClose}>
           <FiShoppingCart /> Orders
         </Link>
 
-        <Link to="/reseller/services" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/services")}`}>
+        <Link to="/reseller/services" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/services")}`} onClick={handleClose}>
           <FiGrid /> Services
         </Link>
 
-        <Link to="/reseller/branding" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/branding")}`}>
+        <Link to="/reseller/branding" className={`flex items-center gap-2 px-3 py-2 rounded ${active("/reseller/branding")}`} onClick={handleClose}>
           <FiCreditCard /> Branding
         </Link>
 
