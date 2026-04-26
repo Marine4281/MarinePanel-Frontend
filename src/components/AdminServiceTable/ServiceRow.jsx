@@ -96,12 +96,10 @@ const ServiceRow = ({
         )}
       </td>
 
-      {/* 💵 ADD RATE */}
+      {/* Final  RATE */}
       <td className="px-4 py-3 text-xs font-medium text-indigo-600">
-        {addRate > 0 ? (
-          addRate.toFixed(4)
-        ) : (
-          <span className="text-gray-400">—</span>
+       ${calculateRate(service)}
+          <span className="text-green-500">—</span>
         )}
       </td>
 
