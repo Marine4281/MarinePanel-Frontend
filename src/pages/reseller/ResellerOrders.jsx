@@ -1,8 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import { FiMenu, FiLogOut, FiHome } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { FiMenu, FiLogOut } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 
 import Sidebar from "../../components/reseller/Sidebar";
@@ -22,9 +21,6 @@ export default function ResellerOrders() {
   const [toDate, setToDate]               = useState("");
   const [currentPage, setCurrentPage]     = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
-
-  const auth   = useAuth();
-  const logout = typeof auth?.logout === "function" ? auth.logout : () => {};
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -93,46 +89,40 @@ export default function ResellerOrders() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-100">
 
-      <Sidebar
-        brandName={brandName}
-        mobileOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-      />
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar brandName={brandName} />
+      </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Mobile Sidebar */}
+      {menuOpen && (
+        <Sidebar
+          brandName={brandName}
+          mobile
+          close={() => setMenuOpen(false)}
+        />
+      )}
 
-        <header className="lg:hidden flex items-center justify-between bg-white px-4 py-3 border-b border-gray-100 sticky top-0 z-30 shadow-sm">
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
-          >
-            <FiMenu size={20} />
+      <div className="flex-1 flex flex-col">
+
+        {/* Mobile Header */}
+        <header className="lg:hidden flex justify-between items-center bg-white p-4 shadow">
+          <button onClick={() => setMenuOpen(true)}>
+            <FiMenu />
           </button>
-
-          <span className="font-bold text-orange-500 text-sm">Orders</span>
-
-          <div className="flex items-center gap-1">
-            <Link to="/home" className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition">
-              <FiHome size={18} />
-            </Link>
-            <button
-              onClick={logout}
-              className="p-2 rounded-lg text-red-400 hover:bg-red-50 transition"
-            >
-              <FiLogOut size={18} />
-            </button>
-          </div>
+          <h1 className="font-bold text-orange-500">Orders</h1>
+          <FiLogOut />
         </header>
 
-        <main className="p-4 md:p-6 flex-1 overflow-auto">
+        <main className="p-4 md:p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-gray-400 text-sm">
+            <div className="text-center py-20 text-gray-400 text-sm">
               Loading orders...
             </div>
           ) : (
-            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white p-5 rounded-xl shadow">
               <UserOrdersFilters
                 search={search}
                 setSearch={setSearch}
