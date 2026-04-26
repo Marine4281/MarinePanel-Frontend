@@ -1,3 +1,4 @@
+// src/components/reseller/Table.jsx
 import { useState, useMemo } from "react";
 
 const formatAmount = (val) => Number(val || 0).toFixed(4);
@@ -16,7 +17,10 @@ const getStatusStyle = (status) => {
 };
 
 export default function Table({ title, data, type }) {
-  const [visible, setVisible] = useState(5);
+  const STEP = 10;
+  const INITIAL = 5;
+
+  const [visible, setVisible] = useState(INITIAL);
 
   const sortedData = useMemo(() => {
     return [...data].sort(
@@ -26,9 +30,19 @@ export default function Table({ title, data, type }) {
 
   const displayed = sortedData.slice(0, visible);
 
+  const isAtEnd = visible >= data.length;
+  const canViewLess = visible > INITIAL;
+
+  const handleViewMore = () => {
+    setVisible((prev) => Math.min(prev + STEP, data.length));
+  };
+
+  const handleViewLess = () => {
+    setVisible((prev) => Math.max(prev - STEP, INITIAL));
+  };
+
   return (
     <div className="bg-white p-5 rounded-xl shadow-md mb-6 overflow-x-auto">
-
       <div className="flex justify-between mb-4">
         <h2 className="font-semibold text-gray-800">{title}</h2>
         <span className="text-sm text-gray-500">{data.length} items</span>
@@ -39,7 +53,6 @@ export default function Table({ title, data, type }) {
       ) : (
         <>
           <table className="w-full text-sm">
-
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
               <tr>
                 {type === "users" ? (
@@ -64,7 +77,6 @@ export default function Table({ title, data, type }) {
             <tbody>
               {displayed.map((item) => (
                 <tr key={item._id} className="border-t hover:bg-gray-50">
-
                   {type === "users" ? (
                     <>
                       <td className="px-4 py-3">{item.email}</td>
@@ -79,7 +91,10 @@ export default function Table({ title, data, type }) {
                   ) : (
                     <>
                       <td className="px-4 py-3">
-                        #{item._id.slice(-6)}
+                        #
+                        {item.customOrderId ||
+                          item._id?.slice(-6) ||
+                          "—"}
                       </td>
                       <td className="px-4 py-3">
                         ${formatAmount(item.charge)}
@@ -88,7 +103,11 @@ export default function Table({ title, data, type }) {
                         ${formatAmount(item.resellerCommission)}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-3 py-1 rounded-full text-xs ${getStatusStyle(item.status)}`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs ${getStatusStyle(
+                            item.status
+                          )}`}
+                        >
                           {item.status}
                         </span>
                       </td>
@@ -97,22 +116,31 @@ export default function Table({ title, data, type }) {
                       </td>
                     </>
                   )}
-
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {visible < data.length && (
-            <div className="text-center mt-4">
+          {/* ✅ Controls */}
+          <div className="flex justify-center gap-3 mt-4">
+            {!isAtEnd && (
               <button
-                onClick={() => setVisible((prev) => prev + 10)}
+                onClick={handleViewMore}
                 className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600"
               >
                 View More
               </button>
-            </div>
-          )}
+            )}
+
+            {isAtEnd && canViewLess && (
+              <button
+                onClick={handleViewLess}
+                className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              >
+                View Less
+              </button>
+            )}
+          </div>
         </>
       )}
     </div>
