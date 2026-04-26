@@ -1,3 +1,4 @@
+// src/components/AdminServiceTable/ServiceTable.jsx
 import ServiceRow from "./ServiceRow";
 import CategoryHeader from "./CategoryHeader";
 
@@ -9,7 +10,7 @@ const ServiceTable = ({
   onDelete,
   onToggleStatus,
   setSelectedDescription,
-  commission, // ← received from AdminService.jsx, no need to fetch again
+  commission,
 }) => {
 
   // ================= SELECT =================
@@ -53,61 +54,74 @@ const ServiceTable = ({
     );
   }
 
+  // ================= GLOBAL OFFSET per category =================
+  // So # continues across categories: cat1 has 5 items → cat2 starts at 6
+  let globalOffset = 0;
+
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left">
+      <table className="w-full text-sm text-left min-w-full bg-white rounded-xl shadow overflow-hidden">
 
         {/* HEADER */}
-        <thead className="bg-gray-100 text-xs">
-          <tr>
-            <th className="px-4 py-3">
-              <input type="checkbox" onChange={toggleSelectAll} />
+        <thead>
+          <tr className="bg-orange-500 text-white text-left text-xs uppercase tracking-wide">
+            <th className="px-3 py-3">
+              <input
+                type="checkbox"
+                onChange={toggleSelectAll}
+                className="accent-white"
+              />
             </th>
-            <th className="px-4 py-3">System ID</th>
-            <th className="px-4 py-3">Platform</th>
-            <th className="px-4 py-3">Service</th>
-            <th className="px-4 py-3">Provider</th>
-            <th className="px-4 py-3">Provider ID</th>
-            <th className="px-4 py-3">Provider Rate</th>
-            <th className="px-4 py-3">
+            <th className="px-3 py-3">#</th>
+            <th className="px-3 py-3">System ID</th>
+            <th className="px-3 py-3">Platform</th>
+            <th className="px-3 py-3">Service</th>
+            <th className="px-3 py-3">Provider</th>
+            <th className="px-3 py-3">Provider ID</th>
+            <th className="px-3 py-3">Provider Rate</th>
+            <th className="px-3 py-3">
               Rate
               {commission != null && (
-                <span className="ml-1 text-[10px] text-gray-400 font-normal">
+                <span className="ml-1 text-[10px] text-orange-200 font-normal">
                   (+{commission}%)
                 </span>
               )}
             </th>
-            <th className="px-4 py-3">Description</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3">Actions</th>
+            <th className="px-3 py-3 text-center">Description</th>
+            <th className="px-3 py-3 text-center">Actions</th>
           </tr>
         </thead>
 
         {/* BODY */}
         <tbody>
-          {groupedServices.map(([category, items]) => (
-            <CategoryHeader
-              key={category}
-              category={category}
-              items={items}
-              toggleSelectCategory={toggleSelectCategory}
-            >
-              {items.map((s, index) => (
-                <ServiceRow
-                  key={s._id}
-                  index={index}
-                  service={s}
-                  commission={commission}
-                  selectedIds={selectedIds}
-                  toggleSelect={toggleSelect}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onToggleStatus={onToggleStatus}
-                  setSelectedDescription={setSelectedDescription}
-                />
-              ))}
-            </CategoryHeader>
-          ))}
+          {groupedServices.map(([category, items]) => {
+            const offset = globalOffset;
+            globalOffset += items.length;
+
+            return (
+              <CategoryHeader
+                key={category}
+                category={category}
+                items={items}
+                toggleSelectCategory={toggleSelectCategory}
+              >
+                {items.map((s, index) => (
+                  <ServiceRow
+                    key={s._id}
+                    index={offset + index}
+                    service={s}
+                    commission={commission}
+                    selectedIds={selectedIds}
+                    toggleSelect={toggleSelect}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onToggleStatus={onToggleStatus}
+                    setSelectedDescription={setSelectedDescription}
+                  />
+                ))}
+              </CategoryHeader>
+            );
+          })}
         </tbody>
       </table>
     </div>
