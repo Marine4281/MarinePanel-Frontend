@@ -16,8 +16,8 @@ export default function ResellerUsers() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { logout, user } = useAuth(); // 👈 pull current user from context
-  const currentUserId = user?._id || user?.id; // adjust based on your AuthContext shape
+  const { logout, user } = useAuth();
+  const currentUserId = user?._id || user?.id;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,11 +48,14 @@ export default function ResellerUsers() {
     fetchUsers();
   }, []);
 
-  // Reset page on search
+  // Reset page when search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
 
+  /* ===============================
+     FILTER
+  =============================== */
   const filteredUsers = useMemo(() => {
     if (!search) return users;
     const lower = search.toLowerCase();
@@ -64,6 +67,9 @@ export default function ResellerUsers() {
     );
   }, [search, users]);
 
+  /* ===============================
+     PAGINATION
+  =============================== */
   const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE) || 1;
 
   const paginatedUsers = useMemo(() => {
@@ -74,15 +80,18 @@ export default function ResellerUsers() {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       const left = Math.max(1, currentPage - 2);
       const right = Math.min(totalPages, currentPage + 2);
+
       if (left > 1) pages.push(1, "...");
       for (let i = left; i <= right; i++) pages.push(i);
       if (right < totalPages) pages.push("...", totalPages);
     }
+
     return pages;
   };
 
@@ -101,10 +110,18 @@ export default function ResellerUsers() {
           >
             <FiArrowLeft /> Back
           </button>
-          <Link to="/reseller/dashboard" className="font-semibold text-gray-700 hover:text-orange-500">Dashboard</Link>
-          <Link to="/reseller/users" className="font-semibold text-orange-500">Users</Link>
-          <Link to="/reseller/orders" className="font-semibold text-gray-700 hover:text-orange-500">Orders</Link>
-          <Link to="/reseller/branding" className="font-semibold text-gray-700 hover:text-orange-500">Branding</Link>
+          <Link to="/reseller/dashboard" className="font-semibold text-gray-700 hover:text-orange-500">
+            Dashboard
+          </Link>
+          <Link to="/reseller/users" className="font-semibold text-orange-500">
+            Users
+          </Link>
+          <Link to="/reseller/orders" className="font-semibold text-gray-700 hover:text-orange-500">
+            Orders
+          </Link>
+          <Link to="/reseller/branding" className="font-semibold text-gray-700 hover:text-orange-500">
+            Branding
+          </Link>
           <button onClick={logout} className="flex items-center gap-2 text-red-500 mt-6">
             <FiLogOut /> Logout
           </button>
@@ -143,6 +160,7 @@ export default function ResellerUsers() {
         )}
 
         <main className="p-6 flex-1 overflow-auto pb-24">
+
           {loading ? (
             <div className="text-center py-20 text-gray-500">Loading reseller users...</div>
           ) : (
@@ -152,6 +170,7 @@ export default function ResellerUsers() {
                 All Reseller Users ({filteredUsers.length})
               </h2>
 
+              {/* Search */}
               <input
                 type="text"
                 placeholder="Search by email, phone or country..."
@@ -201,7 +220,9 @@ export default function ResellerUsers() {
                                   />
                                   <span>{u.country}</span>
                                 </div>
-                              ) : "-"}
+                              ) : (
+                                "-"
+                              )}
                             </td>
                             <td className="px-4 py-2">${u.balance?.toFixed(2) || 0}</td>
                             <td className="px-4 py-2">{new Date(u.createdAt).toLocaleDateString()}</td>
@@ -211,6 +232,7 @@ export default function ResellerUsers() {
                     </tbody>
                   </table>
 
+                  {/* PAGINATION */}
                   {totalPages > 1 && (
                     <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
                       <button
@@ -223,7 +245,12 @@ export default function ResellerUsers() {
 
                       {getPageNumbers().map((p, idx) =>
                         p === "..." ? (
-                          <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-sm text-gray-400">...</span>
+                          <span
+                            key={`ellipsis-${idx}`}
+                            className="px-2 py-1.5 text-sm text-gray-400"
+                          >
+                            ...
+                          </span>
                         ) : (
                           <button
                             key={p}
@@ -254,10 +281,12 @@ export default function ResellerUsers() {
                   )}
                 </>
               )}
+
             </div>
           )}
+
         </main>
       </div>
     </div>
   );
-              }
+                }
