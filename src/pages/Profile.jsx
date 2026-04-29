@@ -1,9 +1,11 @@
+//src/pages/Profile.jsx
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
+import { Copy, Check, Eye, EyeOff, RefreshCw, Trash2 } from "lucide-react";
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -14,23 +16,25 @@ const Profile = () => {
     country: "",
     balance: 0,
     createdAt: "",
+    apiKey: null,
+    apiAccessEnabled: false,
   });
 
   const [editMode, setEditMode] = useState(false);
   const [password, setPassword] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [apiLoading, setApiLoading] = useState(false);
 
-  // Fetch profile from backend
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await API.get("/users/profile");
         setProfile(res.data);
       } catch (error) {
-        console.error("PROFILE ERROR:", error.response || error);
         toast.error(error.response?.data?.message || "Failed to load profile");
       }
     };
-
     fetchProfile();
   }, []);
 
@@ -45,16 +49,62 @@ const Profile = () => {
         country: profile.country,
         password: password || undefined,
       });
-
-      setProfile(res.data);
+      setProfile((prev) => ({ ...prev, ...res.data }));
       toast.success("Profile updated successfully");
       setEditMode(false);
       setPassword("");
     } catch (error) {
-      console.error("UPDATE PROFILE ERROR:", error.response || error);
       toast.error(error.response?.data?.message || "Update failed");
     }
   };
+
+  const handleGenerateKey = async () => {
+    setApiLoading(true);
+    try {
+      const res = await API.post("/users/generate-api-key");
+      setProfile((prev) => ({
+        ...prev,
+        apiKey: res.data.apiKey,
+        apiAccessEnabled: true,
+      }));
+      setShowKey(true);
+      toast.success("API key generated!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to generate key");
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  const handleRevokeKey = async () => {
+    if (!window.confirm("Are you sure? This will disable API access immediately.")) return;
+    setApiLoading(true);
+    try {
+      await API.post("/users/revoke-api-key");
+      setProfile((prev) => ({
+        ...prev,
+        apiKey: null,
+        apiAccessEnabled: false,
+      }));
+      setShowKey(false);
+      toast.success("API key revoked");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to revoke key");
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  const handleCopyKey = () => {
+    if (!profile.apiKey) return;
+    navigator.clipboard.writeText(profile.apiKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const maskedKey = profile.apiKey
+    ? profile.apiKey.slice(0, 6) + "••••••••••••••••••••" + profile.apiKey.slice(-4)
+    : null;
 
   const displayName = profile.email
     ? profile.email.split("@")[0]
@@ -64,14 +114,14 @@ const Profile = () => {
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header balance={profile.balance} />
 
-      <main className="flex-grow max-w-3xl mx-auto mt-8 px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-6 pb-24">
-          {/* Profile Top */}
+      <main className="flex-grow max-w-3xl mx-auto mt-8 px-4 w-full">
+        <div className="bg-white rounded-2xl shadow-lg p-6 pb-10 space-y-6">
+
+          {/* ── Profile Top ── */}
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-3xl font-bold text-orange-500">
               {displayName.slice(0, 2).toUpperCase()}
             </div>
-
             <div>
               <h2 className="text-2xl font-bold">{displayName}</h2>
               <p className="text-gray-500">User ID: #{user?._id}</p>
@@ -79,9 +129,9 @@ const Profile = () => {
             </div>
           </div>
 
-          <hr className="my-6" />
+          <hr />
 
-          {/* Profile Info */}
+          {/* ── Profile Info ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="text-sm text-gray-500">Email</label>
@@ -146,9 +196,105 @@ const Profile = () => {
             )}
           </div>
 
-          <hr className="my-6" />
+          <hr />
 
-          {/* Actions */}
+          {/* ── API Access Section ── */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-gray-800">API Access</h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Use your API key to integrate with Marine Panel.{" "}
+                  <a
+                    href="/api-docs"
+                    className="text-orange-500 hover:underline"
+                  >
+                    View docs →
+                  </a>
+                </p>
+              </div>
+
+              {/* Status badge */}
+              <span
+                className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                  profile.apiAccessEnabled
+                    ? "bg-green-100 text-green-600"
+                    : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {profile.apiAccessEnabled ? "Active" : "Inactive"}
+              </span>
+            </div>
+
+            {/* API URL */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
+              <p className="text-xs text-gray-400 mb-0.5">API Endpoint</p>
+              <code className="text-sm text-orange-500 break-all">
+                https://marinepanel.online/api/v2
+              </code>
+            </div>
+
+            {/* Key display */}
+            {profile.apiKey ? (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
+                <p className="text-xs text-gray-400 mb-1">Your API Key</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-sm text-gray-800 flex-1 break-all font-mono">
+                    {showKey ? profile.apiKey : maskedKey}
+                  </code>
+                  <button
+                    onClick={() => setShowKey((p) => !p)}
+                    className="text-gray-400 hover:text-gray-600 shrink-0"
+                    title={showKey ? "Hide" : "Show"}
+                  >
+                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                  <button
+                    onClick={handleCopyKey}
+                    className="text-gray-400 hover:text-orange-500 shrink-0 transition"
+                    title="Copy"
+                  >
+                    {copied ? (
+                      <Check size={16} className="text-green-500" />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-4 mb-3 text-center text-gray-400 text-sm">
+                No API key generated yet.
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleGenerateKey}
+                disabled={apiLoading}
+                className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition disabled:opacity-60"
+              >
+                <RefreshCw size={15} className={apiLoading ? "animate-spin" : ""} />
+                {profile.apiKey ? "Regenerate Key" : "Generate Key"}
+              </button>
+
+              {profile.apiKey && (
+                <button
+                  onClick={handleRevokeKey}
+                  disabled={apiLoading}
+                  className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-medium px-4 py-2.5 rounded-xl transition disabled:opacity-60"
+                >
+                  <Trash2 size={15} />
+                  Revoke
+                </button>
+              )}
+            </div>
+          </div>
+
+          <hr />
+
+          {/* ── Actions ── */}
           <div className="flex flex-col md:flex-row gap-4">
             {editMode ? (
               <>
@@ -159,10 +305,7 @@ const Profile = () => {
                   Save Changes
                 </button>
                 <button
-                  onClick={() => {
-                    setEditMode(false);
-                    setPassword("");
-                  }}
+                  onClick={() => { setEditMode(false); setPassword(""); }}
                   className="w-full bg-red-500 text-white py-3 rounded-xl hover:bg-red-600 transition"
                 >
                   Cancel
@@ -188,7 +331,6 @@ const Profile = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <Footer />
     </div>
   );
