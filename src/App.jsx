@@ -18,6 +18,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Services from "./pages/Services";
 import Reseller from "./pages/Reseller";
 
+import ApiDocsPage from "./pages/ApiDocsPage";
+
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminService from "./pages/AdminService";
@@ -136,6 +138,12 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+          <Route 
+             path="/api-access" 
+             element={<ApiDocsPage />} 
+          />
+
 
 
         {/* 🔁 RESELLER PANEL */}
