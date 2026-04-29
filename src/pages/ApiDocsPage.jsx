@@ -109,7 +109,7 @@ const ApiDocsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white px-4 py-10">
+    <div className="min-h-screen bg-orange-500 text-white px-4 py-10">
       <div className="max-w-4xl mx-auto space-y-8">
 
         {/* ── Back Button ── */}
