@@ -19,9 +19,9 @@ const CodeBlock = ({ code }) => {
     <div className="relative bg-[#0f172a] rounded-lg overflow-hidden">
       <button
         onClick={handleCopy}
-        className="absolute top-2 right-2 text-gray-400 hover:text-white transition"
+        className="absolute top-2 right-2 text-gray-400 hover:text-orange-400 transition"
       >
-        {copied ? <Check size={16} /> : <Copy size={16} />}
+        {copied ? <Check size={16} className="text-orange-400" /> : <Copy size={16} />}
       </button>
       <pre className="text-sm text-green-400 p-4 overflow-x-auto whitespace-pre-wrap">
         {code}
@@ -45,7 +45,7 @@ const ParamTable = ({ rows }) => (
             key={i}
             className={i % 2 === 0 ? "bg-gray-900" : "bg-gray-800/50"}
           >
-            <td className="px-4 py-2 font-mono text-blue-400">{param}</td>
+            <td className="px-4 py-2 font-mono text-orange-400">{param}</td>
             <td className="px-4 py-2 text-gray-300">{desc}</td>
           </tr>
         ))}
@@ -65,9 +65,9 @@ const Section = ({ title, children }) => {
       >
         <span className="text-white font-semibold text-base">{title}</span>
         {open ? (
-          <ChevronUp size={18} className="text-gray-400" />
+          <ChevronUp size={18} className="text-orange-400" />
         ) : (
-          <ChevronDown size={18} className="text-gray-400" />
+          <ChevronDown size={18} className="text-orange-400" />
         )}
       </button>
 
@@ -82,7 +82,7 @@ const Section = ({ title, children }) => {
 
 const Badge = ({ label, color }) => {
   const colors = {
-    POST: "bg-blue-600",
+    POST: "bg-orange-500",
     GET: "bg-green-600",
   };
   return (
@@ -115,7 +115,7 @@ const ApiDocsPage = () => {
         {/* ── Back Button ── */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition text-sm"
+          className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition text-sm"
         >
           <ArrowLeft size={16} />
           Back
@@ -138,7 +138,7 @@ const ApiDocsPage = () => {
             </div>
             <div className="sm:col-span-2">
               <p className="text-gray-500 mb-1">API URL</p>
-              <code className="text-blue-400 break-all">{API_URL}</code>
+              <code className="text-orange-400 break-all">{API_URL}</code>
             </div>
           </div>
 
@@ -152,14 +152,14 @@ const ApiDocsPage = () => {
             <p className="text-gray-500 mb-1 text-sm">Your API Key</p>
             {apiKey ? (
               <div className="flex items-center gap-2">
-                <code className="bg-gray-800 px-3 py-1.5 rounded text-green-400 text-sm break-all flex-1">
+                <code className="bg-gray-800 px-3 py-1.5 rounded text-orange-400 text-sm break-all flex-1">
                   {apiKey}
                 </code>
                 <button
                   onClick={handleCopyKey}
-                  className="text-gray-400 hover:text-white transition shrink-0"
+                  className="text-gray-400 hover:text-orange-400 transition shrink-0"
                 >
-                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? <Check size={16} className="text-orange-400" /> : <Copy size={16} />}
                 </button>
               </div>
             ) : (
@@ -172,7 +172,7 @@ const ApiDocsPage = () => {
                 {user && (
                   <button
                     onClick={() => navigate("/profile")}
-                    className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 transition font-medium shrink-0"
+                    className="flex items-center gap-1.5 text-orange-500 hover:text-orange-400 transition font-medium shrink-0"
                   >
                     <KeyRound size={14} />
                     Generate one in your Profile
