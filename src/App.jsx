@@ -149,6 +149,15 @@ function AppRoutes() {
           }
         />
 
+         <Route 
+          path="/admin/resellers/:id" 
+          element={
+           <ProtectedRoute adminOnly>
+             <ResellerAdminDetails />
+           </ProtectedRoute>
+         } 
+      />
+
           <Route 
              path="/api-access" 
              element={<ApiDocsPage />} 
