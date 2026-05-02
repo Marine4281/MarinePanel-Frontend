@@ -45,7 +45,16 @@ import ResellersAdminList from "./pages/reseller/ResellersAdminList";
 import ResellerAdminDetails from "./pages/reseller/ResellerAdminDetails";
 
 
-
+//ChildPanel
+import ChildPanelRoute from "./components/childpanel/ChildPanelRoute";
+import ChildPanelActivate from "./pages/childpanel/ChildPanelActivate";
+import ChildPanelDashboard from "./pages/childpanel/ChildPanelDashboard";
+import ChildPanelUsers from "./pages/childpanel/ChildPanelUsers";
+import ChildPanelOrders from "./pages/childpanel/ChildPanelOrders";
+import ChildPanelResellers from "./pages/childpanel/ChildPanelResellers";
+import ChildPanelProviders from "./pages/childpanel/ChildPanelProviders";
+import ChildPanelSettings from "./pages/childpanel/ChildPanelSettings";
+import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -228,6 +237,73 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+         //ChildPanel Routes
+         {/* 🏢 CHILD PANEL ROUTES */}
+<Route
+  path="/child-panel/activate"
+  element={
+    <ProtectedRoute>
+      <ChildPanelActivate />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/child-panel/dashboard"
+  element={
+    <ChildPanelRoute>
+      <ChildPanelDashboard />
+    </ChildPanelRoute>
+  }
+/>
+<Route
+  path="/child-panel/users"
+  element={
+    <ChildPanelRoute>
+      <ChildPanelUsers />
+    </ChildPanelRoute>
+  }
+/>
+<Route
+  path="/child-panel/orders"
+  element={
+    <ChildPanelRoute>
+      <ChildPanelOrders />
+    </ChildPanelRoute>
+  }
+/>
+<Route
+  path="/child-panel/resellers"
+  element={
+    <ChildPanelRoute>
+      <ChildPanelResellers />
+    </ChildPanelRoute>
+  }
+/>
+<Route
+  path="/child-panel/providers"
+  element={
+    <ChildPanelRoute>
+      <ChildPanelProviders />
+    </ChildPanelRoute>
+  }
+/>
+<Route
+  path="/child-panel/wallet"
+  element={
+    <ChildPanelRoute>
+      <ChildPanelWallet />
+    </ChildPanelRoute>
+  }
+/>
+<Route
+  path="/child-panel/settings"
+  element={
+    <ChildPanelRoute>
+      <ChildPanelSettings />
+    </ChildPanelRoute>
+  }
+/>
 
         {/* 👑 ADMIN ROUTES */}
 
