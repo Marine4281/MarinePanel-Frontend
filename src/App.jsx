@@ -56,7 +56,7 @@ import ChildPanelProviders from "./pages/childpanel/ChildPanelProviders";
 import ChildPanelSettings from "./pages/childpanel/ChildPanelSettings";
 import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 import ChildPanelPage from "./pages/childpanel/ChildPanelPage";
-
+import AdminChildPanels from "./pages/AdminChildPanels";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { setupNetworkManager } from "./utils/networkManager";
@@ -416,6 +416,16 @@ function AppRoutes() {
           } 
          />
 
+                 <Route 
+                    path="/child-panel" 
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <AdminChildPanels />
+                      </ProtectedRoute>
+                     } 
+                    />
+
+         
          <Route 
            path="/admin/users/:id" 
            element={
