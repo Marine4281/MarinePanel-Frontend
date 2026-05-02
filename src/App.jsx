@@ -55,6 +55,7 @@ import ChildPanelResellers from "./pages/childpanel/ChildPanelResellers";
 //import ChildPanelProviders from "./pages/childpanel/ChildPanelProviders";
 //import ChildPanelSettings from "./pages/childpanel/ChildPanelSettings";
 //import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
+import ChildPanelPage from "./pages/childpanel/ChildPanelPage";
 
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -240,6 +241,15 @@ function AppRoutes() {
 
          //ChildPanel Routes
          {/* 🏢 CHILD PANEL ROUTES */}
+
+         <Route
+         path="/child-panel"
+         element={
+           <ProtectedRoute>
+             <ChildPanelPage />
+           </ProtectedRoute>
+          }
+        />
 <Route
   path="/child-panel/activate"
   element={
