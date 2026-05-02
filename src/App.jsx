@@ -280,30 +280,6 @@ function AppRoutes() {
     </ChildPanelRoute>
   }
 />
-//<Route
- // path="/child-panel/providers"
- // element={
-   // <ChildPanelRoute>
-      <ChildPanelProviders />
-    </ChildPanelRoute>
- // }
-/>
-//<Route
-  //path="/child-panel/wallet"
-  //element={
-    //<ChildPanelRoute>
-      //<ChildPanelWallet />
-   // </ChildPanelRoute>
-//  }
-///>
-//<Route
-  //path="/child-panel/settings"
-  //element={
-   // <ChildPanelRoute>
-    //  <ChildPanelSettings />
-    //</ChildPanelRoute>
-  //}
-///>
 
         {/* 👑 ADMIN ROUTES */}
 
