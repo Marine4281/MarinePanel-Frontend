@@ -1,17 +1,28 @@
 // src/components/FloatingSupport.jsx
+
 import React, { useState } from "react";
 import { FaWhatsapp, FaTelegramPlane } from "react-icons/fa";
 import { useReseller } from "../context/ResellerContext";
+import { useChildPanel } from "../context/ChildPanelContext";
+import { useCachedServices } from "../context/CachedServicesContext";
 
 const FloatingSupport = () => {
   const [open, setOpen] = useState(false);
   const { reseller } = useReseller();
+  const { childPanel } = useChildPanel();
+  const { domainType } = useCachedServices();
+
+  // Use child panel support if on cp domain,
+  // otherwise fall back to reseller support
+  const support =
+    domainType === "childPanel" && childPanel
+      ? childPanel.support || {}
+      : reseller?.support || {};
 
   const toggleMenu = () => setOpen(!open);
 
-  const support = reseller?.support || {};
+  // ======================= FORMAT HELPERS =======================
 
-  // ✅ Format helpers
   const formatWhatsApp = (number) => {
     if (!number) return "";
     return `https://wa.me/${number.replace(/\D/g, "")}`;
@@ -27,16 +38,14 @@ const FloatingSupport = () => {
   const telegramLink = formatTelegram(support.telegram);
   const whatsappChannelLink = support.whatsappChannel || "";
 
-  const hasLinks =
-    whatsappLink || telegramLink || whatsappChannelLink;
+  const hasLinks = whatsappLink || telegramLink || whatsappChannelLink;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+
       {/* Dropdown */}
       {open && (
         <div className="flex flex-col items-end gap-3 mb-2">
-
-          {/* ✅ SHOW REAL LINKS ONLY IF THEY EXIST */}
           {hasLinks ? (
             <>
               {whatsappLink && (
@@ -73,7 +82,6 @@ const FloatingSupport = () => {
               )}
             </>
           ) : (
-            /* ✅ NO LINKS → SHOW MESSAGE ONLY */
             <div className="bg-gray-200 text-gray-600 px-4 py-2 rounded-lg shadow text-sm">
               Support links are currently unavailable
             </div>
@@ -81,7 +89,7 @@ const FloatingSupport = () => {
         </div>
       )}
 
-      {/* Floating Button (ALWAYS VISIBLE) */}
+      {/* Floating Button */}
       <button
         onClick={toggleMenu}
         className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-xl animate-bounce transition"
