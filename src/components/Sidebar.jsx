@@ -18,7 +18,7 @@ const links = [
   { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
 
   // ✅ NEW PAGE: Child Panels (ADDED)
-  { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/admin/child-panel" },
+  { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/child-panel" },
 
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
 
