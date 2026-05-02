@@ -1,96 +1,155 @@
 // src/context/CachedServicesContext.jsx
+
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { io } from "socket.io-client";
 import API from "../api/axios";
-import { getResellerSlug } from "../utils/domain";
 
 const CachedServicesContext = createContext();
+
+/* =====================================================
+DOMAIN TYPE DETECTION
+Same logic as ServicesContext — shared inline here
+to avoid a circular import between the two contexts.
+
+Returns:
+  "main"       — marinepanel.online or localhost
+  "reseller"   — reseller subdomain / custom domain
+  "childPanel" — child panel subdomain / custom domain
+===================================================== */
+const detectDomainType = async () => {
+  const host = window.location.hostname;
+  const mainDomain = "marinepanel.online";
+
+  if (
+    host === mainDomain ||
+    host === `www.${mainDomain}` ||
+    host === "localhost" ||
+    host === "127.0.0.1"
+  ) {
+    return "main";
+  }
+
+  try {
+    await API.get("/child-panel/branding");
+    return "childPanel";
+  } catch {
+    try {
+      await API.get("/end-user/branding");
+      return "reseller";
+    } catch {
+      return "main";
+    }
+  }
+};
 
 export const CachedServicesProvider = ({ children }) => {
   const [services, setServices] = useState([]);
   const [commission, setCommission] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [domainType, setDomainType] = useState(null);
 
-  const fetchData = async () => {
+  /* =====================================================
+  FETCH DATA
+  Route depends on domain type:
+    reseller   → /reseller/services
+    main       → /services
+    childPanel → /services (backend scopes via middleware)
+  ===================================================== */
+  const fetchData = async (type) => {
     try {
       setLoading(true);
-
-      const slug = getResellerSlug();
-      const token = localStorage.getItem("token");
-
-      let endpoint = "/services";
-      if (slug && token) {
-        endpoint = "/reseller/services";
-      }
-
-      const res = await API.get(endpoint);
 
       let servicesData = [];
       let commissionData = 0;
 
-      if (endpoint === "/reseller/services") {
-        // ✅ Reseller / reseller users
+      if (type === "reseller") {
+        const res = await API.get("/reseller/services");
         servicesData = res.data.services || [];
         commissionData = res.data.commission || 0;
       } else {
-        // ✅ Main panel users (backend already applied commission)
+        // main or childPanel
+        const res = await API.get("/services");
         servicesData = res.data || [];
-        commissionData = 0; // no need to fetch separately
+        commissionData = 0;
       }
 
       setServices(servicesData);
       setCommission(commissionData);
-
     } catch (error) {
       console.error("Failed to fetch services", error);
+      setServices([]);
+      setCommission(0);
     } finally {
       setLoading(false);
     }
   };
 
+  /* =====================================================
+  INIT
+  ===================================================== */
   useEffect(() => {
-    fetchData();
+    let socket;
 
-    const socket = io("https://marinepanel-backend.onrender.com", {
-      transports: ["websocket"],
-    });
+    const init = async () => {
+      const type = await detectDomainType();
+      setDomainType(type);
+      await fetchData(type);
 
-    socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
+      socket = io("https://marinepanel-backend.onrender.com", {
+        transports: ["websocket"],
+      });
 
-    socket.on("servicesUpdated", () => {
-      console.log("🔄 Services updated — refreshing cache...");
-      fetchData();
-    });
+      socket.on("connect", () =>
+        console.log("✅ Socket connected:", socket.id)
+      );
 
-    // ✅ Only useful for reseller dashboard
-    socket.on("commissionUpdated", (data) => {
-      console.log("💰 Commission updated:", data.commission);
-      setCommission(data.commission);
-    });
+      socket.on("servicesUpdated", () => {
+        console.log("🔄 Services updated — refreshing cache...");
+        fetchData(type);
+      });
 
-    socket.on("disconnect", () => console.log("❌ Socket disconnected"));
+      // Only relevant for reseller dashboard
+      socket.on("commissionUpdated", (data) => {
+        console.log("💰 Commission updated:", data.commission);
+        if (type === "reseller") {
+          setCommission(data.commission);
+        }
+      });
 
-    return () => socket.disconnect();
+      socket.on("disconnect", () => console.log("❌ Socket disconnected"));
+    };
+
+    init();
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, []);
+
+  const refreshServices = async () => {
+    if (domainType) await fetchData(domainType);
+  };
+
+  // ======================= DERIVED DATA =======================
 
   const platforms = useMemo(
     () => [...new Set(services.map((s) => s.platform || "General"))],
     [services]
   );
 
-  const getCategoriesByPlatform = (platform) =>
-    [...new Set(
+  const getCategoriesByPlatform = (platform) => [
+    ...new Set(
       services
         .filter((s) => (s.platform || "General") === platform)
         .map((s) => s.category)
-    )];
+    ),
+  ];
 
   const getServicesByCategory = (platform, category) =>
     services.filter(
-      (s) => (s.platform || "General") === platform && s.category === category
+      (s) =>
+        (s.platform || "General") === platform && s.category === category
     );
-
-  const refreshServices = async () => await fetchData();
 
   return (
     <CachedServicesContext.Provider
@@ -98,6 +157,7 @@ export const CachedServicesProvider = ({ children }) => {
         services,
         loading,
         commission,
+        domainType,        // "main" | "reseller" | "childPanel"
         platforms,
         getCategoriesByPlatform,
         getServicesByCategory,
