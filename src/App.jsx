@@ -52,9 +52,9 @@ import ChildPanelDashboard from "./pages/childpanel/ChildPanelDashboard";
 import ChildPanelUsers from "./pages/childpanel/ChildPanelUsers";
 import ChildPanelOrders from "./pages/childpanel/ChildPanelOrders";
 import ChildPanelResellers from "./pages/childpanel/ChildPanelResellers";
-import ChildPanelProviders from "./pages/childpanel/ChildPanelProviders";
-import ChildPanelSettings from "./pages/childpanel/ChildPanelSettings";
-import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
+//import ChildPanelProviders from "./pages/childpanel/ChildPanelProviders";
+//import ChildPanelSettings from "./pages/childpanel/ChildPanelSettings";
+//import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -280,30 +280,30 @@ function AppRoutes() {
     </ChildPanelRoute>
   }
 />
-<Route
-  path="/child-panel/providers"
-  element={
-    <ChildPanelRoute>
+//<Route
+ // path="/child-panel/providers"
+ // element={
+   // <ChildPanelRoute>
       <ChildPanelProviders />
     </ChildPanelRoute>
-  }
+ // }
 />
-<Route
-  path="/child-panel/wallet"
-  element={
-    <ChildPanelRoute>
-      <ChildPanelWallet />
-    </ChildPanelRoute>
-  }
-/>
-<Route
-  path="/child-panel/settings"
-  element={
-    <ChildPanelRoute>
-      <ChildPanelSettings />
-    </ChildPanelRoute>
-  }
-/>
+//<Route
+  //path="/child-panel/wallet"
+  //element={
+    //<ChildPanelRoute>
+      //<ChildPanelWallet />
+   // </ChildPanelRoute>
+//  }
+///>
+//<Route
+  //path="/child-panel/settings"
+  //element={
+   // <ChildPanelRoute>
+    //  <ChildPanelSettings />
+    //</ChildPanelRoute>
+  //}
+///>
 
         {/* 👑 ADMIN ROUTES */}
 
