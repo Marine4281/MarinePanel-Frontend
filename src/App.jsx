@@ -417,7 +417,7 @@ function AppRoutes() {
          />
 
                  <Route 
-                    path="/child-panel" 
+                    path="/admin/child-panel" 
                     element={
                       <ProtectedRoute adminOnly>
                         <AdminChildPanels />
