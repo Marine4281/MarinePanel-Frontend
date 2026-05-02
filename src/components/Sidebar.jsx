@@ -1,4 +1,4 @@
-//src/components/Sidebar.jsx
+// src/components/Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -17,9 +17,12 @@ const links = [
   // ✅ NEW PAGE: Resellers
   { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
 
+  // ✅ NEW PAGE: Child Panels (ADDED)
+  { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/admin/child-panel" },
+
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
 
-  // 🔥 ✅ ADD THIS (Staff Actions Page)
+  // 🔥 Staff Actions Page
   { name: "Staff Actions", icon: "fa-solid fa-shield-halved", path: "/admin/logs" },
 
   { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
