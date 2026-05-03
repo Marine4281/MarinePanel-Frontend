@@ -34,6 +34,10 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/dashboard", icon: <FiGrid />, label: "Dashboard" },
     { to: "/child-panel/users", icon: <FiUsers />, label: "Users" },
     { to: "/child-panel/orders", icon: <FiShoppingCart />, label: "Orders" },
+
+    // ✅ NEW: Services
+    { to: "/child-panel/services", icon: <FiServer />, label: "Services" },
+
     { to: "/child-panel/resellers", icon: <FiUserCheck />, label: "Resellers" },
     { to: "/child-panel/providers", icon: <FiServer />, label: "Providers" },
     { to: "/child-panel/wallet", icon: <FiCreditCard />, label: "Wallet" },
@@ -107,4 +111,4 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       )}
     </>
   );
-          }
+      }
