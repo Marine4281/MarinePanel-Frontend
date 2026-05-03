@@ -64,6 +64,7 @@ import ChildPanelProviders from "./pages/childpanel/ChildPanelProviders";
 import ChildPanelSettings from "./pages/childpanel/ChildPanelSettings";
 import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 import ChildPanelPage from "./pages/childpanel/ChildPanelPage";
+import ChildPanelServices from "./pages/childpanel/ChildPanelServices";
 
 // Guards + utils
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -145,6 +146,7 @@ function AppRoutes() {
         <Route path="/child-panel/providers" element={<ChildPanelRoute><ChildPanelProviders /></ChildPanelRoute>} />
         <Route path="/child-panel/wallet" element={<ChildPanelRoute><ChildPanelWallet /></ChildPanelRoute>} />
         <Route path="/child-panel/settings" element={<ChildPanelRoute><ChildPanelSettings /></ChildPanelRoute>} />
+        <Route path="/child-panel/services" element={<ChildPanelRoute><ChildPanelServices /></ChildPanelRoute>} />
 
         {/* ================================================
             ADMIN ROUTES
