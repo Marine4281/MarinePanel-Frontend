@@ -1,14 +1,36 @@
 // src/pages/LandingPage.jsx
-import React from "react";
-import { Link } from "react-router-dom";
+//
+// Main platform landing page.
+// On child panel domains → redirects immediately to /login
+// so users land directly on the branded login page.
+// Child panel owners can later set a custom landing page
+// style from Settings (the login page IS their landing page).
+
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useReseller } from "../context/ResellerContext";
+import { useChildPanel } from "../context/ChildPanelContext";
+import { useCachedServices } from "../context/CachedServicesContext";
 
 const LandingPage = () => {
+  const navigate = useNavigate();
   const { reseller } = useReseller();
+  const { childPanel } = useChildPanel();
+  const { domainType } = useCachedServices();
 
-  // Fallbacks
+  // Child panel domain — redirect to login immediately
+  // The login page is the landing page for child panel users
+  useEffect(() => {
+    if (domainType === "childPanel") {
+      navigate("/login", { replace: true });
+    }
+  }, [domainType, navigate]);
+
+  // Show nothing while redirecting
+  if (domainType === "childPanel") return null;
+
   const brandName = reseller?.brandName || "MarinePanel";
-  const themeColor = reseller?.themeColor || "#f97316"; // orange fallback
+  const themeColor = reseller?.themeColor || "#f97316";
   const logo = reseller?.logo || null;
 
   return (
@@ -21,7 +43,7 @@ const LandingPage = () => {
           color: "#fff",
         }}
       >
-        {/* Hero Illustration */}
+        {/* Decorative ring */}
         <div className="absolute -top-10 -left-10 opacity-20 animate-spin-slow">
           <svg width="200" height="200" fill="none">
             <circle cx="100" cy="100" r="80" stroke="white" strokeWidth="2" />
@@ -57,55 +79,28 @@ const LandingPage = () => {
           </Link>
         </div>
 
-        {/* Stats / Features Cards */}
+        {/* Stats cards */}
         <div className="flex flex-wrap justify-center gap-8">
-          <div className="bg-orange-500 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">2,200,000+</h2>
-            <p className="text-white mt-2 text-center font-semibold">Total Orders Completed</p>
-          </div>
-          <div className="bg-orange-600 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">✔️</h2>
-            <p className="text-white mt-2 text-center font-semibold">We’re the Real Providers</p>
-          </div>
-          <div className="bg-orange-500 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">24/7</h2>
-            <p className="text-white mt-2 text-center font-semibold">Customer Support</p>
-          </div>
-          <div className="bg-orange-600 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">💳</h2>
-            <p className="text-white mt-2 text-center font-semibold">All Payments Supported</p>
-          </div>
+          {[
+            { value: "2,200,000+", label: "Total Orders Completed", bg: "bg-orange-500" },
+            { value: "✔️", label: "We're the Real Providers", bg: "bg-orange-600" },
+            { value: "24/7", label: "Customer Support", bg: "bg-orange-500" },
+            { value: "💳", label: "All Payments Supported", bg: "bg-orange-600" },
+          ].map(({ value, label, bg }) => (
+            <div
+              key={label}
+              className={`${bg} rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300`}
+            >
+              <h2 className="text-3xl font-bold text-white drop-shadow-md">
+                {value}
+              </h2>
+              <p className="text-white mt-2 text-center font-semibold">
+                {label}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
-
-      {/* Sticky Footer */}
-      <footer
-        className="mt-auto w-full text-center py-6 font-medium text-white"
-        style={{ backgroundColor: themeColor }}
-      >
-        &copy; 2026 {brandName}. All rights reserved.
-      </footer>
-
-      {/* Animations */}
-      <style>
-        {`
-          @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-          }
-          .animate-float {
-            animation: float 3s ease-in-out infinite;
-          }
-
-          @keyframes spin-slow {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          .animate-spin-slow {
-            animation: spin-slow 30s linear infinite;
-          }
-        `}
-      </style>
     </div>
   );
 };
