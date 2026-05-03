@@ -1,4 +1,5 @@
 // src/context/AuthContext.jsx
+
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
@@ -7,22 +8,22 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
-// ✅ SAFE countryCode normalizer (BULLETPROOF)
+// ======================= HELPERS =======================
+
 const normalizeCountryCode = (code) => {
   if (!code || typeof code !== "string") return "us";
-
   return code.trim().toLowerCase();
 };
 
-// ✅ Normalize full user object
 const normalizeUser = (user) => {
   if (!user) return null;
-
   return {
     ...user,
     countryCode: normalizeCountryCode(user.countryCode),
   };
 };
+
+// ======================= PROVIDER =======================
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
@@ -30,12 +31,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔄 Load user from localStorage and refresh from backend
   useEffect(() => {
     const fetchUser = async () => {
       const stored = localStorage.getItem("user");
 
-      // ✅ Load from localStorage first (FAST UI)
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -46,21 +45,16 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 🔄 Fetch fresh data from backend
       try {
-        const res = await API.get("/auth/profile", {
-          withCredentials: true,
-        });
-
+        const res = await API.get("/auth/profile", { withCredentials: true });
         if (res.data) {
           const normalized = normalizeUser(res.data);
-
           setUser(normalized);
           localStorage.setItem("user", JSON.stringify(normalized));
         }
       } catch (err) {
         console.error("Failed to fetch current user:", err);
-        // ❌ Do NOT clear localStorage here (prevents logout flicker)
+        // Do NOT clear localStorage — prevents logout flicker
       } finally {
         setLoading(false);
       }
@@ -69,21 +63,42 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  // 🔐 LOGIN
+  // ======================= LOGIN =======================
+  // Admin → /admin
+  // Everyone else (including child panel owners) → /home
+
   const login = (userData) => {
     const normalized = normalizeUser(userData);
-
     setUser(normalized);
     localStorage.setItem("user", JSON.stringify(normalized));
 
-    navigate("/home");
+    if (normalized.isAdmin) {
+      navigate("/admin");
+    } else {
+      navigate("/home");
+    }
   };
 
-  // 🚪 LOGOUT
+  // ======================= LOGOUT =======================
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
     navigate("/login");
+  };
+
+  // ======================= UPDATE USER =======================
+  // Silently updates user state + localStorage without navigating.
+  // Used by ChildPanelActivate and ChildPanelSettings after
+  // profile changes that need to reflect immediately in the UI.
+
+  const updateUser = (patch) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = normalizeUser({ ...prev, ...patch });
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (
@@ -92,6 +107,7 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         logout,
+        updateUser,
         isAuthenticated: !!user,
         loading,
       }}
@@ -101,5 +117,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// 🔹 Optional hook alias
 export const useAuthContext = () => useContext(AuthContext);
