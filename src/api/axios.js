@@ -1,6 +1,16 @@
 import axios from "axios";
 
-// Create an Axios instance
+const isChildPanelDomain = () => {
+  const host = window.location.hostname;
+  const mainDomain = "marinepanel.online";
+  if (
+    host === "localhost" ||
+    host === mainDomain ||
+    host === `www.${mainDomain}`
+  ) return false;
+  return true; // custom domain or subdomain of mainDomain
+};
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   headers: {
@@ -12,24 +22,29 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem("user"));
+    const user = JSON.parse(localStorage.getItem("user") || "null");
 
     if (user?.token) {
       config.headers.Authorization = `Bearer ${user.token}`;
     }
 
-    // 🔥 reseller domain detection
-    config.headers["x-reseller-domain"] = window.location.host;
+    const host = window.location.host;
+
+    if (isChildPanelDomain()) {
+      // Tell backend this is a child panel domain so it runs childPanelMiddleware
+      config.headers["x-childpanel-domain"] = host;
+    } else {
+      // Main platform — send for reseller subdomain detection
+      config.headers["x-reseller-domain"] = host;
+    }
 
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
