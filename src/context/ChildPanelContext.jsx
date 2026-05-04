@@ -105,6 +105,7 @@ const normalizeBranding = (data = {}) => ({
   domain:       data.domain       || null,
   serviceMode:  data.serviceMode  || "none",
   paymentMode:  data.paymentMode  || "none",
+  templateId:   data.templateId   || null,
   support: {
     whatsapp:        data.support?.whatsapp        || data.supportWhatsapp        || "",
     telegram:        data.support?.telegram        || data.supportTelegram        || "",
