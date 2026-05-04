@@ -6,8 +6,8 @@
 //   1. Uses domainType from CachedServicesContext instead of
 //      raw hostname string comparison — single source of truth
 //      for "main / reseller / childPanel" detection
-//   2. Child panel end users get a tailored nav (no Resellers tab,
-//      Services tab shown instead) matching their panel's scope
+//   2. Child panel end users now get a Reseller tab so they can
+//      access API and Reseller Panel — matching main platform scope
 //   3. Theme color falls back correctly across all three panel types:
 //      childPanel → childPanel.themeColor
 //      reseller   → reseller.themeColor
@@ -48,13 +48,14 @@ const RESELLER_LINKS = [
   { name: "Profile",  icon: "fas fa-user",               path: "/profile" },
 ];
 
-// Child panel end users: same as reseller — no Resellers tab,
-// Services instead. They belong to this child panel's scope only.
+// Child panel end users: they DO get a Reseller tab so they can
+// access API Access and Reseller Panel from the /resellers page.
+// This matches the main platform experience.
 const CHILD_PANEL_LINKS = [
   { name: "Home",     icon: "fas fa-home",               path: "/home" },
   { name: "Wallet",   icon: "fas fa-wallet",             path: "/wallet" },
   { name: "Orders",   icon: "fa-solid fa-cart-shopping", path: "/orders" },
-  { name: "Services", icon: "fas fa-list",               path: "/services" },
+  { name: "Reseller", icon: "fas fa-network-wired",      path: "/resellers" },
   { name: "Profile",  icon: "fas fa-user",               path: "/profile" },
 ];
 
