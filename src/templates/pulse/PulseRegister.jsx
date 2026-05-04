@@ -7,20 +7,22 @@ import API from "../../api/axios";
 import toast from "react-hot-toast";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from "react-icons/fi";
+import { FiLock, FiEye, FiEyeOff, FiMail, FiArrowRight } from "react-icons/fi";
 
 export default function PulseRegister() {
   const { login } = useAuth();
   const { childPanel } = useChildPanel();
   const navigate = useNavigate();
 
-  const [email, setEmail]             = useState("");
-  const [phone, setPhone]             = useState("");
-  const [pw, setPw]                   = useState("");
-  const [confirm, setConfirm]         = useState("");
-  const [showPw, setShowPw]           = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading]         = useState(false);
+  const [email, setEmail]               = useState("");
+  const [phone, setPhone]               = useState("");
+  const [phoneCountry, setPhoneCountry] = useState("us");
+  const [country, setCountry]           = useState({ name: "United States", code: "US" });
+  const [pw, setPw]                     = useState("");
+  const [confirm, setConfirm]           = useState("");
+  const [showPw, setShowPw]             = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
+  const [loading, setLoading]           = useState(false);
 
   const brand = {
     color: childPanel?.themeColor || "#6366f1",
@@ -30,12 +32,22 @@ export default function PulseRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !phone || !pw || !confirm) return toast.error("All fields required");
-    if (pw !== confirm) return toast.error("Passwords don't match");
-    if (pw.length < 6) return toast.error("Min 6 characters");
+    if (!email || !phone || !pw || !confirm)
+      return toast.error("Please fill all fields");
+    if (pw !== confirm)
+      return toast.error("Passwords don't match");
+    if (pw.length < 6)
+      return toast.error("Min 6 characters");
+
     setLoading(true);
     try {
-      const res = await API.post("/auth/register", { email, phone, password: pw });
+      const res = await API.post("/auth/register", {
+        email,
+        phone,
+        country: country.name,
+        countryCode: country.code,
+        password: pw,
+      });
       login(res.data);
       toast.success("Welcome!");
       navigate("/home");
@@ -46,25 +58,26 @@ export default function PulseRegister() {
     }
   };
 
-  const Field = ({ label, type, value, onChange, placeholder, showState, toggleShow }) => (
+  const inputClass =
+    "w-full px-4 py-3 rounded-xl text-sm border border-gray-100 bg-gray-50 outline-none text-gray-800 transition-colors";
+
+  const PwField = ({ label, value, onChange, show, toggle, placeholder }) => (
     <div className="space-y-1">
       <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{label}</label>
       <div className="relative">
         <input
-          type={type === "password" ? (showState ? "text" : "password") : type}
+          type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           required
-          className="w-full px-4 py-3 rounded-xl text-sm border border-gray-100 bg-gray-50 outline-none text-gray-800 transition-colors"
+          className={`${inputClass} pr-10`}
           onFocus={(e) => (e.target.style.borderColor = brand.color)}
           onBlur={(e) => (e.target.style.borderColor = "#f3f4f6")}
         />
-        {type === "password" && (
-          <button type="button" onClick={toggleShow} className="absolute right-4 top-3.5 text-gray-300">
-            {showState ? <FiEyeOff size={15} /> : <FiEye size={15} />}
-          </button>
-        )}
+        <button type="button" onClick={toggle} className="absolute right-3.5 top-3.5 text-gray-300">
+          {show ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+        </button>
       </div>
     </div>
   );
@@ -99,21 +112,45 @@ export default function PulseRegister() {
       <div className="flex-1 px-6 -mt-6 relative z-10 pb-8">
         <div className="bg-white rounded-3xl shadow-xl p-6 space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Field
-              label="Email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              placeholder="you@example.com"
-            />
+
+            {/* Email */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
+              <div className="relative">
+                <FiMail size={14} className="absolute left-4 top-3.5 text-gray-300" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className={`${inputClass} pl-10`}
+                  onFocus={(e) => (e.target.style.borderColor = brand.color)}
+                  onBlur={(e) => (e.target.style.borderColor = "#f3f4f6")}
+                />
+              </div>
+            </div>
 
             {/* Phone */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
               <PhoneInput
-                country="us"
+                country={phoneCountry}
                 value={phone}
-                onChange={setPhone}
+                enableSearch
+                searchPlaceholder="Search country..."
+                disableCountryGuess={true}
+                countryCodeEditable={false}
+                preferredCountries={["ke", "us", "gb"]}
+                onChange={(value, data) => {
+                  setPhone(value);
+                  const iso2 = (data?.countryCode || "us").toLowerCase().trim();
+                  setPhoneCountry(iso2);
+                  setCountry({
+                    name: data?.name || "",
+                    code: iso2.toUpperCase(),
+                  });
+                }}
                 inputStyle={{
                   width: "100%",
                   background: "#f9fafb",
@@ -130,26 +167,25 @@ export default function PulseRegister() {
                   borderRight: "none",
                   borderRadius: "12px 0 0 12px",
                 }}
+                dropdownStyle={{ background: "#fff", color: "#1f2937" }}
               />
             </div>
 
-            <Field
+            <PwField
               label="Password"
-              type="password"
               value={pw}
               onChange={setPw}
               placeholder="Min 6 characters"
-              showState={showPw}
-              toggleShow={() => setShowPw((s) => !s)}
+              show={showPw}
+              toggle={() => setShowPw((s) => !s)}
             />
-            <Field
+            <PwField
               label="Confirm Password"
-              type="password"
               value={confirm}
               onChange={setConfirm}
               placeholder="Repeat password"
-              showState={showConfirm}
-              toggleShow={() => setShowConfirm((s) => !s)}
+              show={showConfirm}
+              toggle={() => setShowConfirm((s) => !s)}
             />
 
             <button
@@ -161,14 +197,16 @@ export default function PulseRegister() {
                 boxShadow: `0 4px 20px ${brand.color}44`,
               }}
             >
-              {loading ? "Creating..." : <>Create Account <FiArrowRight size={15} /></>}
+              {loading ? "Creating..." : <><span>Create Account</span> <FiArrowRight size={15} /></>}
             </button>
           </form>
         </div>
 
         <p className="text-center text-sm text-gray-500 mt-5">
           Already have an account?{" "}
-          <Link to="/login" className="font-bold" style={{ color: brand.color }}>Sign in</Link>
+          <Link to="/login" className="font-bold" style={{ color: brand.color }}>
+            Sign in
+          </Link>
         </p>
       </div>
     </div>
