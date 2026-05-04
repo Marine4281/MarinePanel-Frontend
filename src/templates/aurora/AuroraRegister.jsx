@@ -7,20 +7,22 @@ import API from "../../api/axios";
 import toast from "react-hot-toast";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiUser } from "react-icons/fi";
+import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function AuroraRegister() {
   const { login } = useAuth();
   const { childPanel } = useChildPanel();
   const navigate = useNavigate();
 
-  const [email, setEmail]               = useState("");
-  const [phone, setPhone]               = useState("");
-  const [password, setPassword]         = useState("");
-  const [confirm, setConfirm]           = useState("");
-  const [showPw, setShowPw]             = useState(false);
-  const [showConfirm, setShowConfirm]   = useState(false);
-  const [loading, setLoading]           = useState(false);
+  const [email, setEmail]             = useState("");
+  const [phone, setPhone]             = useState("");
+  const [phoneCountry, setPhoneCountry] = useState("us");
+  const [country, setCountry]         = useState({ name: "United States", code: "US" });
+  const [password, setPassword]       = useState("");
+  const [confirm, setConfirm]         = useState("");
+  const [showPw, setShowPw]           = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading]         = useState(false);
 
   const brand = {
     name:  childPanel?.brandName  || "Panel",
@@ -37,7 +39,7 @@ export default function AuroraRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !phone || !password || !confirm)
-      return toast.error("All fields are required");
+      return toast.error("Please fill all fields");
     if (password !== confirm)
       return toast.error("Passwords do not match");
     if (password.length < 6)
@@ -45,7 +47,13 @@ export default function AuroraRegister() {
 
     setLoading(true);
     try {
-      const res = await API.post("/auth/register", { email, phone, password });
+      const res = await API.post("/auth/register", {
+        email,
+        phone,
+        country: country.name,
+        countryCode: country.code,
+        password,
+      });
       login(res.data);
       toast.success("Account created!");
       navigate("/home");
@@ -115,9 +123,22 @@ export default function AuroraRegister() {
             {/* Phone */}
             <div>
               <PhoneInput
-                country="us"
+                country={phoneCountry}
                 value={phone}
-                onChange={setPhone}
+                enableSearch
+                searchPlaceholder="Search country..."
+                disableCountryGuess={true}
+                countryCodeEditable={false}
+                preferredCountries={["ke", "us", "gb"]}
+                onChange={(value, data) => {
+                  setPhone(value);
+                  const iso2 = (data?.countryCode || "us").toLowerCase().trim();
+                  setPhoneCountry(iso2);
+                  setCountry({
+                    name: data?.name || "",
+                    code: iso2.toUpperCase(),
+                  });
+                }}
                 inputStyle={{
                   width: "100%",
                   background: "rgba(255,255,255,0.06)",
@@ -200,4 +221,4 @@ export default function AuroraRegister() {
       </div>
     </div>
   );
-}
+            }
