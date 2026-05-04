@@ -5,6 +5,7 @@
 // - NO top header, NO traditional footer
 // - Floating pill-shaped bottom navigation bar
 // - Minimal, card-based, mobile-first feel
+// - Reseller link added so child panel users can access API + Reseller Panel
 
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -18,11 +19,11 @@ const baseURL =
   "https://marinepanel-backend.onrender.com";
 
 const NAV = [
-  { label: "Home",     to: "/home",     icon: "fas fa-home" },
-  { label: "Orders",   to: "/orders",   icon: "fa-solid fa-cart-shopping" },
-  { label: "Wallet",   to: "/wallet",   icon: "fas fa-wallet" },
-  { label: "Services", to: "/services", icon: "fas fa-list" },
-  { label: "Profile",  to: "/profile",  icon: "fas fa-user" },
+  { label: "Home",     to: "/home",      icon: "fas fa-home" },
+  { label: "Orders",   to: "/orders",    icon: "fa-solid fa-cart-shopping" },
+  { label: "Wallet",   to: "/wallet",    icon: "fas fa-wallet" },
+  { label: "Reseller", to: "/resellers", icon: "fas fa-network-wired" },
+  { label: "Profile",  to: "/profile",   icon: "fas fa-user" },
 ];
 
 export default function PulseLayout({ children }) {
@@ -130,4 +131,4 @@ export default function PulseLayout({ children }) {
       </div>
     </div>
   );
-}
+                          }
