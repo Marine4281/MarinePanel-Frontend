@@ -2,6 +2,7 @@
 //
 // Tide template — classic header on top, footer on bottom.
 // Professional ocean blue, clean white content area.
+// Reseller link added so child panel users can access API + Reseller Panel.
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -20,6 +21,7 @@ const NAV = [
   { label: "Orders",   to: "/orders" },
   { label: "Services", to: "/services" },
   { label: "Wallet",   to: "/wallet" },
+  { label: "Reseller", to: "/resellers" },
   { label: "Profile",  to: "/profile" },
 ];
 
@@ -160,7 +162,7 @@ export default function TideLayout({ children }) {
             © {new Date().getFullYear()} {brand.name}. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            {NAV.slice(0, 4).map((item) => (
+            {NAV.slice(0, 5).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -175,4 +177,4 @@ export default function TideLayout({ children }) {
       </footer>
     </div>
   );
-}
+                }
