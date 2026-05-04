@@ -66,6 +66,9 @@ import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 import ChildPanelPage from "./pages/childpanel/ChildPanelPage";
 import ChildPanelServices from "./pages/childpanel/ChildPanelServices";
 
+// Template router — renders template version of page on child panel domains
+import TemplateRouter from "./templates/TemplateRouter";
+
 // Guards + utils
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
@@ -96,28 +99,120 @@ function AppRoutes() {
 
         {/* ================================================
             PUBLIC ROUTES
+            Login + Register go through TemplateRouter so
+            child panel domains show their branded template.
+            All other public routes are unchanged.
         ================================================ */}
 
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/login"
+          element={
+            <TemplateRouter
+              page="login"
+              defaultPage={<Login />}
+            />
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <TemplateRouter
+              page="register"
+              defaultPage={<Register />}
+            />
+          }
+        />
+
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/api-access" element={<ApiDocsPage />} />
 
         {/* ================================================
             USER ROUTES
+            Each route is wrapped with TemplateRouter so that
+            on a child panel domain the correct template page
+            renders instead of the default page.
+            ProtectedRoute is preserved as the outer guard.
         ================================================ */}
 
-        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-        <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-        <Route path="/resellers" element={<ProtectedRoute><Reseller /></ProtectedRoute>} />
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <TemplateRouter
+                page="home"
+                defaultPage={<Home />}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/wallet"
+          element={
+            <ProtectedRoute>
+              <TemplateRouter
+                page="wallet"
+                defaultPage={<Wallet />}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <TemplateRouter
+                page="orders"
+                defaultPage={<Orders />}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <TemplateRouter
+                page="profile"
+                defaultPage={<Profile />}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/services"
+          element={
+            <ProtectedRoute>
+              <TemplateRouter
+                page="services"
+                defaultPage={<Services />}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Resellers tab — templates don't override this.
+            CP end users cannot access child panel activation
+            but CAN see resellers (they can become resellers
+            under the CP owner). Default page is always used. */}
+        <Route
+          path="/resellers"
+          element={
+            <ProtectedRoute>
+              <Reseller />
+            </ProtectedRoute>
+          }
+        />
 
         {/* ================================================
-            RESELLER ROUTES
+            RESELLER ROUTES — unchanged
         ================================================ */}
 
         <Route path="/reseller" element={<ProtectedRoute><Reseller /></ProtectedRoute>} />
@@ -131,14 +226,14 @@ function AppRoutes() {
         <Route path="/end-user/dashboard" element={<ProtectedRoute><EndUserDashboard /></ProtectedRoute>} />
 
         {/* ================================================
-            CHILD PANEL ROUTES
+            CHILD PANEL ROUTES — unchanged
+            These are the CP owner admin routes, not end-user
+            routes, so templates do NOT apply here.
         ================================================ */}
 
-        {/* Entry point — any logged in user can see the activate page */}
         <Route path="/child-panel" element={<ProtectedRoute><ChildPanelPage /></ProtectedRoute>} />
         <Route path="/child-panel/activate" element={<ProtectedRoute><ChildPanelActivate /></ProtectedRoute>} />
 
-        {/* These require isChildPanel + childPanelIsActive */}
         <Route path="/child-panel/dashboard" element={<ChildPanelRoute><ChildPanelDashboard /></ChildPanelRoute>} />
         <Route path="/child-panel/users" element={<ChildPanelRoute><ChildPanelUsers /></ChildPanelRoute>} />
         <Route path="/child-panel/orders" element={<ChildPanelRoute><ChildPanelOrders /></ChildPanelRoute>} />
@@ -149,7 +244,7 @@ function AppRoutes() {
         <Route path="/child-panel/services" element={<ChildPanelRoute><ChildPanelServices /></ChildPanelRoute>} />
 
         {/* ================================================
-            ADMIN ROUTES
+            ADMIN ROUTES — unchanged
         ================================================ */}
 
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -176,11 +271,11 @@ function AppRoutes() {
 /* ======================================================
    ROOT APP
    Provider order matters:
-   AuthProvider     — outermost, everything depends on it
-   ResellerProvider — reads domain, sets reseller branding
+   AuthProvider       — outermost, everything depends on it
+   ResellerProvider   — reads domain, sets reseller branding
    ChildPanelProvider — reads domain, sets cp branding
    CachedServicesProvider — reads domain type, fetches services
-   ServicesProvider — same but for the other services context
+   ServicesProvider   — same but for the other services context
 ====================================================== */
 
 export default function App() {
@@ -199,4 +294,4 @@ export default function App() {
       </AuthProvider>
     </QueryClientProvider>
   );
-        }
+}
