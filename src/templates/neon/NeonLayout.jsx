@@ -2,6 +2,7 @@
 //
 // Neon template — persistent left sidebar, dark background,
 // glowing neon accents. No floating nav, no top header bar.
+// Reseller link added so child panel users can access API + Reseller Panel.
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -11,7 +12,7 @@ import API from "../../api/axios";
 import { io } from "socket.io-client";
 import {
   FiHome, FiList, FiDollarSign, FiGlobe, FiUser,
-  FiCode, FiLogOut, FiMenu, FiX,
+  FiCode, FiLogOut, FiMenu, FiX, FiShare2,
 } from "react-icons/fi";
 
 const baseURL =
@@ -23,6 +24,7 @@ const NAV = [
   { label: "Orders",   to: "/orders",     icon: <FiList size={17} /> },
   { label: "Wallet",   to: "/wallet",     icon: <FiDollarSign size={17} /> },
   { label: "Services", to: "/services",   icon: <FiGlobe size={17} /> },
+  { label: "Reseller", to: "/resellers",  icon: <FiShare2 size={17} /> },
   { label: "API",      to: "/api-access", icon: <FiCode size={17} /> },
   { label: "Profile",  to: "/profile",    icon: <FiUser size={17} /> },
 ];
@@ -43,7 +45,6 @@ export default function NeonLayout({ children }) {
     logo:  childPanel?.logo       || null,
   };
 
-  // Use a neon-ified version of the theme color for glow
   const neon = brand.color;
 
   useEffect(() => {
@@ -101,25 +102,25 @@ export default function NeonLayout({ children }) {
       </div>
 
       {/* Balance */}
-      <div className="px-5 py-3" style={{ borderBottom: `1px solid ${neon}10` }}>
-        <p className="text-xs" style={{ color: `${neon}66` }}>Balance</p>
+      <div className="px-5 py-3" style={{ borderBottom: `1px solid ${neon}12` }}>
+        <p className="text-xs mb-1" style={{ color: "#3a3a5a" }}>Balance</p>
         <p
           className="text-lg font-black"
-          style={{ color: neon, textShadow: `0 0 16px ${neon}88` }}
+          style={{ color: neon, textShadow: `0 0 10px ${neon}66` }}
         >
           ${Number(balance).toFixed(2)}
         </p>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {NAV.map((item) => {
           const active = location.pathname === item.to;
           return (
             <Link
               key={item.to}
               to={item.to}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-semibold"
               style={{
                 background: active ? `${neon}14` : "transparent",
                 color: active ? neon : "#4a4a6a",
@@ -164,10 +165,7 @@ export default function NeonLayout({ children }) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div
-            className="flex flex-col"
-            style={{ width: 260 }}
-          >
+          <div className="flex flex-col" style={{ width: 260 }}>
             <Sidebar mobile />
           </div>
           <div className="flex-1" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setMobileOpen(false)} />
@@ -175,10 +173,7 @@ export default function NeonLayout({ children }) {
       )}
 
       {/* Main content */}
-      <div
-        className="flex-1 flex flex-col min-h-screen"
-        style={{ marginLeft: 0 }}
-      >
+      <div className="flex-1 flex flex-col min-h-screen">
         {/* Mobile topbar */}
         <div
           className="lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-20"
@@ -202,10 +197,7 @@ export default function NeonLayout({ children }) {
         </div>
 
         {/* Page */}
-        <main
-          className="flex-1 p-4 lg:p-6 overflow-y-auto"
-          style={{ paddingLeft: undefined }}
-        >
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <div style={{ maxWidth: 860, marginLeft: "auto", marginRight: "auto" }}>
             {children}
           </div>
@@ -220,4 +212,4 @@ export default function NeonLayout({ children }) {
       `}</style>
     </div>
   );
-          }
+    }
