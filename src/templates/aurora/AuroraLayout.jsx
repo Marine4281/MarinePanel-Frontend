@@ -6,6 +6,7 @@
 // - Hidden slide-in drawer triggered by ≡ (hamburger) button
 // - Drawer overlays content from the left
 // - Wallet balance shown as a pill in the top-right corner
+// - Reseller link added so child panel users can access API + Reseller Panel
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ import { io } from "socket.io-client";
 import {
   FiMenu, FiX, FiHome, FiShoppingBag, FiList,
   FiUser, FiLogOut, FiGlobe, FiCode, FiDollarSign,
+  FiShare2,
 } from "react-icons/fi";
 
 const baseURL =
@@ -23,12 +25,13 @@ const baseURL =
   "https://marinepanel-backend.onrender.com";
 
 const NAV = [
-  { label: "Home",     to: "/home",     icon: <FiHome size={18} /> },
-  { label: "Orders",   to: "/orders",   icon: <FiList size={18} /> },
-  { label: "Services", to: "/services", icon: <FiGlobe size={18} /> },
-  { label: "Wallet",   to: "/wallet",   icon: <FiDollarSign size={18} /> },
+  { label: "Home",     to: "/home",      icon: <FiHome size={18} /> },
+  { label: "Orders",   to: "/orders",    icon: <FiList size={18} /> },
+  { label: "Services", to: "/services",  icon: <FiGlobe size={18} /> },
+  { label: "Wallet",   to: "/wallet",    icon: <FiDollarSign size={18} /> },
+  { label: "Reseller", to: "/resellers", icon: <FiShare2 size={18} /> },
   { label: "API",      to: "/api-access", icon: <FiCode size={18} /> },
-  { label: "Profile",  to: "/profile",  icon: <FiUser size={18} /> },
+  { label: "Profile",  to: "/profile",   icon: <FiUser size={18} /> },
 ];
 
 export default function AuroraLayout({ children }) {
@@ -192,4 +195,4 @@ export default function AuroraLayout({ children }) {
       </div>
     </div>
   );
-}
+        }
