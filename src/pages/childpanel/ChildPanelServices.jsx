@@ -1,55 +1,24 @@
 // src/pages/childpanel/ChildPanelServices.jsx
-//
-// Child Panel Owner — Full Service Management
-//
-// This page gives the CP owner full admin-level control:
-//   • View all services in an admin-style table (grouped by category)
-//   • Edit any service (name, rate, category, platform, min/max, description)
-//   • Delete services (single or bulk)
-//   • Toggle services on/off (single or bulk)
-//   • Select services (single or all)
-//   • Manually add new services
-//   • Import services from own provider APIs (Providers tab)
-//   • Set commission % — end users see cost + commission
-//
-// Service Sources:
-//   • "platform" — imported from main panel (admin toggled availableToChildPanels)
-//   • "own"      — imported from CP owner's own provider API connections
-//   • "manual"   — manually added by CP owner directly
-//
-// Commission:
-//   CP owner sets their own % markup (childPanelCommissionRate on User doc).
-//   End users always see: service.rate + commission%.
-//   This is applied in serviceController.js on the public /services endpoint.
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
 
-// Child-panel service components
 import CPCommissionBar from "../../components/childpanel/services/CPCommissionBar";
 import CPServiceTable from "../../components/childpanel/services/CPServiceTable";
 import CPServiceForm from "../../components/childpanel/services/CPServiceForm";
 import CPBulkActionBar from "../../components/childpanel/services/CPBulkActionBar";
 import CPServiceSearchBar from "../../components/childpanel/services/CPServiceSearchBar";
 import CPDescriptionModal from "../../components/childpanel/services/CPDescriptionModal";
-
-// Import from providers tab (reuse existing logic in sub-component)
 import CPProvidersImport from "../../components/childpanel/services/CPProvidersImport";
+import CPRateChangesPanel from "../../components/childpanel/services/CPRateChangesPanel";
+import CPDeletedSyncPanel from "../../components/childpanel/services/CPDeletedSyncPanel";
 
 import {
-  FiPlus,
-  FiRefreshCw,
-  FiLink,
-  FiGrid,
-  FiSettings,
-  FiZap,
+  FiPlus, FiRefreshCw, FiLink, FiGrid, FiZap,
+  FiTrendingUp, FiAlertTriangle,
 } from "react-icons/fi";
-
-// ─────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────
 
 function Spinner() {
   return (
@@ -89,39 +58,27 @@ function EmptyState({ onAdd, onGoProviders }) {
   );
 }
 
-// ─────────────────────────────────────────
-// TABS
-// ─────────────────────────────────────────
-
 const TABS = [
-  { key: "services", label: "My Services", icon: <FiGrid size={14} /> },
-  { key: "providers", label: "Import from Providers", icon: <FiLink size={14} /> },
+  { key: "services",      label: "My Services",          icon: <FiGrid size={14} /> },
+  { key: "providers",     label: "Import from Providers", icon: <FiLink size={14} /> },
+  { key: "rate-changes",  label: "Rate Changes",          icon: <FiTrendingUp size={14} /> },
+  { key: "deleted-sync",  label: "Deleted Sync",          icon: <FiAlertTriangle size={14} /> },
 ];
-
-// ─────────────────────────────────────────
-// MAIN PAGE
-// ─────────────────────────────────────────
 
 export default function ChildPanelServices() {
   const [activeTab, setActiveTab] = useState("services");
 
-  // Services data
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Commission
+  const [services, setServices]   = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [commission, setCommission] = useState(0);
 
-  // Table state
   const [selectedIds, setSelectedIds] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch]           = useState("");
 
-  // Modals
-  const [editService, setEditService] = useState(null);   // null = closed, service = edit mode
-  const [addOpen, setAddOpen] = useState(false);
-  const [descText, setDescText] = useState(null);
+  const [editService, setEditService] = useState(null);
+  const [addOpen, setAddOpen]         = useState(false);
+  const [descText, setDescText]       = useState(null);
 
-  // ── Load services & commission ──
   const loadServices = useCallback(async () => {
     setLoading(true);
     try {
@@ -138,11 +95,8 @@ export default function ChildPanelServices() {
     }
   }, []);
 
-  useEffect(() => {
-    loadServices();
-  }, [loadServices]);
+  useEffect(() => { loadServices(); }, [loadServices]);
 
-  // ── Filter & group ──
   const filtered = useMemo(() => {
     if (!search.trim()) return services;
     const q = search.toLowerCase();
@@ -165,7 +119,6 @@ export default function ChildPanelServices() {
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered]);
 
-  // ── Handlers ──
   const handleToggle = async (id) => {
     try {
       await API.patch(`/cp/services/${id}/toggle`);
@@ -190,16 +143,13 @@ export default function ChildPanelServices() {
 
   const handleSaved = (saved, isEdit) => {
     if (isEdit) {
-      setServices((prev) =>
-        prev.map((s) => (s._id === saved._id ? { ...s, ...saved } : s))
-      );
+      setServices((prev) => prev.map((s) => (s._id === saved._id ? { ...s, ...saved } : s)));
     } else {
       setServices((prev) => [saved, ...prev]);
     }
   };
 
   const handleImportDone = () => {
-    // After importing from providers, switch to services tab and refresh
     setActiveTab("services");
     loadServices();
   };
@@ -207,7 +157,7 @@ export default function ChildPanelServices() {
   return (
     <ChildPanelLayout>
       <div className="max-w-7xl mx-auto space-y-5 px-4 py-6">
-        {/* Page Header */}
+        {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Services</h1>
@@ -236,7 +186,7 @@ export default function ChildPanelServices() {
         <CPCommissionBar commission={commission} onUpdate={setCommission} />
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -256,38 +206,22 @@ export default function ChildPanelServices() {
         {/* ── TAB: MY SERVICES ── */}
         {activeTab === "services" && (
           <div className="space-y-4">
-            {/* Search */}
             <CPServiceSearchBar value={search} onChange={setSearch} />
 
-            {/* Stats */}
             {!loading && (
               <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>
-                  <strong className="text-gray-800">{services.length}</strong> total
-                </span>
-                <span>
-                  <strong className="text-green-600">
-                    {services.filter((s) => s.status).length}
-                  </strong>{" "}
-                  active
-                </span>
-                <span>
-                  <strong className="text-gray-400">
-                    {services.filter((s) => !s.status).length}
-                  </strong>{" "}
-                  hidden
-                </span>
+                <span><strong className="text-gray-800">{services.length}</strong> total</span>
+                <span><strong className="text-green-600">{services.filter((s) => s.status).length}</strong> active</span>
+                <span><strong className="text-gray-400">{services.filter((s) => !s.status).length}</strong> hidden</span>
               </div>
             )}
 
-            {/* Bulk Bar */}
             <CPBulkActionBar
               selectedIds={selectedIds}
               setSelectedIds={setSelectedIds}
               onRefresh={loadServices}
             />
 
-            {/* Table */}
             {loading ? (
               <Spinner />
             ) : services.length === 0 ? (
@@ -314,9 +248,19 @@ export default function ChildPanelServices() {
         {activeTab === "providers" && (
           <CPProvidersImport onImportDone={handleImportDone} />
         )}
+
+        {/* ── TAB: RATE CHANGES ── */}
+        {activeTab === "rate-changes" && (
+          <CPRateChangesPanel onSynced={loadServices} />
+        )}
+
+        {/* ── TAB: DELETED SYNC ── */}
+        {activeTab === "deleted-sync" && (
+          <CPDeletedSyncPanel onDeleted={loadServices} />
+        )}
       </div>
 
-      {/* ── MODALS ── */}
+      {/* Modals */}
       {(addOpen || editService) && (
         <CPServiceForm
           service={editService || null}
@@ -333,4 +277,4 @@ export default function ChildPanelServices() {
       )}
     </ChildPanelLayout>
   );
-  }
+    }
