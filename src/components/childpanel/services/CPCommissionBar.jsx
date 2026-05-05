@@ -1,7 +1,4 @@
 // src/components/childpanel/services/CPCommissionBar.jsx
-// Sticky top bar showing current commission % with inline edit.
-// End users see: service.rate + commission%
-
 import { useState } from "react";
 import { FiPercent, FiEdit2, FiCheck, FiX, FiInfo } from "react-icons/fi";
 import API from "../../../api/axios";
@@ -14,12 +11,12 @@ export default function CPCommissionBar({ commission, onUpdate }) {
 
   const handleSave = async () => {
     const parsed = Number(val);
-    if (isNaN(parsed) || parsed < 0) return toast.error("Enter a valid commission %");
+    if (isNaN(parsed) || parsed < 0) return toast.error("Enter a valid %");
     setSaving(true);
     try {
       await API.patch("/cp/services/commission", { commission: parsed });
       onUpdate(parsed);
-      toast.success("Commission updated");
+      toast.success("Commission updated — end users will see new prices");
       setEditing(false);
     } catch {
       toast.error("Failed to update commission");
@@ -33,11 +30,13 @@ export default function CPCommissionBar({ commission, onUpdate }) {
       <div className="flex items-center gap-2">
         <FiPercent size={16} />
         <span className="font-semibold text-sm">Your Commission Markup</span>
-        <div className="relative group">
-          <FiInfo size={13} className="opacity-70 cursor-help" />
-          <div className="absolute left-5 top-0 hidden group-hover:block w-64 bg-gray-900 text-white text-xs rounded-lg p-2.5 z-20 shadow-xl">
-            This % is added on top of every service rate before your end users see the price.
-            e.g. cost $1.00 + 20% = $1.20 shown to end user.
+        <div className="relative group cursor-help">
+          <FiInfo size={13} className="opacity-70" />
+          <div className="absolute left-6 top-0 hidden group-hover:block w-72 bg-gray-900 text-white text-xs rounded-lg p-3 z-20 shadow-xl leading-relaxed">
+            <p className="font-semibold mb-1">How commission works:</p>
+            <p>• Your cost rate + <strong>{commission}%</strong> = end-user price</p>
+            <p>• Example: cost $1.00 + {commission}% = ${(1 + (1 * (commission ?? 0)) / 100).toFixed(4)}</p>
+            <p className="mt-1 text-blue-300">Changes apply instantly to your end users.</p>
           </div>
         </div>
       </div>
@@ -52,30 +51,24 @@ export default function CPCommissionBar({ commission, onUpdate }) {
               step={0.1}
               value={val}
               onChange={(e) => setVal(e.target.value)}
-              className="w-24 border border-blue-300 bg-blue-500/40 text-white rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-blue-200"
+              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditing(false); }}
+              className="w-24 border border-blue-300 bg-blue-500/40 text-white rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
             />
             <span className="text-sm font-bold">%</span>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition disabled:opacity-60"
-            >
+            <button onClick={handleSave} disabled={saving}
+              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition disabled:opacity-60">
               <FiCheck size={14} />
             </button>
-            <button
-              onClick={() => { setEditing(false); setVal(commission ?? 0); }}
-              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition"
-            >
+            <button onClick={() => { setEditing(false); setVal(commission ?? 0); }}
+              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition">
               <FiX size={14} />
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold">{commission ?? 0}%</span>
-            <button
-              onClick={() => { setEditing(true); setVal(commission ?? 0); }}
-              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition"
-            >
+            <button onClick={() => { setEditing(true); setVal(commission ?? 0); }}
+              className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition">
               <FiEdit2 size={14} />
             </button>
           </div>
@@ -83,4 +76,4 @@ export default function CPCommissionBar({ commission, onUpdate }) {
       </div>
     </div>
   );
-            }
+}
