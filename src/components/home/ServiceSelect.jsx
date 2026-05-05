@@ -76,7 +76,7 @@ const ServiceSelect = ({
                     }}
                     className={`p-3 cursor-pointer transition ${
                       service === s.name
-                        ? "bg-blue-500 text-white"
+                        ? "bg-orange-500 text-white"
                         : "hover:bg-gray-100"
                     }`}
                   >
