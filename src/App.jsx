@@ -89,10 +89,12 @@ const MAIN_DOMAIN = "marinepanel.online";
 
 function AppRoutes() {
   const authContext = useAuthContext();
+  const { user, loading: authLoading } = authContext;
+
   const servicesContext = useCachedServices();
   const { reseller, ready } = useReseller();
-
-  useEffect(() => {
+  
+   useEffect(() => {
     const cleanup = setupNetworkManager(authContext, servicesContext);
     return cleanup;
   }, [authContext, servicesContext]);
@@ -104,11 +106,7 @@ function AppRoutes() {
   const isResellerDomain =
     ready &&
     reseller?.domain &&
-    !reseller.domain.endsWith(MAIN_DOMAIN) === false
-      ? false
-      : ready &&
-        reseller?.domain &&
-        reseller.domain !== MAIN_DOMAIN;
+    reseller.domain !== MAIN_DOMAIN;
 
   return (
     <>
@@ -128,10 +126,10 @@ function AppRoutes() {
         <Route
           path="/"
           element={
-            !ready
-              ? null                           // wait for branding fetch — renders nothing briefly
-              : isResellerDomain
-              ? <Navigate to="/login" replace />
+            isResellerDomain
+              ? user
+                ? <Navigate to="/home" replace />
+                : <Navigate to="/login" replace />
               : <LandingPage />
           }
         />
