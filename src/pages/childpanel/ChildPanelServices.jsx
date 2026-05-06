@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
+import CPInlineAddService from "../../components/childpanel/services/CPInlineAddService";
 
 import CPCommissionBar from "../../components/childpanel/services/CPCommissionBar";
 import CPServiceTable from "../../components/childpanel/services/CPServiceTable";
@@ -206,8 +207,11 @@ export default function ChildPanelServices() {
         {/* ── TAB: MY SERVICES ── */}
         {activeTab === "services" && (
           <div className="space-y-4">
-            <CPServiceSearchBar value={search} onChange={setSearch} />
+            {/* ── INLINE ADD SERVICE FORM (always visible at top) ── */}
+            <CPInlineAddService onAdded={(svc) => setServices((prev) => [svc, ...prev])} />
 
+            {/* Search */}
+            <CPServiceSearchBar value={search} onChange={setSearch} />
             {!loading && (
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <span><strong className="text-gray-800">{services.length}</strong> total</span>
