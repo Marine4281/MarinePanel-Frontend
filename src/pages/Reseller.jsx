@@ -13,6 +13,10 @@ const Reseller = () => {
   // child panels. All other panel types (main platform, reseller domain) show it normally.
   const isChildPanelEndUser = domainType === "childPanel";
 
+  // T&C link only shown on main platform — reseller/CP domains use their own brand
+  // and the link would expose the parent platform name
+  const isMainPlatform = domainType === "main" || !domainType;
+
   const allItems = [
     {
       title: "Services",
@@ -52,7 +56,7 @@ const Reseller = () => {
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 p-4 max-w-6xl mx-auto w-full pb-24">
+      <main className="flex-1 p-4 max-w-6xl mx-auto w-full pb-28">
         <h1 className="text-2xl font-bold mb-6 text-gray-800">
           Reseller Tools
         </h1>
@@ -80,6 +84,18 @@ const Reseller = () => {
             </Link>
           ))}
         </div>
+
+        {/* T&C link — main platform only, subtle at the bottom */}
+        {isMainPlatform && (
+          <div className="mt-10 text-center">
+            <Link
+              to="/terms"
+              className="text-xs text-gray-400 hover:text-orange-500 underline underline-offset-4 transition"
+            >
+              Terms & Conditions
+            </Link>
+          </div>
+        )}
       </main>
 
       <Footer />
