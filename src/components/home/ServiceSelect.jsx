@@ -1,69 +1,63 @@
+// src/components/home/ServiceSelect.jsx
 import { useState, useRef, useEffect } from "react";
 
-const ServiceSelect = ({
-  service,
-  setService,
-  servicesList,
-  selectedServiceData,
-}) => {
+const ServiceSelect = ({ service, setService, servicesList, selectedServiceData }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef();
 
   const selected = servicesList.find((s) => s.name === service);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!dropdownRef.current?.contains(e.target)) {
-        setOpen(false);
-      }
+      if (!dropdownRef.current?.contains(e.target)) setOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter services
-  const filteredServices = servicesList.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase())
+  const filteredServices = servicesList.filter(
+    (s) =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      String(s.serviceId || "").includes(search)
   );
 
   return (
     <>
-      {/* Dropdown */}
       <div className="mb-5 w-[90%]" ref={dropdownRef}>
-        <label className="font-semibold block mb-2 text-gray-700">
-          Service
-        </label>
+        <label className="font-semibold block mb-2 text-gray-700">Service</label>
 
-        {/* Selected Box */}
         <div
           onClick={() => setOpen(!open)}
           className="p-3 rounded-2xl border bg-white shadow-sm cursor-pointer flex justify-between items-center"
         >
-          <span className={selected ? "text-gray-800" : "text-gray-400"}>
-            {selected ? selected.name : "✨ Select service"}
+          <span className={selected ? "text-gray-800 flex items-center gap-2" : "text-gray-400"}>
+            {selected ? (
+              <>
+                <span className="bg-orange-100 text-orange-600 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                  #{selected.serviceId}
+                </span>
+                {selected.name}
+              </>
+            ) : (
+              "✨ Select service"
+            )}
           </span>
-          <span className={`transition ${open ? "rotate-180" : ""}`}>
-            ▼
-          </span>
+          <span className={`transition ${open ? "rotate-180" : ""}`}>▼</span>
         </div>
 
-        {/* Dropdown Menu */}
         {open && (
           <div className="mt-2 bg-white border rounded-2xl shadow-lg max-h-64 overflow-hidden">
-            {/* Search */}
             <div className="p-2 border-b">
               <input
                 type="text"
-                placeholder="Search service..."
+                placeholder="Search by name or ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full p-2 rounded-lg border outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Options */}
             <div className="max-h-52 overflow-y-auto">
               {filteredServices.length > 0 ? (
                 filteredServices.map((s) => (
@@ -74,30 +68,34 @@ const ServiceSelect = ({
                       setOpen(false);
                       setSearch("");
                     }}
-                    className={`p-3 cursor-pointer transition ${
+                    className={`p-3 cursor-pointer transition flex items-center gap-2 ${
                       service === s.name
                         ? "bg-green-500 text-white"
                         : "hover:bg-gray-100"
                     }`}
                   >
-                    {s.name}
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                        service === s.name
+                          ? "bg-white/20 text-white"
+                          : "bg-orange-100 text-orange-600"
+                      }`}
+                    >
+                      #{s.serviceId}
+                    </span>
+                    <span className="text-sm">{s.name}</span>
                   </div>
                 ))
               ) : (
-                <div className="p-3 text-gray-400 text-center">
-                  No services found
-                </div>
+                <div className="p-3 text-gray-400 text-center">No services found</div>
               )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Description */}
       <div className="mb-5">
-        <label className="font-semibold block mb-2 text-gray-700">
-          Description
-        </label>
+        <label className="font-semibold block mb-2 text-gray-700">Description</label>
         <textarea
           className="p-3 w-[90%] rounded-2xl border bg-gray-50"
           rows={3}
@@ -106,11 +104,8 @@ const ServiceSelect = ({
         />
       </div>
 
-      {/* Min / Max */}
       <div className="mb-5">
-        <label className="font-semibold block mb-2 text-gray-700">
-          Min / Max Order
-        </label>
+        <label className="font-semibold block mb-2 text-gray-700">Min / Max Order</label>
         <input
           type="text"
           className="p-3 w-[90%] rounded-2xl border bg-gray-50"
