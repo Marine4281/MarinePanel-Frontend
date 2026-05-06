@@ -1,31 +1,14 @@
 // src/pages/LandingPage.jsx
-
-import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 import { useReseller } from "../context/ResellerContext";
-import { useChildPanel } from "../context/ChildPanelContext";
-import { useCachedServices } from "../context/CachedServicesContext";
 
 const LandingPage = () => {
-  const navigate = useNavigate();
   const { reseller } = useReseller();
-  const { childPanel } = useChildPanel();
-  const { domainType } = useCachedServices();
 
-  // Child panel domain — login page IS the landing page.
-  // Redirect immediately so users never see the main landing.
-  useEffect(() => {
-    if (domainType === "childPanel") {
-      navigate("/login", { replace: true });
-    }
-  }, [domainType, navigate]);
-
-  // Render nothing while redirecting to avoid flash
-  if (domainType === "childPanel") return null;
-
-  // Main platform or reseller — use their branding
+  // Fallbacks
   const brandName = reseller?.brandName || "MarinePanel";
-  const themeColor = reseller?.themeColor || "#f97316";
+  const themeColor = reseller?.themeColor || "#f97316"; // orange fallback
   const logo = reseller?.logo || null;
 
   return (
@@ -77,32 +60,20 @@ const LandingPage = () => {
         {/* Stats / Features Cards */}
         <div className="flex flex-wrap justify-center gap-8">
           <div className="bg-orange-500 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">
-              2,200,000+
-            </h2>
-            <p className="text-white mt-2 text-center font-semibold">
-              Total Orders Completed
-            </p>
+            <h2 className="text-3xl font-bold text-white drop-shadow-md">2,200,000+</h2>
+            <p className="text-white mt-2 text-center font-semibold">Total Orders Completed</p>
           </div>
           <div className="bg-orange-600 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
             <h2 className="text-3xl font-bold text-white drop-shadow-md">✔️</h2>
-            <p className="text-white mt-2 text-center font-semibold">
-              We're the Real Providers
-            </p>
+            <p className="text-white mt-2 text-center font-semibold">We’re the Real Providers</p>
           </div>
           <div className="bg-orange-500 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
-            <h2 className="text-3xl font-bold text-white drop-shadow-md">
-              24/7
-            </h2>
-            <p className="text-white mt-2 text-center font-semibold">
-              Customer Support
-            </p>
+            <h2 className="text-3xl font-bold text-white drop-shadow-md">24/7</h2>
+            <p className="text-white mt-2 text-center font-semibold">Customer Support</p>
           </div>
           <div className="bg-orange-600 rounded-2xl p-6 w-48 flex flex-col items-center animate-float shadow-2xl hover:scale-110 transition-transform duration-300">
             <h2 className="text-3xl font-bold text-white drop-shadow-md">💳</h2>
-            <p className="text-white mt-2 text-center font-semibold">
-              All Payments Supported
-            </p>
+            <p className="text-white mt-2 text-center font-semibold">All Payments Supported</p>
           </div>
         </div>
       </section>
@@ -112,7 +83,7 @@ const LandingPage = () => {
         className="mt-auto w-full text-center py-6 font-medium text-white"
         style={{ backgroundColor: themeColor }}
       >
-        &copy; {new Date().getFullYear()} {brandName}. All rights reserved.
+        &copy; 2026 {brandName}. All rights reserved.
       </footer>
 
       {/* Animations */}
