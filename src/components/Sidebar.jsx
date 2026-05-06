@@ -8,6 +8,9 @@ const links = [
   { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
   { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
 
+  // ✅ NEW: Categories (ADDED HERE)
+  { name: "Categories", icon: "fa-solid fa-tags", path: "/admin/categories" },
+
   // ✅ NEW PAGE: Provider Sync
   { name: "Provider Sync", icon: "fa-solid fa-arrows-rotate", path: "/admin/provider-sync" },
 
@@ -17,7 +20,7 @@ const links = [
   // ✅ NEW PAGE: Resellers
   { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
 
-  // ✅ NEW PAGE: Child Panels (ADDED)
+  // ✅ NEW PAGE: Child Panels
   { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/admin/child-panels" },
 
   { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
