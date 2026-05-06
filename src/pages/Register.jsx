@@ -453,6 +453,20 @@ const Register = () => {
           </button>
         </div>
 
+                {/* ── Terms notice (default layout) ── */}
+        <p className="text-gray-400 text-xs text-center leading-relaxed">
+          By registering you accept our{" "}
+          <Link
+            to="/terms-public"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: branding.themeColor }}
+            className="underline underline-offset-2 font-medium hover:opacity-80"
+          >
+            Terms & Conditions
+          </Link>
+        </p>
+
         {/* Submit */}
         <button
           type="submit"
