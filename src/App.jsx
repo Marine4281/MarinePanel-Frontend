@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import TermsAndConditions from "./pages/TermsAndConditions";
 
 // User pages
 import Home from "./pages/Home";
@@ -129,6 +130,7 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/api-access" element={<ApiDocsPage />} />
+        <Route path="/terms" element={<ProtectedRoute><TermsAndConditions /></ProtectedRoute>} />
 
         {/* ================================================
             USER ROUTES
