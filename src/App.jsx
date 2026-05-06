@@ -80,6 +80,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const client = new QueryClient();
 
+const { reseller, ready } = useReseller();
+const isResellerDomain = ready && reseller?.domain && reseller.domain !== "marinepanel.online";
+
+
 /* ======================================================
    INTERNAL ROUTES COMPONENT
    Sits inside all providers so it can consume any context
@@ -106,6 +110,7 @@ function AppRoutes() {
             child panel domains show their branded template.
             All other public routes are unchanged.
         ================================================ */}
+         <Route path="/" element={isResellerDomain? <Navigate to="/login" replace />: <LandingPage />}/>
 
         <Route path="/" element={<LandingPage />} />
 
