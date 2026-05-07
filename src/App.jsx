@@ -1,9 +1,9 @@
 // src/App.jsx
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import { CachedServicesProvider, useCachedServices } from "./context/CachedServicesContext";
-import { ResellerProvider, useReseller } from "./context/ResellerContext";
+import { ResellerProvider } from "./context/ResellerContext";
 import { ChildPanelProvider } from "./context/ChildPanelContext";
 import { ServicesProvider } from "./context/ServicesContext";
 import { Toaster } from "react-hot-toast";
@@ -18,6 +18,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import TermsPublic from "./pages/TermsPublic";
+
 
 // User pages
 import Home from "./pages/Home";
@@ -41,6 +42,8 @@ import AdminUserDetails from "./components/AdminUserDetails";
 import AdminChildPanels from "./pages/AdminChildPanels";
 import AdminChildPanelDetails from "./pages/AdminChildPanelDetails";
 import ProviderSync from "./pages/ProviderSync";
+import AdminCategoryMeta from "./pages/AdminCategoryMeta";
+import Financial from "./pages/Financial";
 
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
@@ -79,9 +82,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const client = new QueryClient();
 
-// The main platform domain — visitors on any other domain are on a reseller domain
-const MAIN_DOMAIN = "marinepanel.online";
-
 /* ======================================================
    INTERNAL ROUTES COMPONENT
    Sits inside all providers so it can consume any context
@@ -90,25 +90,11 @@ const MAIN_DOMAIN = "marinepanel.online";
 function AppRoutes() {
   const authContext = useAuthContext();
   const servicesContext = useCachedServices();
-  const { reseller, ready } = useReseller();
 
   useEffect(() => {
     const cleanup = setupNetworkManager(authContext, servicesContext);
     return cleanup;
   }, [authContext, servicesContext]);
-
-  // True once ResellerContext has finished its branding fetch AND
-  // the current hostname is not the main platform domain.
-  // This covers both custom domains (smmpro.com) and subdomains
-  // (smmlord.marinepanel.online) that belong to a reseller.
-  const isResellerDomain =
-    ready &&
-    reseller?.domain &&
-    !reseller.domain.endsWith(MAIN_DOMAIN) === false
-      ? false
-      : ready &&
-        reseller?.domain &&
-        reseller.domain !== MAIN_DOMAIN;
 
   return (
     <>
@@ -118,23 +104,12 @@ function AppRoutes() {
 
         {/* ================================================
             PUBLIC ROUTES
-            If the visitor is on a reseller domain, skip the
-            landing page entirely and send them straight to
-            login (with reseller branding already applied via
-            ResellerContext + TemplateRouter).
-            On the main domain, show LandingPage as normal.
+            Login + Register go through TemplateRouter so
+            child panel domains show their branded template.
+            All other public routes are unchanged.
         ================================================ */}
 
-        <Route
-          path="/"
-          element={
-            !ready
-              ? null                           // wait for branding fetch — renders nothing briefly
-              : isResellerDomain
-              ? <Navigate to="/login" replace />
-              : <LandingPage />
-          }
-        />
+        <Route path="/" element={<LandingPage />} />
 
         <Route
           path="/login"
@@ -174,7 +149,10 @@ function AppRoutes() {
           path="/home"
           element={
             <ProtectedRoute>
-              <TemplateRouter page="home" defaultPage={<Home />} />
+              <TemplateRouter
+                page="home"
+                defaultPage={<Home />}
+              />
             </ProtectedRoute>
           }
         />
@@ -183,7 +161,10 @@ function AppRoutes() {
           path="/wallet"
           element={
             <ProtectedRoute>
-              <TemplateRouter page="wallet" defaultPage={<Wallet />} />
+              <TemplateRouter
+                page="wallet"
+                defaultPage={<Wallet />}
+              />
             </ProtectedRoute>
           }
         />
@@ -192,7 +173,10 @@ function AppRoutes() {
           path="/orders"
           element={
             <ProtectedRoute>
-              <TemplateRouter page="orders" defaultPage={<Orders />} />
+              <TemplateRouter
+                page="orders"
+                defaultPage={<Orders />}
+              />
             </ProtectedRoute>
           }
         />
@@ -201,7 +185,10 @@ function AppRoutes() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <TemplateRouter page="profile" defaultPage={<Profile />} />
+              <TemplateRouter
+                page="profile"
+                defaultPage={<Profile />}
+              />
             </ProtectedRoute>
           }
         />
@@ -210,7 +197,10 @@ function AppRoutes() {
           path="/services"
           element={
             <ProtectedRoute>
-              <TemplateRouter page="services" defaultPage={<Services />} />
+              <TemplateRouter
+                page="services"
+                defaultPage={<Services />}
+              />
             </ProtectedRoute>
           }
         />
@@ -279,6 +269,8 @@ function AppRoutes() {
         <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
         <Route path="/admin/child-panels" element={<AdminRoute><AdminChildPanels /></AdminRoute>} />
         <Route path="/admin/child-panels/:id" element={<AdminRoute><AdminChildPanelDetails /></AdminRoute>} />
+         <Route path="/admin/categories" element={<AdminCategoryMeta />} />
+        <Route path="/admin/financial" element={<AdminRoute><Financial /></AdminRoute>} />
 
       </Routes>
     </>
