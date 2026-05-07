@@ -5,6 +5,7 @@ import { useState } from "react";
 const links = [
   { name: "Dashboard", icon: "fa-solid fa-chart-line", path: "/admin", exact: true },
   { name: "Users", icon: "fa-solid fa-users", path: "/admin/users" },
+  { name: "Financial", icon: "fa-solid fa-coins", path: "/admin/financial" },
   { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
   { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
 
