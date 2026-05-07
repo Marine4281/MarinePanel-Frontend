@@ -9,7 +9,7 @@ import { useCachedServices } from "../context/CachedServicesContext";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 
-/* ─── tiny inline SVG icons (no extra dep needed) ─── */
+/* ─── inline SVG icons — zero new deps ─── */
 const IconMail = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
@@ -51,7 +51,6 @@ const IconCreditCard = () => (
   </svg>
 );
 
-/* ─── payment gateway pill logos (text-based) ─── */
 const PAYMENT_GATEWAYS = ["PayPal", "Stripe", "Crypto", "Payeer", "PerfectMoney", "CoinGate"];
 
 const Login = () => {
@@ -136,7 +135,7 @@ const Login = () => {
     );
   }
 
-  // ======================= CHILD PANEL LOGIN PAGE =======================
+  // ======================= CHILD PANEL LOGIN =======================
   if (domainType === "childPanel") {
     return (
       <div
@@ -145,7 +144,6 @@ const Login = () => {
           background: `linear-gradient(135deg, ${tc}ee 0%, ${tc}99 50%, #0f172a 100%)`,
         }}
       >
-        {/* Top brand bar */}
         <div className="flex items-center justify-center pt-10 pb-6 gap-3">
           {branding.logo && (
             <img src={branding.logo} alt="logo" className="h-12 w-12 rounded-xl object-contain bg-white/20 p-1" />
@@ -182,7 +180,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full bg-white/10 border border-white/30 text-white placeholder-white/40 rounded-xl px-4 py-3 pr-16 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                    className="w-full bg-white/10 border border-white/30 text-white placeholder-white/40 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
                   />
                   <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white">
                     {showPassword ? <IconEyeOff /> : <IconEye />}
@@ -224,10 +222,10 @@ const Login = () => {
     );
   }
 
-  // ======================= MAIN / RESELLER LOGIN — REDESIGNED =======================
-  // Dark, premium full-screen layout matching the Aurora template's quality level.
-  // Left panel = marketing copy about reseller & child panel ecosystem.
-  // Right panel = login form card with glass morphism.
+  // ======================= MAIN + RESELLER LOGIN — PREMIUM DARK LAYOUT =======================
+  // Reseller domain visitors land here after being redirected from /register.
+  // Left panel shows marketing copy (hidden on reseller domains — they already
+  // have their own branding). Right panel is the login form.
 
   const isReseller = domainType === "reseller";
 
@@ -236,150 +234,122 @@ const Login = () => {
       className="min-h-screen flex"
       style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #0f172a 50%, #0a0a0f 100%)" }}
     >
-      {/* ── Ambient glow orbs ── */}
+      {/* Ambient glow orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="absolute -top-60 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.07] blur-3xl"
-          style={{ background: tc }}
-        />
-        <div
-          className="absolute -bottom-60 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.05] blur-3xl"
-          style={{ background: "#6366f1" }}
-        />
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-[0.03] blur-3xl"
-          style={{ background: tc }}
-        />
+        <div className="absolute -top-60 -left-40 w-[600px] h-[600px] rounded-full opacity-[0.07] blur-3xl" style={{ background: tc }} />
+        <div className="absolute -bottom-60 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.05] blur-3xl" style={{ background: "#6366f1" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-[0.03] blur-3xl" style={{ background: tc }} />
       </div>
 
-      {/* ══════════════════════════════════════
-          LEFT PANEL — marketing / feature copy
-      ══════════════════════════════════════ */}
-      <div className="hidden lg:flex flex-col justify-between w-1/2 px-16 py-14 relative z-10">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          {branding.logo ? (
-            <img src={branding.logo} alt="logo" className="h-10 w-10 rounded-xl object-contain" />
-          ) : (
-            <div
-              className="h-10 w-10 rounded-xl flex items-center justify-center text-lg font-black text-white"
-              style={{ background: `linear-gradient(135deg, ${tc}, ${tc}99)` }}
-            >
-              {branding.brandName?.[0] ?? "M"}
+      {/* ── LEFT PANEL — marketing copy (main platform only) ── */}
+      {!isReseller && (
+        <div className="hidden lg:flex flex-col justify-between w-1/2 px-16 py-14 relative z-10">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            {branding.logo ? (
+              <img src={branding.logo} alt="logo" className="h-10 w-10 rounded-xl object-contain" />
+            ) : (
+              <div
+                className="h-10 w-10 rounded-xl flex items-center justify-center text-lg font-black text-white"
+                style={{ background: `linear-gradient(135deg, ${tc}, ${tc}99)` }}
+              >
+                {branding.brandName?.[0] ?? "M"}
+              </div>
+            )}
+            <span className="text-xl font-bold text-white">{branding.brandName}</span>
+          </div>
+
+          {/* Hero copy */}
+          <div className="space-y-8">
+            <div>
+              <h1 className="text-5xl font-black text-white leading-tight mb-4">
+                The Smartest<br />
+                <span style={{ color: tc }}>SMM Platform</span><br />
+                for Resellers
+              </h1>
+              <p className="text-white/50 text-lg leading-relaxed max-w-md">
+                Power your business with a complete white-label ecosystem.
+                Launch your own branded panel, manage sub-resellers, and
+                deliver orders at unbeatable prices — all from one place.
+              </p>
             </div>
-          )}
-          <span className="text-xl font-bold text-white">{branding.brandName}</span>
+
+            {/* Feature cards */}
+            <div className="grid grid-cols-1 gap-4 max-w-md">
+              <div className="rounded-2xl p-5 border" style={{ background: "rgba(255,255,255,0.03)", borderColor: `${tc}30` }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${tc}22`, color: tc }}>
+                    <IconUsers />
+                  </div>
+                  <span className="text-white font-semibold text-sm">Reseller Panel</span>
+                </div>
+                <p className="text-white/45 text-xs leading-relaxed">
+                  Get your own branded reseller panel with a custom domain,
+                  logo, and theme. Manage your own user base, set custom pricing,
+                  and grow your brand independently.
+                </p>
+              </div>
+
+              <div className="rounded-2xl p-5 border" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(99,102,241,0.3)" }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,0.15)", color: "#818cf8" }}>
+                    <IconShield />
+                  </div>
+                  <span className="text-white font-semibold text-sm">Child Panel</span>
+                </div>
+                <p className="text-white/45 text-xs leading-relaxed">
+                  Create fully isolated child panels under your account — each
+                  with its own domain, branding, and user management. Perfect for
+                  scaling your operation across multiple brands or markets.
+                </p>
+              </div>
+
+              <div className="rounded-2xl p-5 border" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(16,185,129,0.3)" }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}>
+                    <IconZap />
+                  </div>
+                  <span className="text-white font-semibold text-sm">Industry-Lowest Prices</span>
+                </div>
+                <p className="text-white/45 text-xs leading-relaxed">
+                  Access thousands of SMM services at the cheapest rates in the market.
+                  Bulk pricing, instant delivery, and zero hidden fees — maximise your
+                  profit margin on every order.
+                </p>
+              </div>
+            </div>
+
+            {/* Payment gateways */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span style={{ color: "rgba(255,255,255,0.3)" }}><IconCreditCard /></span>
+                <span className="text-white/40 text-xs font-semibold uppercase tracking-widest">All Payment Gateways Supported</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {PAYMENT_GATEWAYS.map((gw) => (
+                  <span
+                    key={gw}
+                    className="text-xs px-3 py-1.5 rounded-full font-medium border"
+                    style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" }}
+                  >
+                    {gw}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <p className="text-white/20 text-xs">
+            Trusted by thousands of resellers worldwide · Instant activation · 24/7 support
+          </p>
         </div>
+      )}
 
-        {/* Hero copy */}
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-5xl font-black text-white leading-tight mb-4">
-              The Smartest<br />
-              <span style={{ color: tc }}>SMM Platform</span><br />
-              for Resellers
-            </h1>
-            <p className="text-white/50 text-lg leading-relaxed max-w-md">
-              Power your business with a complete white-label ecosystem.
-              Launch your own branded panel, manage sub-resellers, and
-              deliver orders at unbeatable prices — all from one place.
-            </p>
-          </div>
+      {/* ── RIGHT PANEL — login form ── */}
+      <div className={`flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10 ${isReseller ? "lg:max-w-xl lg:mx-auto" : ""}`}>
 
-          {/* Feature cards */}
-          <div className="grid grid-cols-1 gap-4 max-w-md">
-            {/* Reseller panel */}
-            <div
-              className="rounded-2xl p-5 border"
-              style={{ background: "rgba(255,255,255,0.03)", borderColor: `${tc}30` }}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${tc}22`, color: tc }}>
-                  <IconUsers />
-                </div>
-                <span className="text-white font-semibold text-sm">Reseller Panel</span>
-              </div>
-              <p className="text-white/45 text-xs leading-relaxed">
-                Get your own branded reseller panel with a custom domain,
-                logo, and theme. Manage your own user base, set custom pricing,
-                and grow your brand independently.
-              </p>
-            </div>
-
-            {/* Child panel */}
-            <div
-              className="rounded-2xl p-5 border"
-              style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(99,102,241,0.3)" }}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(99,102,241,0.15)", color: "#818cf8" }}>
-                  <IconShield />
-                </div>
-                <span className="text-white font-semibold text-sm">Child Panel</span>
-              </div>
-              <p className="text-white/45 text-xs leading-relaxed">
-                Create fully isolated child panels under your account — each
-                with its own domain, branding, and user management. Perfect for
-                scaling your operation across multiple brands or markets.
-              </p>
-            </div>
-
-            {/* Pricing */}
-            <div
-              className="rounded-2xl p-5 border"
-              style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(16,185,129,0.3)" }}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(16,185,129,0.15)", color: "#34d399" }}>
-                  <IconZap />
-                </div>
-                <span className="text-white font-semibold text-sm">Industry-Lowest Prices</span>
-              </div>
-              <p className="text-white/45 text-xs leading-relaxed">
-                Access thousands of SMM services at the cheapest rates in the market.
-                Bulk pricing, instant delivery, and zero hidden fees — maximise your
-                profit margin on every order.
-              </p>
-            </div>
-          </div>
-
-          {/* Payment gateways */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <IconCreditCard />
-              <span className="text-white/40 text-xs font-semibold uppercase tracking-widest">All Payment Gateways Supported</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {PAYMENT_GATEWAYS.map((gw) => (
-                <span
-                  key={gw}
-                  className="text-xs px-3 py-1.5 rounded-full font-medium border"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    borderColor: "rgba(255,255,255,0.1)",
-                    color: "rgba(255,255,255,0.55)",
-                  }}
-                >
-                  {gw}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom testimonial / trust */}
-        <p className="text-white/20 text-xs">
-          Trusted by thousands of resellers worldwide · Instant activation · 24/7 support
-        </p>
-      </div>
-
-      {/* ══════════════════════════════════════
-          RIGHT PANEL — login form
-      ══════════════════════════════════════ */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative z-10">
-
-        {/* Mobile-only logo */}
-        <div className="flex lg:hidden items-center gap-3 mb-8">
+        {/* Mobile logo (always) + desktop logo on reseller domains */}
+        <div className={`flex items-center gap-3 mb-8 ${!isReseller ? "lg:hidden" : ""}`}>
           {branding.logo ? (
             <img src={branding.logo} alt="logo" className="h-9 w-9 rounded-xl object-contain" />
           ) : (
@@ -404,33 +374,25 @@ const Login = () => {
             boxShadow: `0 0 80px ${tc}14, 0 32px 64px rgba(0,0,0,0.5)`,
           }}
         >
-          {/* Heading */}
           <div className="mb-7">
             <h2 className="text-2xl font-bold text-white mb-1">
               {isReseller ? `Welcome to ${branding.brandName}` : "Welcome back"}
             </h2>
             <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
               {isReseller
-                ? "Sign in to your reseller dashboard"
+                ? "Sign in to your account"
                 : "Sign in to your account to continue"}
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email field */}
+            {/* Email */}
             <div>
-              <label
-                className="block text-xs font-semibold mb-1.5"
-                style={{ color: "rgba(255,255,255,0.5)" }}
-              >
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
                 Email Address
               </label>
               <div className="relative">
-                <span
-                  className="absolute left-4 top-1/2 -translate-y-1/2"
-                  style={{ color: "rgba(255,255,255,0.25)" }}
-                >
+                <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.25)" }}>
                   <IconMail />
                 </span>
                 <input
@@ -440,30 +402,20 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full pl-11 pr-4 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "#e2e8f0",
-                  }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}
                   onFocus={(e) => (e.target.style.borderColor = tc)}
                   onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
                 />
               </div>
             </div>
 
-            {/* Password field */}
+            {/* Password */}
             <div>
-              <label
-                className="block text-xs font-semibold mb-1.5"
-                style={{ color: "rgba(255,255,255,0.5)" }}
-              >
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
                 Password
               </label>
               <div className="relative">
-                <span
-                  className="absolute left-4 top-1/2 -translate-y-1/2"
-                  style={{ color: "rgba(255,255,255,0.25)" }}
-                >
+                <span className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.25)" }}>
                   <IconLock />
                 </span>
                 <input
@@ -473,11 +425,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full pl-11 pr-11 py-3 rounded-xl text-sm outline-none transition-all"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "#e2e8f0",
-                  }}
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}
                   onFocus={(e) => (e.target.style.borderColor = tc)}
                   onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
                 />
@@ -499,7 +447,7 @@ const Login = () => {
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="text-xs hover:underline transition-opacity hover:opacity-100"
+                className="text-xs hover:underline"
                 style={{ color: tc, opacity: 0.8 }}
               >
                 Forgot password?
@@ -521,27 +469,25 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
-            <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>or</span>
-            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
-          </div>
-
-          {/* Register */}
-          <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="font-semibold hover:underline"
-              style={{ color: tc }}
-            >
-              Create one free
-            </Link>
-          </p>
+          {/* Divider — hidden on reseller domains (no register page for them) */}
+          {!isReseller && (
+            <>
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+                <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>or</span>
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+              </div>
+              <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+                Don't have an account?{" "}
+                <Link to="/register" className="font-semibold hover:underline" style={{ color: tc }}>
+                  Create one free
+                </Link>
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Trust badges below card */}
+        {/* Trust badges */}
         <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
           {[
             { icon: <IconZap />, label: "Instant Delivery" },
@@ -549,11 +495,7 @@ const Login = () => {
             { icon: <IconUsers />, label: "Reseller & Child Panel" },
             { icon: <IconCreditCard />, label: "All Gateways" },
           ].map(({ icon, label }) => (
-            <div
-              key={label}
-              className="flex items-center gap-1.5 text-xs"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
+            <div key={label} className="flex items-center gap-1.5 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
               <span style={{ color: "rgba(255,255,255,0.2)" }}>{icon}</span>
               {label}
             </div>
@@ -566,11 +508,7 @@ const Login = () => {
             <span
               key={gw}
               className="text-xs px-2.5 py-1 rounded-full border"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                borderColor: "rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.35)",
-              }}
+              style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)" }}
             >
               {gw}
             </span>
