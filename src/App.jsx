@@ -43,6 +43,8 @@ import AdminChildPanels from "./pages/AdminChildPanels";
 import AdminChildPanelDetails from "./pages/AdminChildPanelDetails";
 import ProviderSync from "./pages/ProviderSync";
 import AdminCategoryMeta from "./pages/AdminCategoryMeta";
+import Financial from "./pages/Financial";
+
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
 import AdminResellerGuides from "./pages/reseller/AdminResellerGuides";
@@ -268,6 +270,7 @@ function AppRoutes() {
         <Route path="/admin/child-panels" element={<AdminRoute><AdminChildPanels /></AdminRoute>} />
         <Route path="/admin/child-panels/:id" element={<AdminRoute><AdminChildPanelDetails /></AdminRoute>} />
          <Route path="/admin/categories" element={<AdminCategoryMeta />} />
+        <Route path="/admin/financial" element={<AdminRoute><Financial /></AdminRoute>} />
 
       </Routes>
     </>
