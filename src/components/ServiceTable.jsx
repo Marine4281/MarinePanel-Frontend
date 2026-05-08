@@ -8,14 +8,12 @@ const ServiceTable = ({ services }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [categoryMeta, setCategoryMeta] = useState([]);
 
-  // Fetch category meta for sort order + featured flags
   useEffect(() => {
     API.get("/category-meta")
       .then((res) => setCategoryMeta(res.data || []))
       .catch(() => setCategoryMeta([]));
   }, []);
 
-  // Build lookup: "Platform::Category" → { sortOrder, isFeatured }
   const metaMap = useMemo(() => {
     const m = {};
     categoryMeta.forEach((c) => {
@@ -26,36 +24,6 @@ const ServiceTable = ({ services }) => {
 
   const isFeatured = (platform, category) =>
     metaMap[`${platform}::${category}`]?.isFeatured ?? false;
-
-  const getSortOrder = (platform, category) =>
-    metaMap[`${platform}::${category}`]?.sortOrder ?? 999;
-
-  // Group services by platform → category, respecting sortOrder
-  const groupedServices = useMemo(() => {
-    if (!services?.length) return [];
-
-    // Group by platform
-    const byPlatform = {};
-    services.forEach((s) => {
-      const p = s.platform || "General";
-      if (!byPlatform[p]) byPlatform[p] = {};
-      if (!byPlatform[p][s.category]) byPlatform[p][s.category] = [];
-      byPlatform[p][s.category].push(s);
-    });
-
-    // Flatten into sorted rows
-    const rows = [];
-    Object.entries(byPlatform).forEach(([platform, categories]) => {
-      const sortedCats = Object.entries(categories).sort(([catA], [catB]) => {
-        return getSortOrder(platform, catA) - getSortOrder(platform, catB);
-      });
-      sortedCats.forEach(([category, items]) => {
-        rows.push({ platform, category, items, featured: isFeatured(platform, category) });
-      });
-    });
-
-    return rows;
-  }, [services, metaMap]);
 
   const calculateRate = (service) => {
     if (service?.resellerRate != null) return Number(service.resellerRate).toFixed(4);
@@ -72,12 +40,15 @@ const ServiceTable = ({ services }) => {
     );
   }
 
+  // Original logic — no sorting, just track category changes
+  let lastCategory = null;
+  let lastPlatform = null;
+
   return (
     <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
       <div className="w-full overflow-x-auto">
         <table className="w-full table-auto text-[11px] border border-gray-200">
 
-          {/* HEADER */}
           <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
             <tr>
               <th className="px-3 py-2 text-left">ID</th>
@@ -90,43 +61,50 @@ const ServiceTable = ({ services }) => {
           </thead>
 
           <tbody>
-            {groupedServices.map(({ platform, category, items, featured }) => (
-              <React.Fragment key={`${platform}::${category}`}>
+            {services.map((service, index) => {
+              const showCategory =
+                service.category !== lastCategory ||
+                service.platform !== lastPlatform;
+              lastCategory = service.category;
+              lastPlatform = service.platform;
 
-                {/* CATEGORY HEADER ROW */}
-                <tr className="bg-orange-50 border-t border-orange-200">
-                  <td colSpan="6" className="px-3 py-2 font-semibold text-orange-700">
-                    <span className="flex items-center gap-2">
-                      {featured && (
-                        <span
-                          className="text-yellow-400 text-sm animate-pulse"
-                          style={{
-                            filter:
-                              "drop-shadow(0 0 5px rgba(250,204,21,0.95)) drop-shadow(0 0 10px rgba(250,204,21,0.6))",
-                          }}
-                        >
-                          ⭐
+              const featured = isFeatured(service.platform || "General", service.category);
+
+              return (
+                <React.Fragment key={service._id}>
+
+                  {/* CATEGORY HEADER ROW */}
+                  {showCategory && (
+                    <tr className="bg-orange-50 border-t border-orange-200">
+                      <td colSpan="6" className="px-3 py-2 font-semibold text-orange-700">
+                        <span className="flex items-center gap-2">
+                          {featured && (
+                            <span
+                              className="text-yellow-400 text-sm animate-pulse"
+                              style={{
+                                filter:
+                                  "drop-shadow(0 0 5px rgba(250,204,21,0.95)) drop-shadow(0 0 10px rgba(250,204,21,0.6))",
+                              }}
+                            >
+                              ⭐
+                            </span>
+                          )}
+                          {service.category}
                         </span>
-                      )}
-                      {category}
-                    </span>
-                  </td>
-                </tr>
+                      </td>
+                    </tr>
+                  )}
 
-                {/* SERVICE ROWS */}
-                {items.map((service, index) => (
+                  {/* SERVICE ROW */}
                   <tr
-                    key={service._id}
                     className={`border-t hover:bg-gray-50 ${
                       index % 2 === 0 ? "bg-white" : "bg-gray-50"
                     }`}
                   >
-                    {/* ID */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                       {service.serviceId || service._id}
                     </td>
 
-                    {/* SERVICE NAME */}
                     <td className="px-3 py-2 text-gray-800 leading-snug whitespace-normal break-words max-w-[320px] md:max-w-full">
                       <div className="md:hidden">
                         {service.name?.split("~").map((part, idx) => (
@@ -138,22 +116,18 @@ const ServiceTable = ({ services }) => {
                       </div>
                     </td>
 
-                    {/* RATE */}
                     <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
                       ${calculateRate(service)}
                     </td>
 
-                    {/* MIN */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                       {formatNumber(service.min)}
                     </td>
 
-                    {/* MAX */}
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
                       {formatNumber(service.max)}
                     </td>
 
-                    {/* INFO */}
                     <td className="px-3 py-2">
                       <button
                         onClick={() => setSelectedService(service)}
@@ -163,16 +137,15 @@ const ServiceTable = ({ services }) => {
                       </button>
                     </td>
                   </tr>
-                ))}
 
-              </React.Fragment>
-            ))}
+                </React.Fragment>
+              );
+            })}
           </tbody>
 
         </table>
       </div>
 
-      {/* DESCRIPTION MODAL */}
       {selectedService && (
         <ServiceDescriptionModal
           service={selectedService}
