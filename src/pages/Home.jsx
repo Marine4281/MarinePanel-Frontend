@@ -15,19 +15,23 @@ import CategoryIcons from "../components/home/CategoryIcons";
 import CategorySelect from "../components/home/CategorySelect";
 import ServiceSelect from "../components/home/ServiceSelect";
 
+const isCustomComments = (serviceData) =>
+  serviceData?.serviceType === "Custom Comments" ||
+  serviceData?.serviceType === "Custom Comments Package";
+
 const Home = () => {
   const { user, setUser } = useAuth();
-  const { services, loading, getGlobalDefault, getPlatformDefault } =
-    useServices();
+  const { services, loading, getGlobalDefault, getPlatformDefault } = useServices();
 
   const location = useLocation();
-  const prefillApplied = useRef(false); // ✅ prevent override
+  const prefillApplied = useRef(false);
 
   const [selectedPlatform, setSelectedPlatform] = useState("");
   const [category, setCategory] = useState("");
   const [service, setService] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [comments, setComments] = useState("");
   const [charge, setCharge] = useState(0);
 
   const categoriesGrid = [
@@ -50,11 +54,8 @@ const Home = () => {
   ============================= */
   useEffect(() => {
     const prefill = location.state?.prefill;
-
     if (!prefill || !services.length || prefillApplied.current) return;
-
     prefillApplied.current = true;
-
     setSelectedPlatform(prefill.platform || "All");
     setCategory(prefill.category || "");
     setService(prefill.service || "");
@@ -67,9 +68,7 @@ const Home = () => {
   ============================= */
   useEffect(() => {
     if (!services.length || prefillApplied.current) return;
-
     const globalDefault = getGlobalDefault();
-
     if (globalDefault) {
       setSelectedPlatform(globalDefault.platform);
       setCategory(globalDefault.category);
@@ -92,14 +91,11 @@ const Home = () => {
   ============================= */
   useEffect(() => {
     if (!selectedPlatform || prefillApplied.current) return;
-
     if (selectedPlatform === "All") {
       setCategory(categories[0] || "");
       return;
     }
-
     const platformDefault = getPlatformDefault(selectedPlatform);
-
     if (platformDefault) {
       setCategory(platformDefault.category);
     } else {
@@ -116,10 +112,7 @@ const Home = () => {
   ============================= */
   useEffect(() => {
     if (!servicesList.length || prefillApplied.current) return;
-
-    const defaultService =
-      servicesList.find((s) => s.isDefault) || servicesList[0];
-
+    const defaultService = servicesList.find((s) => s.isDefault) || servicesList[0];
     setService(defaultService.name);
   }, [servicesList]);
 
@@ -127,26 +120,27 @@ const Home = () => {
     return servicesList.find((s) => s.name === service) || null;
   }, [service, servicesList]);
 
+  // Reset comments when service changes
+  useEffect(() => {
+    setComments("");
+  }, [service]);
+
+  const commentLines = comments
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
   /* =============================
      CHARGE CALCULATION
   ============================= */
   const calculateChargeBackend = async (qty, serviceName) => {
-    if (!qty || !serviceName) {
-      setCharge(0);
-      return;
-    }
-
+    if (!qty || !serviceName) { setCharge(0); return; }
     try {
       const res = await API.post("/orders/preview", {
         service: serviceName,
         quantity: Number(qty),
       });
-
-      setCharge(
-        res.data?.finalCharge
-          ? Number(res.data.finalCharge).toFixed(4)
-          : 0
-      );
+      setCharge(res.data?.finalCharge ? Number(res.data.finalCharge).toFixed(4) : 0);
     } catch {
       setCharge(0);
       toast.error("Failed to calculate charge");
@@ -154,30 +148,34 @@ const Home = () => {
   };
 
   const calculateChargeDebounced = useCallback(
-    debounce((qty, serviceName) => {
-      calculateChargeBackend(qty, serviceName);
-    }, 200),
+    debounce((qty, serviceName) => { calculateChargeBackend(qty, serviceName); }, 200),
     []
   );
 
   useEffect(() => {
-    if (service && quantity && selectedServiceData) {
+    if (service && selectedServiceData) {
       if (selectedServiceData.isFree) {
         setCharge(0);
-      } else {
+      } else if (isCustomComments(selectedServiceData)) {
+        // For custom comments, quantity = number of comment lines
+        if (commentLines.length > 0) {
+          calculateChargeDebounced(commentLines.length, service);
+        } else {
+          setCharge(0);
+        }
+      } else if (quantity) {
         calculateChargeDebounced(quantity, service);
+      } else {
+        setCharge(0);
       }
     } else {
       setCharge(0);
     }
-  }, [service, quantity, selectedServiceData]);
+  }, [service, quantity, comments, selectedServiceData]);
 
   function debounce(fn, delay) {
     let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
   }
 
   /* =============================
@@ -187,16 +185,22 @@ const Home = () => {
     e.preventDefault();
 
     if (!user?._id) return toast.error("User not logged in");
-    if (!category || !service || !link || !quantity)
-      return toast.error("Please fill in all fields");
+    if (!category || !service || !link) return toast.error("Please fill in all fields");
 
-    if (
-      quantity < selectedServiceData?.min ||
-      quantity > selectedServiceData?.max
-    )
-      return toast.error(
-        `Quantity must be between ${selectedServiceData?.min} and ${selectedServiceData?.max}`
-      );
+    const customCommentsService = isCustomComments(selectedServiceData);
+
+    if (customCommentsService) {
+      if (commentLines.length === 0)
+        return toast.error("Please enter at least one comment");
+      if (commentLines.length < selectedServiceData?.min)
+        return toast.error(`Minimum ${selectedServiceData?.min} comments required`);
+      if (commentLines.length > selectedServiceData?.max)
+        return toast.error(`Maximum ${selectedServiceData?.max} comments allowed`);
+    } else {
+      if (!quantity) return toast.error("Please enter quantity");
+      if (quantity < selectedServiceData?.min || quantity > selectedServiceData?.max)
+        return toast.error(`Quantity must be between ${selectedServiceData?.min} and ${selectedServiceData?.max}`);
+    }
 
     try {
       await API.post("/orders", {
@@ -204,13 +208,14 @@ const Home = () => {
         category,
         service,
         link,
-        quantity: Number(quantity),
+        quantity: customCommentsService ? commentLines.length : Number(quantity),
+        comments: customCommentsService ? comments.trim() : "",
       });
 
       toast.success("Order placed successfully");
-
       setLink("");
       setQuantity("");
+      setComments("");
       setCharge(0);
     } catch (err) {
       return toast.error(err.response?.data?.message || "Order failed");
@@ -223,6 +228,8 @@ const Home = () => {
       console.log("Profile refresh failed, but order is fine");
     }
   };
+
+  const customCommentsService = isCustomComments(selectedServiceData);
 
   return (
     <div className="bg-gray-200 min-h-screen flex flex-col">
@@ -238,7 +245,8 @@ const Home = () => {
             setSelectedPlatform(platform);
             setCategory("");
             setService("");
-            prefillApplied.current = false; // ✅ allow manual change
+            setComments("");
+            prefillApplied.current = false;
           }}
         />
 
@@ -276,6 +284,7 @@ const Home = () => {
             </div>
           )}
 
+          {/* LINK */}
           <div className="mb-4">
             <label className="font-semibold block mb-1">Link</label>
             <input
@@ -286,21 +295,54 @@ const Home = () => {
             />
           </div>
 
-          <div className="mb-4">
-            <label className="font-semibold block mb-1">Quantity</label>
-            <input
-              type="number"
-              className="p-3 w-[90%] rounded-xl shadow"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              disabled={!selectedServiceData}
-            />
-          </div>
+          {/* CUSTOM COMMENTS BOX */}
+          {customCommentsService ? (
+            <div className="mb-4">
+              <label className="font-semibold block mb-1">
+                Comments
+                <span className="text-xs font-normal text-gray-500 ml-2">(1 per line)</span>
+              </label>
+              <textarea
+                className="p-3 w-[90%] rounded-xl shadow resize-y min-h-[120px] font-mono text-sm"
+                placeholder={`Write one comment per line:\nGreat content!\nKeep it up!\nLove this!`}
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+              />
+              {/* Live counter */}
+              <div className="mt-1 w-[90%] flex justify-between text-xs text-gray-500">
+                <span>
+                  {commentLines.length} comment{commentLines.length !== 1 ? "s" : ""}
+                  {selectedServiceData && (
+                    <span className="ml-1 text-gray-400">
+                      (min {selectedServiceData.min} / max {selectedServiceData.max})
+                    </span>
+                  )}
+                </span>
+                {commentLines.length > 0 && commentLines.length < (selectedServiceData?.min || 0) && (
+                  <span className="text-red-500">Need {selectedServiceData.min - commentLines.length} more</span>
+                )}
+                {commentLines.length > (selectedServiceData?.max || Infinity) && (
+                  <span className="text-red-500">{commentLines.length - selectedServiceData.max} too many</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* REGULAR QUANTITY */
+            <div className="mb-4">
+              <label className="font-semibold block mb-1">Quantity</label>
+              <input
+                type="number"
+                className="p-3 w-[90%] rounded-xl shadow"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                disabled={!selectedServiceData}
+              />
+            </div>
+          )}
 
+          {/* CHARGE */}
           <div className="mb-4">
-            <label className="font-semibold block mb-1">
-              Charge (USD)
-            </label>
+            <label className="font-semibold block mb-1">Charge (USD)</label>
             <input
               type="text"
               className="p-3 w-[90%] rounded-xl shadow bg-gray-100"
@@ -312,7 +354,7 @@ const Home = () => {
           <button
             type="submit"
             className="w-[90%] bg-green-600 text-white p-3 rounded-xl font-bold mb-20"
-            disabled={!selectedServiceData || !quantity}
+            disabled={!selectedServiceData || (!customCommentsService && !quantity)}
           >
             {selectedServiceData?.isFree ? "Claim Free Service" : "Place Order"}
           </button>
