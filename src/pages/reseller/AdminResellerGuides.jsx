@@ -1,3 +1,5 @@
+//src/pages/reseller/AdminResellerGuides.jsx
+
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -16,7 +18,10 @@ const AdminResellerGuides = () => {
 
   const [editingId, setEditingId] = useState(null);
 
-  const token = localStorage.getItem("token");
+  // FIXED TOKEN
+  const token = localStorage
+    .getItem("token")
+    ?.replace("Bearer ", "");
 
   /*
   --------------------------------
@@ -28,6 +33,7 @@ const AdminResellerGuides = () => {
       const res = await API.get("/reseller-guides");
       setGuides(res.data);
     } catch (error) {
+      console.error(error);
       toast.error("Failed to load guides");
     }
   };
@@ -63,6 +69,10 @@ const AdminResellerGuides = () => {
       return toast.error("Title and content required");
     }
 
+    if (!token) {
+      return toast.error("Authentication required");
+    }
+
     try {
       const payload = {
         title,
@@ -73,6 +83,7 @@ const AdminResellerGuides = () => {
       };
 
       if (editingId) {
+
         await API.put(
           `/reseller-guides/${editingId}`,
           payload,
@@ -84,7 +95,9 @@ const AdminResellerGuides = () => {
         );
 
         toast.success("Guide updated");
+
       } else {
+
         await API.post(
           "/reseller-guides",
           payload,
@@ -96,13 +109,19 @@ const AdminResellerGuides = () => {
         );
 
         toast.success("Guide created");
+
       }
 
       resetForm();
       fetchGuides();
+
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save guide");
+
+      toast.error(
+        error?.response?.data?.message ||
+        "Failed to save guide"
+      );
     }
   };
 
@@ -138,7 +157,12 @@ const AdminResellerGuides = () => {
   const deleteGuide = async (id) => {
     if (!window.confirm("Delete this guide?")) return;
 
+    if (!token) {
+      return toast.error("Authentication required");
+    }
+
     try {
+
       await API.delete(
         `/reseller-guides/${id}`,
         {
@@ -150,9 +174,14 @@ const AdminResellerGuides = () => {
 
       toast.success("Guide deleted");
       fetchGuides();
+
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete guide");
+
+      toast.error(
+        error?.response?.data?.message ||
+        "Failed to delete guide"
+      );
     }
   };
 
@@ -162,7 +191,12 @@ const AdminResellerGuides = () => {
   --------------------------------
   */
   const toggleVisibility = async (guide) => {
+    if (!token) {
+      return toast.error("Authentication required");
+    }
+
     try {
+
       await API.put(
         `/reseller-guides/${guide._id}`,
         {
@@ -177,9 +211,14 @@ const AdminResellerGuides = () => {
 
       toast.success("Guide updated");
       fetchGuides();
+
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update visibility");
+
+      toast.error(
+        error?.response?.data?.message ||
+        "Failed to update visibility"
+      );
     }
   };
 
@@ -190,6 +229,7 @@ const AdminResellerGuides = () => {
   */
   const placementColor = (placement) => {
     switch (placement) {
+
       case "activation":
         return "bg-blue-100 text-blue-700";
 
@@ -201,6 +241,7 @@ const AdminResellerGuides = () => {
 
       default:
         return "bg-gray-100 text-gray-700";
+
     }
   };
 
@@ -281,7 +322,9 @@ const AdminResellerGuides = () => {
 
               <select
                 value={placement}
-                onChange={(e) => setPlacement(e.target.value)}
+                onChange={(e) =>
+                  setPlacement(e.target.value)
+                }
                 className="border rounded-lg px-3 py-2 w-full"
               >
                 <option value="activation">
@@ -295,6 +338,7 @@ const AdminResellerGuides = () => {
                 <option value="both">
                   Both
                 </option>
+
               </select>
 
             </div>
@@ -338,12 +382,14 @@ const AdminResellerGuides = () => {
             </button>
 
             {editingId && (
+
               <button
                 onClick={resetForm}
                 className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
               >
                 Cancel
               </button>
+
             )}
 
           </div>
