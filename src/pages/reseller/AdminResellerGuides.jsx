@@ -18,11 +18,6 @@ const AdminResellerGuides = () => {
 
   const [editingId, setEditingId] = useState(null);
 
-  // FIXED TOKEN
-  const token = localStorage
-    .getItem("token")
-    ?.replace("Bearer ", "");
-
   /*
   --------------------------------
   Fetch Guides
@@ -69,10 +64,6 @@ const AdminResellerGuides = () => {
       return toast.error("Title and content required");
     }
 
-    if (!token) {
-      return toast.error("Authentication required");
-    }
-
     try {
       const payload = {
         title,
@@ -86,12 +77,7 @@ const AdminResellerGuides = () => {
 
         await API.put(
           `/reseller-guides/${editingId}`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          payload
         );
 
         toast.success("Guide updated");
@@ -100,12 +86,7 @@ const AdminResellerGuides = () => {
 
         await API.post(
           "/reseller-guides",
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          payload
         );
 
         toast.success("Guide created");
@@ -132,7 +113,9 @@ const AdminResellerGuides = () => {
   */
   const editGuide = (guide) => {
     setTitle(guide.title);
+
     setContent(guide.content);
+
     setOrder(guide.order || 0);
 
     // NEW
@@ -157,22 +140,14 @@ const AdminResellerGuides = () => {
   const deleteGuide = async (id) => {
     if (!window.confirm("Delete this guide?")) return;
 
-    if (!token) {
-      return toast.error("Authentication required");
-    }
-
     try {
 
       await API.delete(
-        `/reseller-guides/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `/reseller-guides/${id}`
       );
 
       toast.success("Guide deleted");
+
       fetchGuides();
 
     } catch (error) {
@@ -191,25 +166,17 @@ const AdminResellerGuides = () => {
   --------------------------------
   */
   const toggleVisibility = async (guide) => {
-    if (!token) {
-      return toast.error("Authentication required");
-    }
-
     try {
 
       await API.put(
         `/reseller-guides/${guide._id}`,
         {
           visible: !guide.visible,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         }
       );
 
       toast.success("Guide updated");
+
       fetchGuides();
 
     } catch (error) {
