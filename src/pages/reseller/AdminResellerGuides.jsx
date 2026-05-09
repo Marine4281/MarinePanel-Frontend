@@ -25,7 +25,7 @@ const AdminResellerGuides = () => {
   */
   const fetchGuides = async () => {
     try {
-      const res = await API.get("/reseller-guides");
+      const res = await API.get("/reseller-guides/admin/all");
       setGuides(res.data);
     } catch (error) {
       console.error(error);
