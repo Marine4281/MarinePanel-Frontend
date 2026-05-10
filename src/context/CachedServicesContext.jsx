@@ -8,9 +8,6 @@ const CachedServicesContext = createContext();
 
 /* =====================================================
 DOMAIN TYPE DETECTION
-Same logic as ServicesContext — shared inline here
-to avoid a circular import between the two contexts.
-
 Returns:
   "main"       — marinepanel.online or localhost
   "reseller"   — reseller subdomain / custom domain
@@ -43,10 +40,11 @@ const detectDomainType = async () => {
 };
 
 export const CachedServicesProvider = ({ children }) => {
-  const [services, setServices] = useState([]);
-  const [commission, setCommission] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [domainType, setDomainType] = useState(null);
+  const [services,       setServices]       = useState([]);
+  const [commission,     setCommission]     = useState(0);
+  const [loading,        setLoading]        = useState(true);
+  const [domainType,     setDomainType]     = useState(null);
+  const [domainResolved, setDomainResolved] = useState(false); // ← NEW: true once domain detection is complete
 
   /* =====================================================
   FETCH DATA
@@ -59,16 +57,16 @@ export const CachedServicesProvider = ({ children }) => {
     try {
       setLoading(true);
 
-      let servicesData = [];
+      let servicesData   = [];
       let commissionData = 0;
 
       if (type === "reseller") {
-        const res = await API.get("/reseller/services");
-        servicesData = res.data.services || [];
+        const res  = await API.get("/reseller/services");
+        servicesData   = res.data.services  || [];
         commissionData = res.data.commission || 0;
       } else {
         // main or childPanel
-        const res = await API.get("/services");
+        const res  = await API.get("/services");
         servicesData = res.data || [];
         commissionData = 0;
       }
@@ -92,7 +90,12 @@ export const CachedServicesProvider = ({ children }) => {
 
     const init = async () => {
       const type = await detectDomainType();
+
+      // Set domain type first, then immediately mark as resolved.
+      // This is what unblocks the router — no page renders until this fires.
       setDomainType(type);
+      setDomainResolved(true); // ← unblocks App.jsx router
+
       await fetchData(type);
 
       socket = io("https://marinepanel-backend.onrender.com", {
@@ -157,7 +160,8 @@ export const CachedServicesProvider = ({ children }) => {
         services,
         loading,
         commission,
-        domainType,        // "main" | "reseller" | "childPanel"
+        domainType,     // "main" | "reseller" | "childPanel"
+        domainResolved, // ← NEW: boolean, gates the entire router in App.jsx
         platforms,
         getCategoriesByPlatform,
         getServicesByCategory,
