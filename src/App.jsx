@@ -19,7 +19,6 @@ import ResetPassword from "./pages/ResetPassword";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import TermsPublic from "./pages/TermsPublic";
 
-
 // User pages
 import Home from "./pages/Home";
 import Wallet from "./pages/Wallet";
@@ -84,18 +83,63 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const client = new QueryClient();
 
 /* ======================================================
-   INTERNAL ROUTES COMPONENT
-   Sits inside all providers so it can consume any context
+   DOMAIN BOOT SCREEN
+   Shown while detectDomainType() is in flight.
+   Prevents ANY route from mounting — zero flicker possible.
+   Neutral dark background works for all domain types.
 ====================================================== */
+const DomainBootScreen = () => (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "#0f172a",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: "50%",
+        border: "3px solid rgba(255,255,255,0.08)",
+        borderTopColor: "#f97316",
+        animation: "domainSpin 0.75s linear infinite",
+      }}
+    />
+    <style>{`
+      @keyframes domainSpin {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
 
+/* ======================================================
+   INTERNAL ROUTES COMPONENT
+   Sits inside all providers so it can consume any context.
+   Blocks ALL route rendering until domainResolved is true —
+   this is the single gate that eliminates flicker for
+   reseller and child panel users.
+====================================================== */
 function AppRoutes() {
-  const authContext = useAuthContext();
+  const authContext     = useAuthContext();
   const servicesContext = useCachedServices();
+  const { domainResolved } = servicesContext;
 
   useEffect(() => {
     const cleanup = setupNetworkManager(authContext, servicesContext);
     return cleanup;
   }, [authContext, servicesContext]);
+
+  // ── Block everything until domain type is known ──
+  // detectDomainType() runs once on boot (~200-400ms).
+  // Until it resolves, no page mounts, so no landing page
+  // can flash before the redirect fires.
+  if (!domainResolved) return <DomainBootScreen />;
 
   return (
     <>
@@ -150,10 +194,7 @@ function AppRoutes() {
           path="/home"
           element={
             <ProtectedRoute>
-              <TemplateRouter
-                page="home"
-                defaultPage={<Home />}
-              />
+              <TemplateRouter page="home" defaultPage={<Home />} />
             </ProtectedRoute>
           }
         />
@@ -162,10 +203,7 @@ function AppRoutes() {
           path="/wallet"
           element={
             <ProtectedRoute>
-              <TemplateRouter
-                page="wallet"
-                defaultPage={<Wallet />}
-              />
+              <TemplateRouter page="wallet" defaultPage={<Wallet />} />
             </ProtectedRoute>
           }
         />
@@ -174,10 +212,7 @@ function AppRoutes() {
           path="/orders"
           element={
             <ProtectedRoute>
-              <TemplateRouter
-                page="orders"
-                defaultPage={<Orders />}
-              />
+              <TemplateRouter page="orders" defaultPage={<Orders />} />
             </ProtectedRoute>
           }
         />
@@ -186,10 +221,7 @@ function AppRoutes() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <TemplateRouter
-                page="profile"
-                defaultPage={<Profile />}
-              />
+              <TemplateRouter page="profile" defaultPage={<Profile />} />
             </ProtectedRoute>
           }
         />
@@ -198,10 +230,7 @@ function AppRoutes() {
           path="/services"
           element={
             <ProtectedRoute>
-              <TemplateRouter
-                page="services"
-                defaultPage={<Services />}
-              />
+              <TemplateRouter page="services" defaultPage={<Services />} />
             </ProtectedRoute>
           }
         />
@@ -223,16 +252,16 @@ function AppRoutes() {
             RESELLER ROUTES — unchanged
         ================================================ */}
 
-        <Route path="/reseller" element={<ProtectedRoute><Reseller /></ProtectedRoute>} />
-        <Route path="/reseller-panel" element={<ProtectedRoute><ResellerPanel /></ProtectedRoute>} />
-        <Route path="/reseller/activate" element={<ProtectedRoute><ResellerActivate /></ProtectedRoute>} />
-        <Route path="/reseller/services" element={<ProtectedRoute><ResellerServices /></ProtectedRoute>} />
-        <Route path="/reseller/dashboard" element={<ProtectedRoute><ResellerDashboard /></ProtectedRoute>} />
-        <Route path="/reseller/users" element={<ProtectedRoute><ResellerUsers /></ProtectedRoute>} />
-        <Route path="/reseller/orders" element={<ProtectedRoute><ResellerOrders /></ProtectedRoute>} />
-        <Route path="/reseller/branding" element={<ProtectedRoute><ResellerBranding /></ProtectedRoute>} />
-        <Route path="/end-user/dashboard" element={<ProtectedRoute><EndUserDashboard /></ProtectedRoute>} />
-        <Route path="/reseller/guides" element={<ResellerGuides />} />
+        <Route path="/reseller"            element={<ProtectedRoute><Reseller /></ProtectedRoute>} />
+        <Route path="/reseller-panel"      element={<ProtectedRoute><ResellerPanel /></ProtectedRoute>} />
+        <Route path="/reseller/activate"   element={<ProtectedRoute><ResellerActivate /></ProtectedRoute>} />
+        <Route path="/reseller/services"   element={<ProtectedRoute><ResellerServices /></ProtectedRoute>} />
+        <Route path="/reseller/dashboard"  element={<ProtectedRoute><ResellerDashboard /></ProtectedRoute>} />
+        <Route path="/reseller/users"      element={<ProtectedRoute><ResellerUsers /></ProtectedRoute>} />
+        <Route path="/reseller/orders"     element={<ProtectedRoute><ResellerOrders /></ProtectedRoute>} />
+        <Route path="/reseller/branding"   element={<ProtectedRoute><ResellerBranding /></ProtectedRoute>} />
+        <Route path="/end-user/dashboard"  element={<ProtectedRoute><EndUserDashboard /></ProtectedRoute>} />
+        <Route path="/reseller/guides"     element={<ResellerGuides />} />
 
         {/* ================================================
             CHILD PANEL ROUTES — unchanged
@@ -240,39 +269,39 @@ function AppRoutes() {
             routes, so templates do NOT apply here.
         ================================================ */}
 
-        <Route path="/child-panel" element={<ProtectedRoute><ChildPanelPage /></ProtectedRoute>} />
+        <Route path="/child-panel"          element={<ProtectedRoute><ChildPanelPage /></ProtectedRoute>} />
         <Route path="/child-panel/activate" element={<ProtectedRoute><ChildPanelActivate /></ProtectedRoute>} />
 
-        <Route path="/child-panel/dashboard" element={<ChildPanelRoute><ChildPanelDashboard /></ChildPanelRoute>} />
-        <Route path="/child-panel/users" element={<ChildPanelRoute><ChildPanelUsers /></ChildPanelRoute>} />
-        <Route path="/child-panel/orders" element={<ChildPanelRoute><ChildPanelOrders /></ChildPanelRoute>} />
-        <Route path="/child-panel/resellers" element={<ChildPanelRoute><ChildPanelResellers /></ChildPanelRoute>} />
-        <Route path="/child-panel/providers" element={<ChildPanelRoute><ChildPanelProviders /></ChildPanelRoute>} />
-        <Route path="/child-panel/wallet" element={<ChildPanelRoute><ChildPanelWallet /></ChildPanelRoute>} />
-        <Route path="/child-panel/settings" element={<ChildPanelRoute><ChildPanelSettings /></ChildPanelRoute>} />
-        <Route path="/child-panel/services" element={<ChildPanelRoute><ChildPanelServices /></ChildPanelRoute>} />
+        <Route path="/child-panel/dashboard"  element={<ChildPanelRoute><ChildPanelDashboard /></ChildPanelRoute>} />
+        <Route path="/child-panel/users"      element={<ChildPanelRoute><ChildPanelUsers /></ChildPanelRoute>} />
+        <Route path="/child-panel/orders"     element={<ChildPanelRoute><ChildPanelOrders /></ChildPanelRoute>} />
+        <Route path="/child-panel/resellers"  element={<ChildPanelRoute><ChildPanelResellers /></ChildPanelRoute>} />
+        <Route path="/child-panel/providers"  element={<ChildPanelRoute><ChildPanelProviders /></ChildPanelRoute>} />
+        <Route path="/child-panel/wallet"     element={<ChildPanelRoute><ChildPanelWallet /></ChildPanelRoute>} />
+        <Route path="/child-panel/settings"   element={<ChildPanelRoute><ChildPanelSettings /></ChildPanelRoute>} />
+        <Route path="/child-panel/services"   element={<ChildPanelRoute><ChildPanelServices /></ChildPanelRoute>} />
 
         {/* ================================================
             ADMIN ROUTES — unchanged
         ================================================ */}
 
-        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-        <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-        <Route path="/admin/users/:id" element={<AdminRoute><AdminUserDetails /></AdminRoute>} />
-        <Route path="/admin/payment-methods" element={<AdminRoute><AdminPaymentMethods /></AdminRoute>} />
-        <Route path="/admin/services" element={<AdminRoute><AdminService /></AdminRoute>} />
-        <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-        <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-        <Route path="/admin/user-orders" element={<AdminRoute><AdminUserOrders /></AdminRoute>} />
-        <Route path="/admin/provider-sync" element={<AdminRoute><ProviderSync /></AdminRoute>} />
-        <Route path="/admin/reseller-guides" element={<AdminRoute><AdminResellerGuides /></AdminRoute>} />
-        <Route path="/admin/resellers" element={<AdminRoute><ResellersAdminList /></AdminRoute>} />
-        <Route path="/admin/resellers/:id" element={<AdminRoute><ResellerAdminDetails /></AdminRoute>} />
-        <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
-        <Route path="/admin/child-panels" element={<AdminRoute><AdminChildPanels /></AdminRoute>} />
-        <Route path="/admin/child-panels/:id" element={<AdminRoute><AdminChildPanelDetails /></AdminRoute>} />
-         <Route path="/admin/categories" element={<AdminCategoryMeta />} />
-        <Route path="/admin/financial" element={<AdminRoute><Financial /></AdminRoute>} />
+        <Route path="/admin"                    element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/users"              element={<AdminRoute><AdminUsers /></AdminRoute>} />
+        <Route path="/admin/users/:id"          element={<AdminRoute><AdminUserDetails /></AdminRoute>} />
+        <Route path="/admin/payment-methods"    element={<AdminRoute><AdminPaymentMethods /></AdminRoute>} />
+        <Route path="/admin/services"           element={<AdminRoute><AdminService /></AdminRoute>} />
+        <Route path="/admin/settings"           element={<AdminRoute><AdminSettings /></AdminRoute>} />
+        <Route path="/admin/orders"             element={<AdminRoute><AdminOrders /></AdminRoute>} />
+        <Route path="/admin/user-orders"        element={<AdminRoute><AdminUserOrders /></AdminRoute>} />
+        <Route path="/admin/provider-sync"      element={<AdminRoute><ProviderSync /></AdminRoute>} />
+        <Route path="/admin/reseller-guides"    element={<AdminRoute><AdminResellerGuides /></AdminRoute>} />
+        <Route path="/admin/resellers"          element={<AdminRoute><ResellersAdminList /></AdminRoute>} />
+        <Route path="/admin/resellers/:id"      element={<AdminRoute><ResellerAdminDetails /></AdminRoute>} />
+        <Route path="/admin/logs"               element={<AdminRoute><AdminLogs /></AdminRoute>} />
+        <Route path="/admin/child-panels"       element={<AdminRoute><AdminChildPanels /></AdminRoute>} />
+        <Route path="/admin/child-panels/:id"   element={<AdminRoute><AdminChildPanelDetails /></AdminRoute>} />
+        <Route path="/admin/categories"         element={<AdminCategoryMeta />} />
+        <Route path="/admin/financial"          element={<AdminRoute><Financial /></AdminRoute>} />
 
       </Routes>
     </>
@@ -282,13 +311,12 @@ function AppRoutes() {
 /* ======================================================
    ROOT APP
    Provider order matters:
-   AuthProvider       — outermost, everything depends on it
-   ResellerProvider   — reads domain, sets reseller branding
-   ChildPanelProvider — reads domain, sets cp branding
-   CachedServicesProvider — reads domain type, fetches services
-   ServicesProvider   — same but for the other services context
+   AuthProvider           — outermost, everything depends on it
+   ResellerProvider       — reads domain, sets reseller branding
+   ChildPanelProvider     — reads domain, sets cp branding
+   CachedServicesProvider — detects domain type, exposes domainResolved
+   ServicesProvider       — same but for the other services context
 ====================================================== */
-
 export default function App() {
   return (
     <QueryClientProvider client={client}>
