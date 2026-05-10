@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
 import Sidebar from "../../components/reseller/Sidebar";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
