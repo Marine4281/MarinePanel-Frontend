@@ -1,42 +1,118 @@
 // src/api/axios.js
+
 import axios from "axios";
 
 const BASE_DOMAIN = "marinepanel.online";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+    Expires: "0",
+  },
 });
 
-api.interceptors.request.use((config) => {
-  // 1. Auth token
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+/* =========================================================
+REQUEST INTERCEPTOR
+========================================================= */
+api.interceptors.request.use(
+  (config) => {
+    /* =====================================================
+    1. LOAD USER SAFELY
+    ===================================================== */
+    let user = {};
 
-  const host = window.location.hostname;
+    try {
+      user = JSON.parse(localStorage.getItem("user") || "{}");
+    } catch (err) {
+      user = {};
+    }
 
-  // 2. Skip domain headers on main platform and localhost
-  if (host === BASE_DOMAIN || host === "localhost" || host === "127.0.0.1") {
+    /* =====================================================
+    2. SUPPORT OLD + NEW TOKEN STORAGE
+       - localStorage.token
+       - user.token
+    ===================================================== */
+    const standaloneToken = localStorage.getItem("token");
+    const userToken = user?.token;
+
+    const token = standaloneToken || userToken;
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    /* =====================================================
+    3. DOMAIN DETECTION
+    ===================================================== */
+    const hostname = window.location.hostname;
+    const fullHost = window.location.host;
+
+    const isMainPlatform =
+      hostname === BASE_DOMAIN ||
+      hostname === `www.${BASE_DOMAIN}` ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1";
+
+    /* =====================================================
+    4. MAIN PLATFORM
+       - No child/reseller headers needed
+    ===================================================== */
+    if (isMainPlatform) {
+      return config;
+    }
+
+    /* =====================================================
+    5. CHILD PANEL DETECTION
+       - Child panel owner
+       - OR user registered under child panel scope
+    ===================================================== */
+    const isChildPanelRequest =
+      user?.isChildPanel === true ||
+      (user?.scope && user.scope !== "platform");
+
+    if (isChildPanelRequest) {
+      config.headers["x-childpanel-domain"] = fullHost;
+    } else {
+      /* ===================================================
+      6. RESELLER DOMAIN
+      =================================================== */
+      config.headers["x-reseller-domain"] = fullHost;
+    }
+
     return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+/* =========================================================
+RESPONSE INTERCEPTOR
+========================================================= */
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error(
+      "API Error:",
+      error?.response?.data || error.message
+    );
+
+    /*
+    OPTIONAL:
+    Auto logout if token becomes invalid
+    Uncomment if desired
+
+    if (error?.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    */
+
+    return Promise.reject(error);
   }
-
-  // 3. Determine domain type from stored user object (set at login)
-  const user = (() => {
-    try { return JSON.parse(localStorage.getItem("user") || "{}"); }
-    catch { return {}; }
-  })();
-
-  // 4. Child panel owner OR user registered on a child panel
-  //    → send x-childpanel-domain so backend sets req.childPanel + correct scope
-  if (user?.isChildPanel || user?.scope !== "platform") {
-    config.headers["x-childpanel-domain"] = host;
-  } else {
-    // Reseller domain or reseller's end-user
-    // → send x-reseller-domain so backend sets req.reseller + req.brand
-    config.headers["x-reseller-domain"] = host;
-  }
-
-  return config;
-});
+);
 
 export default api;
