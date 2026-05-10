@@ -3,7 +3,7 @@
 // Dark premium glass UI. No child panel / reseller panel copy.
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useReseller } from "../../context/ResellerContext";
 import API from "../../api/axios";
@@ -60,9 +60,9 @@ const PAYMENT_METHODS = [
 ];
 
 export default function ResellerLogin() {
-  const { login }                     = useAuth();
-  const navigate                      = useNavigate();
-  const { reseller, loading }         = useReseller();
+  const { login }             = useAuth();
+  const navigate              = useNavigate();
+  const { reseller, loading } = useReseller();
 
   const [email,        setEmail]        = useState("");
   const [password,     setPassword]     = useState("");
@@ -95,9 +95,9 @@ export default function ResellerLogin() {
       const res = await API.post("/auth/login", { email, password });
       login(res.data);
       toast.success("Login successful!");
-      if (res.data.isAdmin)      navigate("/admin");
+      if (res.data.isAdmin)           navigate("/admin");
       else if (res.data.isChildPanel) navigate("/child-panel/dashboard");
-      else                        navigate("/home");
+      else                            navigate("/home");
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {
@@ -244,6 +244,24 @@ export default function ResellerLogin() {
               {submitting ? "Signing in…" : "Sign In"}
             </button>
           </form>
+
+          {/* ── Divider + Register link ── */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+            <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>or</span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+          </div>
+
+          <p className="text-center text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="font-semibold hover:underline"
+              style={{ color: tc }}
+            >
+              Create one free
+            </Link>
+          </p>
         </div>
 
         {/* Trust badges */}
@@ -284,4 +302,4 @@ export default function ResellerLogin() {
       </div>
     </div>
   );
-    }
+                                                 }
