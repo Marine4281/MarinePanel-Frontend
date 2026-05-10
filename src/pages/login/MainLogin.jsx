@@ -315,14 +315,13 @@ export default function MainLogin() {
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   Password
                 </label>
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
+                <Link
+                  to="/forgot-password"
                   className="text-xs font-semibold transition-opacity hover:opacity-70"
                   style={{ color: BRAND }}
                 >
-                  Forgot password?
-                </button>
+                Forgot password?
+              </Link>
               </div>
               <div className="relative">
                 <input
