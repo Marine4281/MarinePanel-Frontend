@@ -1,11 +1,11 @@
-//src/pages/Profile.jsx
+// src/pages/Profile.jsx
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
-import { Copy, Check, Eye, EyeOff, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Check, Eye, EyeOff, RefreshCw, Trash2, Lock } from "lucide-react";
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -21,10 +21,19 @@ const Profile = () => {
   });
 
   const [editMode, setEditMode] = useState(false);
-  const [password, setPassword] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
+
+  // Password change state
+  const [pwSection, setPwSection] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -47,14 +56,45 @@ const Profile = () => {
       const res = await API.put("/users/profile", {
         phone: profile.phone,
         country: profile.country,
-        password: password || undefined,
       });
       setProfile((prev) => ({ ...prev, ...res.data }));
       toast.success("Profile updated successfully");
       setEditMode(false);
-      setPassword("");
     } catch (error) {
       toast.error(error.response?.data?.message || "Update failed");
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("All password fields are required");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      await API.put("/users/profile", {
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+      toast.success("Password changed successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPwSection(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Password change failed");
+    } finally {
+      setPwLoading(false);
     }
   };
 
@@ -106,9 +146,7 @@ const Profile = () => {
     ? profile.apiKey.slice(0, 6) + "••••••••••••••••••••" + profile.apiKey.slice(-4)
     : null;
 
-  const displayName = profile.email
-    ? profile.email.split("@")[0]
-    : "User";
+  const displayName = profile.email ? profile.email.split("@")[0] : "User";
 
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
@@ -181,17 +219,110 @@ const Profile = () => {
                   : "-"}
               </p>
             </div>
+          </div>
 
-            {editMode && (
-              <div>
-                <label className="text-sm text-gray-500">New Password</label>
-                <input
-                  type="password"
-                  placeholder="Enter new password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="p-2 w-full border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
+          {/* ── Edit Profile Actions ── */}
+          {editMode && (
+            <div className="flex flex-col md:flex-row gap-3">
+              <button
+                onClick={handleUpdate}
+                className="flex-1 bg-green-600 text-white py-2.5 rounded-xl hover:bg-green-700 transition font-medium"
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => setEditMode(false)}
+                className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl hover:bg-gray-200 transition font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          <hr />
+
+          {/* ── Change Password Section ── */}
+          <div>
+            <button
+              onClick={() => setPwSection((p) => !p)}
+              className="flex items-center gap-2 text-orange-500 font-semibold hover:text-orange-600 transition"
+            >
+              <Lock size={17} />
+              {pwSection ? "Hide Password Change" : "Change Password"}
+            </button>
+
+            {pwSection && (
+              <div className="mt-4 space-y-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                {/* Current Password */}
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">Current Password</label>
+                  <div className="relative">
+                    <input
+                      type={showCurrent ? "text" : "password"}
+                      placeholder="Enter current password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="p-2 pr-10 w-full border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrent((p) => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showNew ? "text" : "password"}
+                      placeholder="Enter new password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="p-2 pr-10 w-full border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew((p) => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="text-sm text-gray-500 block mb-1">Confirm New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="p-2 pr-10 w-full border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((p) => !p)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwLoading}
+                  className="w-full bg-orange-500 text-white py-2.5 rounded-xl hover:bg-orange-600 transition font-medium disabled:opacity-60"
+                >
+                  {pwLoading ? "Updating..." : "Update Password"}
+                </button>
               </div>
             )}
           </div>
@@ -205,16 +336,11 @@ const Profile = () => {
                 <h3 className="font-semibold text-gray-800">API Access</h3>
                 <p className="text-xs text-gray-400 mt-0.5">
                   Use your API key to integrate with Marine Panel.{" "}
-                  <a
-                    href="/api-docs"
-                    className="text-orange-500 hover:underline"
-                  >
+                  <a href="/api-docs" className="text-orange-500 hover:underline">
                     View docs →
                   </a>
                 </p>
               </div>
-
-              {/* Status badge */}
               <span
                 className={`text-xs font-semibold px-3 py-1 rounded-full ${
                   profile.apiAccessEnabled
@@ -226,7 +352,6 @@ const Profile = () => {
               </span>
             </div>
 
-            {/* API URL */}
             <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
               <p className="text-xs text-gray-400 mb-0.5">API Endpoint</p>
               <code className="text-sm text-orange-500 break-all">
@@ -234,7 +359,6 @@ const Profile = () => {
               </code>
             </div>
 
-            {/* Key display */}
             {profile.apiKey ? (
               <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
                 <p className="text-xs text-gray-400 mb-1">Your API Key</p>
@@ -245,20 +369,14 @@ const Profile = () => {
                   <button
                     onClick={() => setShowKey((p) => !p)}
                     className="text-gray-400 hover:text-gray-600 shrink-0"
-                    title={showKey ? "Hide" : "Show"}
                   >
                     {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                   <button
                     onClick={handleCopyKey}
                     className="text-gray-400 hover:text-orange-500 shrink-0 transition"
-                    title="Copy"
                   >
-                    {copied ? (
-                      <Check size={16} className="text-green-500" />
-                    ) : (
-                      <Copy size={16} />
-                    )}
+                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                   </button>
                 </div>
               </div>
@@ -268,7 +386,6 @@ const Profile = () => {
               </div>
             )}
 
-            {/* Action buttons */}
             <div className="flex gap-3">
               <button
                 onClick={handleGenerateKey}
@@ -278,7 +395,6 @@ const Profile = () => {
                 <RefreshCw size={15} className={apiLoading ? "animate-spin" : ""} />
                 {profile.apiKey ? "Regenerate Key" : "Generate Key"}
               </button>
-
               {profile.apiKey && (
                 <button
                   onClick={handleRevokeKey}
@@ -294,24 +410,9 @@ const Profile = () => {
 
           <hr />
 
-          {/* ── Actions ── */}
+          {/* ── Bottom Actions ── */}
           <div className="flex flex-col md:flex-row gap-4">
-            {editMode ? (
-              <>
-                <button
-                  onClick={handleUpdate}
-                  className="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition"
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={() => { setEditMode(false); setPassword(""); }}
-                  className="w-full bg-red-500 text-white py-3 rounded-xl hover:bg-red-600 transition"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
+            {!editMode && (
               <>
                 <button
                   onClick={() => setEditMode(true)}
