@@ -24,7 +24,7 @@ const links = [
   // ✅ NEW PAGE: Child Panels
   { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/admin/child-panels" },
 
-  { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-methods" },
+  { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-gateways" },
 
   // 🔥 Staff Actions Page
   { name: "Staff Actions", icon: "fa-solid fa-shield-halved", path: "/admin/logs" },
