@@ -18,6 +18,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import TermsPublic from "./pages/TermsPublic";
+import AddFunds              from "./pages/AddFunds";
+import PaymentSuccess        from "./pages/payment/PaymentSuccess";
 
 // User pages
 import Home from "./pages/Home";
@@ -43,6 +45,7 @@ import AdminChildPanelDetails from "./pages/AdminChildPanelDetails";
 import ProviderSync from "./pages/ProviderSync";
 import AdminCategoryMeta from "./pages/AdminCategoryMeta";
 import Financial from "./pages/Financial";
+import AdminPaymentGateways  from "./pages/AdminPaymentGateways";
 
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
@@ -70,6 +73,7 @@ import ChildPanelSettings from "./pages/childpanel/ChildPanelSettings";
 import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 import ChildPanelPage from "./pages/childpanel/ChildPanelPage";
 import ChildPanelServices from "./pages/childpanel/ChildPanelServices";
+import CpPaymentGateways     from "./pages/childpanel/CpPaymentGateways";
 
 // Template router — renders template version of page on child panel domains
 import TemplateRouter from "./templates/TemplateRouter";
@@ -182,6 +186,9 @@ function AppRoutes() {
         <Route path="/terms" element={<ProtectedRoute><TermsAndConditions /></ProtectedRoute>} />
         <Route path="/terms-public" element={<TermsPublic />} />
 
+        <Route path="/add-funds"      element={<ProtectedRoute><AddFunds /></ProtectedRoute>} />
+        <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+
         {/* ================================================
             USER ROUTES
             Each route is wrapped with TemplateRouter so that
@@ -280,6 +287,8 @@ function AppRoutes() {
         <Route path="/child-panel/wallet"     element={<ChildPanelRoute><ChildPanelWallet /></ChildPanelRoute>} />
         <Route path="/child-panel/settings"   element={<ChildPanelRoute><ChildPanelSettings /></ChildPanelRoute>} />
         <Route path="/child-panel/services"   element={<ChildPanelRoute><ChildPanelServices /></ChildPanelRoute>} />
+        <Route path="/child-panel/payment-gateways" element={<ChildPanelRoute><CpPaymentGateways /></ChildPanelRoute>} />
+      
 
         {/* ================================================
             ADMIN ROUTES — unchanged
@@ -302,6 +311,8 @@ function AppRoutes() {
         <Route path="/admin/child-panels/:id"   element={<AdminRoute><AdminChildPanelDetails /></AdminRoute>} />
         <Route path="/admin/categories"         element={<AdminCategoryMeta />} />
         <Route path="/admin/financial"          element={<AdminRoute><Financial /></AdminRoute>} />
+        <Route path="/admin/payment-gateways" element={<AdminRoute><AdminPaymentGateways /></AdminRoute>} />
+
 
       </Routes>
     </>
