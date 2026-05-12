@@ -35,8 +35,15 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/users", icon: <FiUsers />, label: "Users" },
     { to: "/child-panel/orders", icon: <FiShoppingCart />, label: "Orders" },
 
-    // ✅ NEW: Services
+    // ✅ Services
     { to: "/child-panel/services", icon: <FiServer />, label: "Services" },
+
+    // ✅ NEW: Payment Gateways
+    {
+      to: "/child-panel/payment-gateways",
+      icon: <FiCreditCard />,
+      label: "Payment Gateways",
+    },
 
     { to: "/child-panel/resellers", icon: <FiUserCheck />, label: "Resellers" },
     { to: "/child-panel/providers", icon: <FiServer />, label: "Providers" },
@@ -70,7 +77,9 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
             key={to}
             to={to}
             onClick={onClose}
-            className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${active(to)}`}
+            className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${active(
+              to
+            )}`}
           >
             {icon} {label}
           </Link>
@@ -111,4 +120,4 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       )}
     </>
   );
-      }
+     }
