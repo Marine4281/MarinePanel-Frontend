@@ -42,7 +42,7 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     {
       to: "/child-panel/payment-gateways",
       icon: <FiCreditCard />,
-      label: "Payment Gateways",
+      label: "Payments",
     },
 
     { to: "/child-panel/resellers", icon: <FiUserCheck />, label: "Resellers" },
