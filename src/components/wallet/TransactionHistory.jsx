@@ -1,108 +1,139 @@
 // src/components/wallet/TransactionHistory.jsx
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-const statusColor = (s) =>
-  s === "Completed" ? "#4ade80" : s === "Pending" ? "#fbbf24" : "#f87171";
+const PAGE_SIZE = 10;
 
-const statusBg = (s) =>
-  s === "Completed" ? "rgba(74,222,128,0.1)" : s === "Pending" ? "rgba(251,191,36,0.1)" : "rgba(248,113,113,0.1)";
+const statusClass = (s) =>
+  s === "Completed" ? "text-green-600"
+  : s === "Pending"   ? "text-yellow-500"
+  : "text-red-500";
 
-export default function TransactionHistory({ transactions }) {
-  const [showAll, setShowAll] = useState(false);
+const TransactionHistory = ({ transactions }) => {
+  const [page,       setPage]       = useState(1);
+  const [displayed,  setDisplayed]  = useState([]);
+  const [hasMore,    setHasMore]    = useState(false);
+  const loaderRef                   = useRef(null);
 
-  const displayed = showAll ? transactions : transactions.slice(0, 5);
+  // Reset when transactions prop changes (e.g. socket update)
+  useEffect(() => {
+    const slice = transactions.slice(0, PAGE_SIZE);
+    setDisplayed(slice);
+    setPage(1);
+    setHasMore(transactions.length > PAGE_SIZE);
+  }, [transactions]);
+
+  // Load next page
+  const loadMore = useCallback(() => {
+    const nextPage  = page + 1;
+    const nextSlice = transactions.slice(0, nextPage * PAGE_SIZE);
+    setDisplayed(nextSlice);
+    setPage(nextPage);
+    setHasMore(nextSlice.length < transactions.length);
+  }, [page, transactions]);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    if (!loaderRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting && hasMore) loadMore(); },
+      { threshold: 1 }
+    );
+
+    observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [loaderRef, hasMore, loadMore]);
 
   return (
-    <div className="rounded-2xl overflow-hidden"
-      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+    <div className="bg-white rounded-2xl shadow-lg p-6">
 
-      <div className="px-5 py-4 flex items-center justify-between"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <h3 className="text-sm font-bold text-white">Transaction History</h3>
-        <span className="text-xs px-2 py-0.5 rounded-full"
-          style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-semibold text-gray-800">Transaction History</h3>
+        <span className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">
           {transactions.length} total
         </span>
       </div>
 
-      {/* Mobile cards */}
-      <div className="sm:hidden divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-        {displayed.length === 0 && (
-          <p className="px-5 py-8 text-center text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-            No transactions yet
-          </p>
-        )}
-        {displayed.map((tx) => (
-          <div key={tx._id} className="px-5 py-4 flex items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{tx.type}</p>
-              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
-                {new Date(tx.createdAt).toLocaleDateString()} · {tx.method || ""}
-              </p>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <p className="text-sm font-bold" style={{ color: tx.amount > 0 ? "#4ade80" : "#f87171" }}>
-                {tx.amount > 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(4)}
-              </p>
-              <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
-                style={{ background: statusBg(tx.status), color: statusColor(tx.status) }}>
-                {tx.status}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+      <div className="overflow-x-auto">
 
-      {/* Desktop table */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-sm">
+        {/* Desktop table */}
+        <table className="w-full border-collapse hidden sm:table">
           <thead>
-            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              {["Date", "Type", "Method", "Amount", "Status"].map((h) => (
-                <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "rgba(255,255,255,0.4)" }}>{h}</th>
-              ))}
+            <tr className="bg-gray-50 text-left">
+              <th className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+              <th className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+              <th className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Method</th>
+              <th className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+              <th className="p-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
             </tr>
           </thead>
+
           <tbody>
             {displayed.length === 0 && (
-              <tr><td colSpan={5} className="px-5 py-8 text-center text-sm"
-                style={{ color: "rgba(255,255,255,0.3)" }}>No transactions yet</td></tr>
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-gray-400 text-sm">
+                  No transactions yet
+                </td>
+              </tr>
             )}
             {displayed.map((tx) => (
-              <tr key={tx._id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                <td className="px-5 py-3 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
+              <tr key={tx._id} className="border-t hover:bg-gray-50 transition">
+                <td className="p-3 text-sm text-gray-500">
                   {new Date(tx.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-5 py-3 text-white font-medium">{tx.type}</td>
-                <td className="px-5 py-3 text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  {tx.method || "—"}
-                </td>
-                <td className="px-5 py-3 font-bold"
-                  style={{ color: tx.amount > 0 ? "#4ade80" : "#f87171" }}>
+                <td className="p-3 text-sm text-gray-700 font-medium">{tx.type}</td>
+                <td className="p-3 text-sm text-gray-500">{tx.method || "—"}</td>
+                <td className={`p-3 text-sm font-semibold ${tx.amount > 0 ? "text-green-600" : "text-red-500"}`}>
                   {tx.amount > 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(4)}
                 </td>
-                <td className="px-5 py-3">
-                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
-                    style={{ background: statusBg(tx.status), color: statusColor(tx.status) }}>
-                    {tx.status}
-                  </span>
+                <td className={`p-3 text-sm font-semibold ${statusClass(tx.status)}`}>
+                  {tx.status}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
 
-      {transactions.length > 5 && (
-        <div className="px-5 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={() => setShowAll((s) => !s)}
-            className="w-full py-2 rounded-xl text-sm font-semibold transition hover:opacity-80"
-            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
-            {showAll ? "Show Less" : `View All ${transactions.length} Transactions`}
-          </button>
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-3">
+          {displayed.length === 0 && (
+            <p className="text-center text-gray-400 text-sm py-6">No transactions yet</p>
+          )}
+          {displayed.map((tx) => (
+            <div key={tx._id} className="flex items-center justify-between border rounded-xl p-3 bg-gray-50">
+              <div>
+                <p className="text-sm font-semibold text-gray-700">{tx.type}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {new Date(tx.createdAt).toLocaleDateString()} · {tx.method || "—"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className={`text-sm font-bold ${tx.amount > 0 ? "text-green-600" : "text-red-500"}`}>
+                  {tx.amount > 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(4)}
+                </p>
+                <p className={`text-xs mt-0.5 font-semibold ${statusClass(tx.status)}`}>
+                  {tx.status}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+
+        {/* Infinity scroll trigger */}
+        {hasMore && (
+          <div ref={loaderRef} className="flex justify-center py-4">
+            <div className="w-5 h-5 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+          </div>
+        )}
+
+        {!hasMore && displayed.length > 0 && (
+          <p className="text-center text-xs text-gray-300 py-4">
+            All {transactions.length} transactions loaded
+          </p>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default TransactionHistory;
