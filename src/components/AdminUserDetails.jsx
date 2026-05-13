@@ -308,8 +308,8 @@ const AdminUserDetails = () => {
   const requestSaveCommission = (onDone) => {
     const isEmpty = commissionRate === "" || commissionRate === null;
     const value = isEmpty ? null : Number(commissionRate);
-    if (!isEmpty && (isNaN(value) || value < 0 || value > 100))
-      return toast.error("Commission must be 0–100");
+    if (!isEmpty && (isNaN(value) || value < 0 || value > 1000))
+      return toast.error("Commission must be 0–1000");
 
     setConfirmSave({
       type: "commission",
