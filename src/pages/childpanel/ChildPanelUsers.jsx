@@ -1,5 +1,5 @@
 // src/pages/childpanel/ChildPanelUsers.jsx
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -8,10 +8,10 @@ import { FiSearch, FiRefreshCw } from "react-icons/fi";
 
 // ─── Type config ───────────────────────────────────────────────
 const TYPE_CONFIG = {
-  Admin:    { label: "Admin",   bg: "bg-red-100",    text: "text-red-700"    },
-  Reseller: { label: "RS",      bg: "bg-purple-100", text: "text-purple-700" },
-  API:      { label: "API",     bg: "bg-yellow-100", text: "text-yellow-700" },
-  User:     { label: "User",    bg: "bg-gray-100",   text: "text-gray-500"   },
+  Admin:    { label: "Admin", bg: "bg-red-100",    text: "text-red-700"    },
+  Reseller: { label: "RS",    bg: "bg-purple-100", text: "text-purple-700" },
+  API:      { label: "API",   bg: "bg-yellow-100", text: "text-yellow-700" },
+  User:     { label: "User",  bg: "bg-gray-100",   text: "text-gray-500"   },
 };
 
 const getUserTypes = (u) => {
@@ -40,7 +40,6 @@ const StatusBadge = ({ user }) => {
   return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Active</span>;
 };
 
-// Smart page buttons
 const pageButtons = (current, total) => {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   if (current <= 4) return [1, 2, 3, 4, 5, "...", total];
@@ -50,34 +49,53 @@ const pageButtons = (current, total) => {
 
 export default function ChildPanelUsers() {
   const navigate = useNavigate();
-  const [users, setUsers]       = useState([]);
-  const [total, setTotal]       = useState(0);
-  const [pages, setPages]       = useState(1);
-  const [page, setPage]         = useState(1);
-  const [search, setSearch]     = useState("");
-  const [loading, setLoading]   = useState(true);
 
-  // Reset page on search
-  useEffect(() => { setPage(1); }, [search]);
+  const [users, setUsers]     = useState([]);
+  const [total, setTotal]     = useState(0);
+  const [pages, setPages]     = useState(1);
+  const [page, setPage]       = useState(1);
+  const [search, setSearch]   = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const fetchUsers = useCallback(async (p = 1, q = search) => {
+  // Debounce search so we don't fire on every keystroke
+  const searchTimer = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1); // reset to page 1 on new search
+    }, 350);
+    return () => clearTimeout(searchTimer.current);
+  }, [search]);
+
+  const fetchUsers = useCallback(async (p, q) => {
     setLoading(true);
     try {
-      const res = await API.get(`/cp/users?page=${p}&limit=20&search=${encodeURIComponent(q)}`);
+      const params = new URLSearchParams({ page: p, limit: 20 });
+      if (q && q.trim()) params.set("search", q.trim());
+
+      const res = await API.get(`/cp/users?${params.toString()}`);
+
       setUsers(res.data.data || []);
       setTotal(res.data.pagination?.total || 0);
       setPages(res.data.pagination?.pages || 1);
-      setPage(res.data.pagination?.page || 1);
-    } catch {
+      setPage(res.data.pagination?.page  || 1);
+    } catch (err) {
+      console.error("ChildPanelUsers fetch error:", err);
       toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, []);
 
-  useEffect(() => { fetchUsers(page, search); }, [page, search]);
+  // Single effect — fires when page or debounced search changes
+  useEffect(() => {
+    fetchUsers(page, debouncedSearch);
+  }, [page, debouncedSearch, fetchUsers]);
 
-  const first = (page - 1) * 20 + 1;
+  const first = total === 0 ? 0 : (page - 1) * 20 + 1;
   const last  = Math.min(page * 20, total);
 
   return (
@@ -105,8 +123,9 @@ export default function ChildPanelUsers() {
               />
             </div>
             <button
-              onClick={() => fetchUsers(page, search)}
+              onClick={() => fetchUsers(page, debouncedSearch)}
               className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 text-gray-500"
+              title="Refresh"
             >
               <FiRefreshCw size={14} />
             </button>
@@ -120,7 +139,11 @@ export default function ChildPanelUsers() {
               <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : users.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-16">No users found</p>
+            <div className="py-16 text-center">
+              <p className="text-gray-400 text-sm">
+                {debouncedSearch ? `No users matching "${debouncedSearch}"` : "No users on your panel yet"}
+              </p>
+            </div>
           ) : (
             <>
               <table className="w-full text-sm text-left">
@@ -165,7 +188,9 @@ export default function ChildPanelUsers() {
                       <td className="px-5 py-3 font-semibold text-green-600">
                         ${Number(u.balance || 0).toFixed(4)}
                       </td>
-                      <td className="px-5 py-3"><StatusBadge user={u} /></td>
+                      <td className="px-5 py-3">
+                        <StatusBadge user={u} />
+                      </td>
                       <td className="px-5 py-3 text-gray-400 text-xs">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
@@ -182,34 +207,42 @@ export default function ChildPanelUsers() {
                 </tbody>
               </table>
 
-              {/* Footer */}
+              {/* Footer pagination */}
               <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                <span>Showing {first}–{last} of {total}</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    disabled={page === 1}
-                    onClick={() => setPage((p) => p - 1)}
-                    className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600"
-                  >‹</button>
-                  {pageButtons(page, pages).map((p, i) =>
-                    p === "..." ? (
-                      <span key={`e${i}`} className="px-1 text-gray-300">…</span>
-                    ) : (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p)}
-                        className={`w-7 h-7 rounded font-medium transition-colors ${
-                          page === p ? "bg-blue-600 text-white shadow-sm" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >{p}</button>
-                    )
-                  )}
-                  <button
-                    disabled={page === pages || pages === 0}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600"
-                  >›</button>
-                </div>
+                <span>
+                  {total === 0 ? "No results" : `Showing ${first}–${last} of ${total}`}
+                </span>
+                {pages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage((p) => p - 1)}
+                      className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600"
+                    >‹</button>
+
+                    {pageButtons(page, pages).map((p, i) =>
+                      p === "..." ? (
+                        <span key={`e${i}`} className="px-1 text-gray-300">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`w-7 h-7 rounded font-medium transition-colors ${
+                            page === p
+                              ? "bg-blue-600 text-white shadow-sm"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >{p}</button>
+                      )
+                    )}
+
+                    <button
+                      disabled={page === pages}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600"
+                    >›</button>
+                  </div>
+                )}
               </div>
             </>
           )}
