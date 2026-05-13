@@ -74,6 +74,8 @@ import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 import ChildPanelPage from "./pages/childpanel/ChildPanelPage";
 import ChildPanelServices from "./pages/childpanel/ChildPanelServices";
 import CpPaymentGateways     from "./pages/childpanel/CpPaymentGateways";
+import ChildPanelUserDetails from "./pages/childpanel/ChildPanelUserDetails";
+
 
 // Template router — renders template version of page on child panel domains
 import TemplateRouter from "./templates/TemplateRouter";
@@ -288,7 +290,7 @@ function AppRoutes() {
         <Route path="/child-panel/settings"   element={<ChildPanelRoute><ChildPanelSettings /></ChildPanelRoute>} />
         <Route path="/child-panel/services"   element={<ChildPanelRoute><ChildPanelServices /></ChildPanelRoute>} />
         <Route path="/child-panel/payment-gateways" element={<ChildPanelRoute><CpPaymentGateways /></ChildPanelRoute>} />
-      
+        <Route path="/cp/users/:id" element={<ChildPanelUserDetails />} />
 
         {/* ================================================
             ADMIN ROUTES — unchanged
