@@ -336,7 +336,7 @@ export default function ChildPanelUsers() {
                       <td className="px-5 py-3">
                         <button
                           onClick={() =>
-                            navigate(`/cp/users/${u._id}`)
+                            navigate(`/child-panel/users/${u._id}`)
                           }
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
                         >
