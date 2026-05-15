@@ -290,7 +290,7 @@ function AppRoutes() {
         <Route path="/child-panel/settings"   element={<ChildPanelRoute><ChildPanelSettings /></ChildPanelRoute>} />
         <Route path="/child-panel/services"   element={<ChildPanelRoute><ChildPanelServices /></ChildPanelRoute>} />
         <Route path="/child-panel/payment-gateways" element={<ChildPanelRoute><CpPaymentGateways /></ChildPanelRoute>} />
-        <Route path="/cp/users/:id" element={<ChildPanelUserDetails />} />
+        <Route path="/child-panel/users/:id" element={<ChildPanelRoute><ChildPanelUserDetails /></ChildPanelRoute>} />
 
         {/* ================================================
             ADMIN ROUTES — unchanged
