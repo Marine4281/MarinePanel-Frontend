@@ -7,28 +7,53 @@ import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
 import { FiSearch, FiRefreshCw } from "react-icons/fi";
 
 const TYPE_CONFIG = {
-  Admin:    { label: "Admin", bg: "bg-red-100",    text: "text-red-700"    },
-  Reseller: { label: "RS",    bg: "bg-purple-100", text: "text-purple-700" },
-  API:      { label: "API",   bg: "bg-yellow-100", text: "text-yellow-700" },
-  User:     { label: "User",  bg: "bg-gray-100",   text: "text-gray-500"   },
+  Admin: {
+    label: "Admin",
+    bg: "bg-red-100",
+    text: "text-red-700",
+  },
+  Reseller: {
+    label: "RS",
+    bg: "bg-purple-100",
+    text: "text-purple-700",
+  },
+  API: {
+    label: "API",
+    bg: "bg-yellow-100",
+    text: "text-yellow-700",
+  },
+  User: {
+    label: "User",
+    bg: "bg-gray-100",
+    text: "text-gray-500",
+  },
 };
 
-// Always returns an array — never throws
+// Always returns an array
 const getUserTypes = (u) => {
   if (!u || typeof u !== "object") return ["User"];
-  // Prefer pre-computed field from backend
-  if (Array.isArray(u.userTypes) && u.userTypes.length > 0) return u.userTypes;
+
+  // Prefer backend-computed field
+  if (Array.isArray(u.userTypes) && u.userTypes.length > 0) {
+    return u.userTypes;
+  }
+
   const t = [];
-  if (u.isAdmin)          t.push("Admin");
-  if (u.isReseller)       t.push("Reseller");
+
+  if (u.isAdmin) t.push("Admin");
+  if (u.isReseller) t.push("Reseller");
   if (u.apiAccessEnabled) t.push("API");
-  return t.length > 0 ? t : ["User"];
+
+  return t.length ? t : ["User"];
 };
 
 const TypeBadge = ({ type }) => {
   const cfg = TYPE_CONFIG[type] || TYPE_CONFIG.User;
+
   return (
-    <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${cfg.bg} ${cfg.text}`}>
+    <span
+      className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${cfg.bg} ${cfg.text}`}
+    >
       {cfg.label}
     </span>
   );
@@ -36,70 +61,127 @@ const TypeBadge = ({ type }) => {
 
 const StatusBadge = ({ user }) => {
   if (!user) return null;
-  if (user.isBlocked)
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Blocked</span>;
-  if (user.isFrozen)
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Frozen</span>;
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Active</span>;
+
+  if (user.isBlocked) {
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+        Blocked
+      </span>
+    );
+  }
+
+  if (user.isFrozen) {
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+        Frozen
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+      Active
+    </span>
+  );
 };
 
-// Safe page buttons — always returns an array
+// Always returns an array
 const pageButtons = (current, total) => {
   const t = Number(total) || 0;
   const c = Number(current) || 1;
+
   if (t <= 0) return [];
-  if (t <= 7) return Array.from({ length: t }, (_, i) => i + 1);
-  if (c <= 4) return [1, 2, 3, 4, 5, "...", t];
-  if (c >= t - 3) return [1, "...", t - 4, t - 3, t - 2, t - 1, t];
+
+  if (t <= 7) {
+    return Array.from({ length: t }, (_, i) => i + 1);
+  }
+
+  if (c <= 4) {
+    return [1, 2, 3, 4, 5, "...", t];
+  }
+
+  if (c >= t - 3) {
+    return [1, "...", t - 4, t - 3, t - 2, t - 1, t];
+  }
+
   return [1, "...", c - 1, c, c + 1, "...", t];
 };
 
 export default function ChildPanelUsers() {
   const navigate = useNavigate();
 
-  const [users, setUsers]     = useState([]);
-  const [total, setTotal]     = useState(0);
-  const [pages, setPages]     = useState(1);
-  const [page, setPage]       = useState(1);
-  const [search, setSearch]   = useState("");
+  const [users, setUsers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
+
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   const searchTimer = useRef(null);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  // Debounce search
   useEffect(() => {
     clearTimeout(searchTimer.current);
+
     searchTimer.current = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
     }, 350);
+
     return () => clearTimeout(searchTimer.current);
   }, [search]);
 
-  const fetchUsers = useCallback(async (p, q) => {
+  const fetchUsers = useCallback(async (p = 1, q = "") => {
     setLoading(true);
+
     try {
-      const params = new URLSearchParams({ page: p || 1, limit: 20 });
-      if (q && q.trim()) params.set("search", q.trim());
+      const params = new URLSearchParams({
+        page: String(p),
+        limit: "20",
+      });
+
+      if (q?.trim()) {
+        params.set("search", q.trim());
+      }
 
       const res = await API.get(`/cp/users?${params.toString()}`);
 
-      // Handle both array response (old) and paginated object (new)
-      if (Array.isArray(res.data)) {
-        setUsers(res.data);
-        setTotal(res.data.length);
-        setPages(1);
-        setPage(1);
-      } else {
-        setUsers(Array.isArray(res.data.data) ? res.data.data : []);
-        setTotal(res.data.pagination?.total || 0);
-        setPages(res.data.pagination?.pages || 1);
-        setPage(res.data.pagination?.page  || 1);
-      }
+      // NEW API FORMAT
+      // {
+      //   data: [],
+      //   pagination: { total, page, pages }
+      // }
+
+      const usersData = Array.isArray(res?.data?.data)
+        ? res.data.data
+        : [];
+
+      const pagination = res?.data?.pagination || {};
+
+      setUsers(usersData);
+
+      setTotal(Number(pagination.total) || usersData.length || 0);
+
+      setPages(
+        Math.max(1, Number(pagination.pages) || 1)
+      );
+
+      setPage(
+        Math.max(1, Number(pagination.page) || p)
+      );
     } catch (err) {
       console.error("ChildPanelUsers fetch error:", err);
-      toast.error("Failed to load users");
+
+      toast.error(
+        err?.response?.data?.message || "Failed to load users"
+      );
+
       setUsers([]);
+      setTotal(0);
+      setPages(1);
     } finally {
       setLoading(false);
     }
@@ -110,7 +192,7 @@ export default function ChildPanelUsers() {
   }, [page, debouncedSearch, fetchUsers]);
 
   const first = total === 0 ? 0 : (page - 1) * 20 + 1;
-  const last  = Math.min(page * 20, total);
+  const last = Math.min(page * 20, total);
 
   return (
     <ChildPanelLayout>
@@ -119,14 +201,23 @@ export default function ChildPanelUsers() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">Users</h1>
+            <h1 className="text-xl font-bold text-gray-800">
+              Users
+            </h1>
+
             <p className="text-sm text-gray-400 mt-0.5">
               {total} user{total !== 1 ? "s" : ""} on your panel
             </p>
           </div>
+
           <div className="flex gap-2">
+            {/* Search */}
             <div className="relative w-full sm:w-72">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+              <FiSearch
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={14}
+              />
+
               <input
                 type="search"
                 placeholder="Search email or phone…"
@@ -135,6 +226,8 @@ export default function ChildPanelUsers() {
                 className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 shadow-sm w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
               />
             </div>
+
+            {/* Refresh */}
             <button
               onClick={() => fetchUsers(page, debouncedSearch)}
               className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 text-gray-500"
@@ -147,6 +240,7 @@ export default function ChildPanelUsers() {
 
         {/* Table */}
         <div className="bg-white rounded-2xl shadow-sm overflow-x-auto">
+
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -174,9 +268,14 @@ export default function ChildPanelUsers() {
                     <th className="px-5 py-3">Action</th>
                   </tr>
                 </thead>
+
                 <tbody className="divide-y divide-gray-50">
-                  {users.map((u) => (
-                    <tr key={u._id} className="hover:bg-blue-50/30 transition-colors">
+                  {(users || []).map((u) => (
+                    <tr
+                      key={u._id}
+                      className="hover:bg-blue-50/30 transition-colors"
+                    >
+                      {/* Types */}
                       <td className="px-5 py-3">
                         <div className="flex flex-wrap gap-1">
                           {getUserTypes(u).map((t) => (
@@ -184,12 +283,20 @@ export default function ChildPanelUsers() {
                           ))}
                         </div>
                       </td>
+
+                      {/* Email */}
                       <td className="px-5 py-3 font-medium text-gray-700 max-w-[180px] truncate">
                         {u.email}
                       </td>
+
+                      {/* Phone */}
                       <td className="px-5 py-3 text-gray-500">
-                        {u.phone || <span className="text-gray-300">—</span>}
+                        {u.phone || (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
+
+                      {/* Country */}
                       <td className="px-5 py-3">
                         {u.countryCode ? (
                           <div className="flex items-center gap-2">
@@ -198,22 +305,39 @@ export default function ChildPanelUsers() {
                               alt={u.country || ""}
                               className="w-6 h-4 object-cover rounded-sm shadow-sm"
                             />
-                            <span className="text-gray-600 text-xs">{u.country}</span>
+
+                            <span className="text-gray-600 text-xs">
+                              {u.country}
+                            </span>
                           </div>
-                        ) : <span className="text-gray-300">—</span>}
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
+
+                      {/* Balance */}
                       <td className="px-5 py-3 font-semibold text-green-600">
                         ${Number(u.balance || 0).toFixed(4)}
                       </td>
+
+                      {/* Status */}
                       <td className="px-5 py-3">
                         <StatusBadge user={u} />
                       </td>
+
+                      {/* Joined */}
                       <td className="px-5 py-3 text-gray-400 text-xs">
-                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                        {u.createdAt
+                          ? new Date(u.createdAt).toLocaleDateString()
+                          : "—"}
                       </td>
+
+                      {/* Action */}
                       <td className="px-5 py-3">
                         <button
-                          onClick={() => navigate(`/cp/users/${u._id}`)}
+                          onClick={() =>
+                            navigate(`/cp/users/${u._id}`)
+                          }
                           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
                         >
                           View →
@@ -227,37 +351,55 @@ export default function ChildPanelUsers() {
               {/* Footer */}
               <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
                 <span>
-                  {total === 0 ? "No results" : `Showing ${first}–${last} of ${total}`}
+                  {total === 0
+                    ? "No results"
+                    : `Showing ${first}–${last} of ${total}`}
                 </span>
+
                 {pages > 1 && (
                   <div className="flex items-center gap-1">
+
+                    {/* Prev */}
                     <button
                       disabled={page === 1}
                       onClick={() => setPage((p) => p - 1)}
                       className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600"
-                    >‹</button>
+                    >
+                      ‹
+                    </button>
 
+                    {/* Numbers */}
                     {pageButtons(page, pages).map((p, i) =>
                       p === "..." ? (
-                        <span key={`e${i}`} className="px-1 text-gray-300">…</span>
+                        <span
+                          key={`e${i}`}
+                          className="px-1 text-gray-300"
+                        >
+                          …
+                        </span>
                       ) : (
                         <button
                           key={p}
-                          onClick={() => setPage(p)}
+                          onClick={() => setPage(Number(p))}
                           className={`w-7 h-7 rounded font-medium transition-colors ${
                             page === p
                               ? "bg-blue-600 text-white shadow-sm"
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                           }`}
-                        >{p}</button>
+                        >
+                          {p}
+                        </button>
                       )
                     )}
 
+                    {/* Next */}
                     <button
                       disabled={page === pages}
                       onClick={() => setPage((p) => p + 1)}
                       className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-gray-600"
-                    >›</button>
+                    >
+                      ›
+                    </button>
                   </div>
                 )}
               </div>
@@ -267,4 +409,4 @@ export default function ChildPanelUsers() {
       </div>
     </ChildPanelLayout>
   );
-    }
+  }
