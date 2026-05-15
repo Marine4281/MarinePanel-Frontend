@@ -133,7 +133,7 @@ export default function ChildPanelDashboard() {
         ]);
 
         setData(dashRes.data);
-        setUsers(usersRes.data || usersRes.data[]);
+        setUsers(usersRes.data?.data || usersRes.data[]);
         setOrders(ordersRes.data?.orders || []);
       } catch (err) {
         toast.error("Failed to load dashboard");
