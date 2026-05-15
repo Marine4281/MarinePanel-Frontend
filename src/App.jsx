@@ -74,7 +74,7 @@ import ChildPanelWallet from "./pages/childpanel/ChildPanelWallet";
 import ChildPanelPage from "./pages/childpanel/ChildPanelPage";
 import ChildPanelServices from "./pages/childpanel/ChildPanelServices";
 import CpPaymentGateways     from "./pages/childpanel/CpPaymentGateways";
-import ChildPanelUserDetails from "./pages/childpanel/ChildPanelUserDetails";
+import ChildPanelUserDetails from "./components/childpanel/ChildPanelUserDetails";
 
 
 // Template router — renders template version of page on child panel domains
