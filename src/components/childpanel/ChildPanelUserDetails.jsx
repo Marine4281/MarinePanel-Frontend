@@ -261,7 +261,7 @@ export default function ChildPanelUserDetails() {
     try {
       await API.delete(`/cp/users/${id}`);
       toast.success("User deleted");
-      navigate("/cp/users");
+      navigate("/child-panel/users");
     } catch { toast.error("Delete failed"); }
     finally { setDeleting(false); setShowDelete(false); }
   };
