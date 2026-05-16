@@ -1,4 +1,4 @@
-// src/pages/childpanel/ChildPanelUserDetails.jsx
+// src/components/childpanel/ChildPanelUserDetails.jsx
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../api/axios";
@@ -65,8 +65,8 @@ const ConfirmSaveModal = ({ title, message, onConfirm, onCancel, loading }) => (
 const statusColor = (s) => {
   if (!s) return "bg-gray-100 text-gray-600";
   const v = s.toLowerCase();
-  if (v === "completed") return "bg-green-100 text-green-700";
-  if (v === "pending")   return "bg-yellow-100 text-yellow-700";
+  if (v === "completed")  return "bg-green-100 text-green-700";
+  if (v === "pending")    return "bg-yellow-100 text-yellow-700";
   if (v === "processing") return "bg-blue-100 text-blue-700";
   return "bg-red-100 text-red-700";
 };
@@ -134,6 +134,7 @@ export default function ChildPanelUserDetails() {
   const [updatingComm, setUpdComm]    = useState(false);
   const [blocking, setBlocking]       = useState(false);
   const [freezing, setFreezing]       = useState(false);
+  const [promoting, setPromoting]     = useState(false);  // NEW
   const [deleting, setDeleting]       = useState(false);
 
   const [showDelete, setShowDelete]   = useState(false);
@@ -256,6 +257,18 @@ export default function ChildPanelUserDetails() {
     finally { setFreezing(false); }
   };
 
+  // NEW — promote / demote
+  const handleToggleAdmin = async () => {
+    setPromoting(true);
+    try {
+      const action = user.isAdmin ? "demote" : "promote";
+      const res = await API.patch(`/cp/users/${id}/${action}`);
+      setUser(res.data);
+      toast.success(user.isAdmin ? "Demoted to regular user" : "Promoted to admin");
+    } catch { toast.error("Failed"); }
+    finally { setPromoting(false); }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -270,7 +283,7 @@ export default function ChildPanelUserDetails() {
   if (loading) return <ChildPanelLayout><div className="p-10 text-center text-gray-400">Loading...</div></ChildPanelLayout>;
   if (!user)   return <ChildPanelLayout><div className="p-10 text-center text-gray-400">User not found</div></ChildPanelLayout>;
 
-  const types   = getUserTypes(user);
+  const types    = getUserTypes(user);
   const isOnline = user.lastSeen === "Online";
 
   return (
@@ -311,6 +324,8 @@ export default function ChildPanelUserDetails() {
             <h2 className="text-xl font-bold text-gray-800">User Details</h2>
             <div className="flex gap-2 flex-wrap justify-end">
               {types.map((t) => <UserTypeBadge key={t} type={t} />)}
+              {/* NEW — Admin badge */}
+              {user.isAdmin   && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Admin</span>}
               {user.isBlocked && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Blocked</span>}
               {user.isFrozen  && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Frozen</span>}
             </div>
@@ -382,11 +397,16 @@ export default function ChildPanelUserDetails() {
               <div className="flex gap-2 flex-wrap pt-1">
                 <button onClick={handleToggleBlock} disabled={blocking}
                   className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${user.isBlocked ? "bg-green-600 hover:bg-green-700" : "bg-gray-500 hover:bg-gray-600"}`}>
-                  {user.isBlocked ? "Unblock" : "Block"}
+                  {blocking ? "..." : user.isBlocked ? "Unblock" : "Block"}
                 </button>
                 <button onClick={handleToggleFreeze} disabled={freezing}
                   className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${user.isFrozen ? "bg-blue-500 hover:bg-blue-600" : "bg-purple-600 hover:bg-purple-700"}`}>
-                  {user.isFrozen ? "Unfreeze" : "Freeze"}
+                  {freezing ? "..." : user.isFrozen ? "Unfreeze" : "Freeze"}
+                </button>
+                {/* NEW — Promote / Demote button */}
+                <button onClick={handleToggleAdmin} disabled={promoting}
+                  className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${user.isAdmin ? "bg-orange-500 hover:bg-orange-600" : "bg-blue-600 hover:bg-blue-700"}`}>
+                  {promoting ? "..." : user.isAdmin ? "Demote" : "Promote to Admin"}
                 </button>
               </div>
             </div>
@@ -492,6 +512,7 @@ export default function ChildPanelUserDetails() {
             </>
           ) : <p className="text-sm text-gray-400 py-6 text-center">No transactions yet</p>}
         </div>
+
       </div>
     </ChildPanelLayout>
   );
