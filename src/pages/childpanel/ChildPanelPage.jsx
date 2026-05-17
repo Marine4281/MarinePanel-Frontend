@@ -271,7 +271,7 @@ export default function ChildPanelPage() {
                     )}
                   </button>
                   {activeIndex === index && (
-                    <div className="px-6 pb-5 text-gray-600 text-sm leading-relaxed">
+                    <div className="px-6 pb-5 text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
                       {guide.content}
                     </div>
                   )}
