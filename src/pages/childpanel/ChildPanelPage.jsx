@@ -79,7 +79,7 @@ export default function ChildPanelPage() {
   const fetchGuides = async () => {
     try {
       setLoadingGuides(true);
-      const res = await API.get("/reseller-guides"); // reuse same guides endpoint
+      const res = await API.get("/child-panel/guides?placement=activation");
       setGuides(res.data);
     } catch (err) {
       console.error(err);
