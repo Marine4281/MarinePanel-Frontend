@@ -58,29 +58,26 @@ api.interceptors.request.use(
       hostname === "127.0.0.1";
 
     /* =====================================================
-    /* =====================================================
-4. MAIN PLATFORM — no extra headers needed
-===================================================== */
-if (isMainPlatform) {
-  return config;
-}
-
-/* =====================================================
-5. EXTERNAL DOMAIN — always send the host header.
-   The backend middleware figures out if it's a child
-   panel or reseller by looking up the host in the DB.
-   We must NOT gate this on the user object because
-   unauthenticated users (login, register) have no
-   user in localStorage yet.
-===================================================== */
-config.headers["x-childpanel-domain"] = fullHost;
-
-return config;
-      /* ===================================================
-      6. RESELLER DOMAIN
-      =================================================== */
-      config.headers["x-reseller-domain"] = fullHost;
+    4. MAIN PLATFORM — no extra headers needed
+    ===================================================== */
+    if (isMainPlatform) {
+      return config;
     }
+
+    /* =====================================================
+    5. EXTERNAL DOMAIN — always send the host header.
+       The backend middleware figures out if it's a child
+       panel or reseller by looking up the host in the DB.
+       We must NOT gate this on the user object because
+       unauthenticated users (login, register) have no
+       user in localStorage yet.
+    ===================================================== */
+    config.headers["x-childpanel-domain"] = fullHost;
+
+    /* ===================================================
+    6. RESELLER DOMAIN
+    =================================================== */
+    config.headers["x-reseller-domain"] = fullHost;
 
     return config;
   },
