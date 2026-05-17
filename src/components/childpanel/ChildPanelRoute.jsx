@@ -1,7 +1,4 @@
 // src/components/childpanel/ChildPanelRoute.jsx
-// Route guard — only lets through authenticated users
-// who are child panel owners with an active panel.
-// Mirrors ProtectedRoute.jsx but scoped to isChildPanel.
 
 import { useAuth } from "../../context/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -20,29 +17,29 @@ export default function ChildPanelRoute({ children }) {
     );
   }
 
-  // Not logged in at all
   if (!user) return <Navigate to="/login" replace />;
-
-  // Logged in but not a child panel owner
   if (!user.isChildPanel) return <Navigate to="/home" replace />;
 
-  // Panel is suspended
+  // Panel is suspended by admin
   if (!user.childPanelIsActive) {
+    const reason = user.childPanelSuspendReason || "Your child panel has been suspended.";
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center max-w-md px-6">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-8 text-center">
           <div className="text-5xl mb-4">🚫</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Panel Suspended
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Your child panel has been suspended. Please contact support to
-            resolve this.
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Panel Suspended</h2>
+          <p className="text-gray-500 text-sm mb-4">{reason}</p>
+          <p className="text-xs text-gray-400">
+            Please contact support to resolve this issue.
           </p>
+          <a href="/home"
+            className="mt-5 inline-block px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+            Back to Home
+          </a>
         </div>
       </div>
     );
   }
 
   return children;
-}
+            }
