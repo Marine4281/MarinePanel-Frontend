@@ -1,59 +1,169 @@
-// src/components/childpanel/financial/CPFinancialResellerEarnings.jsx
-import { Section, fmt } from "./CPFinancialShared";
+// src/pages/childpanel/ChildPanelFinancial.jsx
+import { useState, useEffect, useCallback } from "react";
+import api from "../../api/axios";
+import CPFinancialOverview        from "../../components/childpanel/financial/CPFinancialOverview";
+import CPFinancialProfit          from "../../components/childpanel/financial/CPFinancialProfit";
+import CPFinancialUserBalances    from "../../components/childpanel/financial/CPFinancialUserBalances";
+import CPFinancialWithdrawals     from "../../components/childpanel/financial/CPFinancialWithdrawals";
+import CPFinancialResellerEarnings from "../../components/childpanel/financial/CPFinancialResellerEarnings";
 
-export default function CPFinancialResellerEarnings({ resellerEarnings, loading, rePage, setRePage, reTotal }) {
+const TABS = [
+  { key: "overview",    label: "Overview" },
+  { key: "profit",      label: "Profit" },
+  { key: "users",       label: "User Balances" },
+  { key: "withdrawals", label: "Withdrawals" },
+  { key: "resellers",   label: "Reseller Earnings" },
+];
+
+export default function ChildPanelFinancial() {
+  const [tab, setTab] = useState("overview");
+
+  // ── Summary ──────────────────────────────────────────────────
+  const [summary, setSummary]               = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+
+  // ── Profit ───────────────────────────────────────────────────
+  const [profitData, setProfitData]         = useState(null);
+  const [range, setRange]                   = useState("thisMonth");
+  const [country, setCountry]               = useState("All");
+  const [customStart, setCustomStart]       = useState("");
+  const [customEnd, setCustomEnd]           = useState("");
+  const [loadingProfit, setLoadingProfit]   = useState(false);
+
+  // ── Users ────────────────────────────────────────────────────
+  const [users, setUsers]                   = useState([]);
+  const [userPage, setUserPage]             = useState(1);
+  const [userTotal, setUserTotal]           = useState(0);
+  const [loadingUsers, setLoadingUsers]     = useState(false);
+
+  // ── Withdrawals ──────────────────────────────────────────────
+  const [withdrawals, setWithdrawals]       = useState([]);
+  const [wPage, setWPage]                   = useState(1);
+  const [wTotal, setWTotal]                 = useState(0);
+  const [wStatusFilter, setWStatusFilter]   = useState("");
+  const [loadingW, setLoadingW]             = useState(false);
+
+  // ── Reseller Earnings ────────────────────────────────────────
+  const [resellerEarnings, setResellerEarnings] = useState([]);
+  const [rePage, setRePage]                 = useState(1);
+  const [reTotal, setReTotal]               = useState(0);
+  const [loadingRe, setLoadingRe]           = useState(false);
+
+  // ── Fetches ──────────────────────────────────────────────────
+  useEffect(() => {
+    setLoadingSummary(true);
+    api.get("/cp/financial/summary")
+      .then((r) => setSummary(r.data))
+      .catch(console.error)
+      .finally(() => setLoadingSummary(false));
+  }, []);
+
+  const fetchProfit = useCallback(() => {
+    setLoadingProfit(true);
+    const params = { range, country };
+    if (range === "custom") { params.customStart = customStart; params.customEnd = customEnd; }
+    api.get("/cp/financial/profit", { params })
+      .then((r) => setProfitData(r.data))
+      .catch(console.error)
+      .finally(() => setLoadingProfit(false));
+  }, [range, country, customStart, customEnd]);
+
+  useEffect(() => { fetchProfit(); }, [fetchProfit]);
+
+  useEffect(() => {
+    if (tab !== "users") return;
+    setLoadingUsers(true);
+    api.get("/cp/financial/users", { params: { page: userPage, limit: 20 } })
+      .then((r) => { setUsers(r.data.data); setUserTotal(r.data.total); })
+      .catch(console.error)
+      .finally(() => setLoadingUsers(false));
+  }, [tab, userPage]);
+
+  const fetchWithdrawals = useCallback(() => {
+    if (tab !== "withdrawals") return;
+    setLoadingW(true);
+    const params = { page: wPage, limit: 20 };
+    if (wStatusFilter) params.status = wStatusFilter;
+    api.get("/cp/financial/withdrawals", { params })
+      .then((r) => { setWithdrawals(r.data.data); setWTotal(r.data.total); })
+      .catch(console.error)
+      .finally(() => setLoadingW(false));
+  }, [tab, wPage, wStatusFilter]);
+
+  useEffect(() => { fetchWithdrawals(); }, [fetchWithdrawals]);
+
+  useEffect(() => {
+    if (tab !== "resellers") return;
+    setLoadingRe(true);
+    api.get("/cp/financial/reseller-earnings", { params: { page: rePage, limit: 20 } })
+      .then((r) => { setResellerEarnings(r.data.data); setReTotal(r.data.total); })
+      .catch(console.error)
+      .finally(() => setLoadingRe(false));
+  }, [tab, rePage]);
+
   return (
-    <Section title={`Reseller Total Earnings — ${reTotal} resellers`}>
-      {loading ? (
-        <p className="text-gray-400 text-sm">Loading…</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-100">
-                  <th className="pb-2">#</th>
-                  <th className="pb-2">Reseller</th>
-                  <th className="pb-2">Country</th>
-                  <th className="pb-2 text-right">Orders</th>
-                  <th className="pb-2 text-right">Gross Revenue</th>
-                  <th className="pb-2 text-right">Earnings (Commission)</th>
-                  <th className="pb-2 text-right">Wallet Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resellerEarnings.length === 0 && (
-                  <tr><td colSpan={7} className="py-6 text-center text-gray-400">No resellers found</td></tr>
-                )}
-                {resellerEarnings.map((r, i) => (
-                  <tr key={r._id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="py-2 text-gray-400">{(rePage - 1) * 20 + i + 1}</td>
-                    <td className="py-2">
-                      <p className="text-gray-800 font-medium">{r.email}</p>
-                      <p className="text-xs text-gray-400">{r.phone}</p>
-                    </td>
-                    <td className="py-2 text-gray-500">{r.country ?? "—"}</td>
-                    <td className="py-2 text-right text-gray-600">{r.totalOrders}</td>
-                    <td className="py-2 text-right text-gray-600">${fmt(r.totalCharge)}</td>
-                    <td className="py-2 text-right font-bold text-green-600">${fmt(r.totalEarnings)}</td>
-                    <td className="py-2 text-right font-bold text-blue-600">${fmt(r.walletBalance)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
-            <span>{reTotal} resellers</span>
-            <div className="flex gap-2">
-              <button disabled={rePage === 1} onClick={() => setRePage((p) => p - 1)}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50">Prev</button>
-              <span className="px-3 py-1">Page {rePage}</span>
-              <button disabled={rePage * 20 >= reTotal} onClick={() => setRePage((p) => p + 1)}
-                className="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50">Next</button>
-            </div>
-          </div>
-        </>
-      )}
-    </Section>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Financial Overview</h1>
+          <p className="text-sm text-gray-500 mt-1">Wallet balances, profit, withdrawals &amp; earnings</p>
+        </div>
+
+        {/* Tab nav */}
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit shadow-sm overflow-x-auto">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                tab === t.key ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        {tab === "overview" && (
+          <CPFinancialOverview summary={summary} loading={loadingSummary} />
+        )}
+        {tab === "profit" && (
+          <CPFinancialProfit
+            profitData={profitData}   loading={loadingProfit}
+            range={range}             setRange={setRange}
+            country={country}         setCountry={setCountry}
+            customStart={customStart} setCustomStart={setCustomStart}
+            customEnd={customEnd}     setCustomEnd={setCustomEnd}
+            onApply={fetchProfit}
+          />
+        )}
+        {tab === "users" && (
+          <CPFinancialUserBalances
+            users={users}         loading={loadingUsers}
+            userPage={userPage}   setUserPage={setUserPage}
+            userTotal={userTotal}
+          />
+        )}
+        {tab === "withdrawals" && (
+          <CPFinancialWithdrawals
+            withdrawals={withdrawals}     loading={loadingW}
+            wPage={wPage}                 setWPage={setWPage}
+            wTotal={wTotal}
+            wStatusFilter={wStatusFilter} setWStatusFilter={setWStatusFilter}
+          />
+        )}
+        {tab === "resellers" && (
+          <CPFinancialResellerEarnings
+            resellerEarnings={resellerEarnings} loading={loadingRe}
+            rePage={rePage}                     setRePage={setRePage}
+            reTotal={reTotal}
+          />
+        )}
+
+      </div>
+    </div>
   );
-                }
+    }
