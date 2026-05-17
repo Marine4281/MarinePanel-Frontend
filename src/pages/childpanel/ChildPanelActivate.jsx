@@ -67,7 +67,7 @@ export default function ChildPanelActivate() {
     if (domainType === "custom" && !customDomain.trim())
       return toast.error("Custom domain is required");
 
-    if (wallet < (info?.activationFee || 0)) {
+    if (wallet < (info?. fee || 0)) {
       return toast.error(
         `Insufficient balance. You need $${info?.activationFee} to activate.`
       );
@@ -106,7 +106,7 @@ export default function ChildPanelActivate() {
     );
   }
 
-  const fee = info?.activationFee || 0;
+  const fee = info. fee || 0;
   const monthlyFee = info?.monthlyFee || 0;
   const billingMode = info?.billingMode || "monthly";
   const perOrderFee = info?.perOrderFee || 0;
