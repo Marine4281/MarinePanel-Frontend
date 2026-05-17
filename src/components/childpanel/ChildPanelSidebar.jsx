@@ -14,6 +14,8 @@ import {
   FiUserCheck,
   FiBookOpen,
   FiCreditCard,
+  FiDollarSign,
+  
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -49,6 +51,7 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/resellers", icon: <FiUserCheck />, label: "Resellers" },
     { to: "/child-panel/providers", icon: <FiServer />, label: "Providers" },
     { to: "/child-panel/wallet", icon: <FiCreditCard />, label: "Wallet" },
+    { to: "/child-panel/financial", icon: <FiDollarSign />, label: "Financial" },
     { to: "/child-panel/settings", icon: <FiSliders />, label: "Settings" },
     { to: "/child-panel/guides", icon: <FiBookOpen />, label: "Guides" },
   ];
