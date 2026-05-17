@@ -1,46 +1,38 @@
 // src/components/childpanel/orders/CPOrdersStats.jsx
 import { useEffect, useState } from "react";
 import API from "../../../api/axios";
-import { FiDollarSign, FiTrendingUp } from "react-icons/fi";
 
-export default function CPOrdersStats() {
-  const [stats, setStats] = useState({ totalBalance: 0, totalUsed: 0 });
+const CARDS = [
+  { key: "total",      label: "Total",      color: "bg-gray-100 text-gray-700" },
+  { key: "pending",    label: "Pending",    color: "bg-yellow-100 text-yellow-700" },
+  { key: "processing", label: "Processing", color: "bg-blue-100 text-blue-700" },
+  { key: "completed",  label: "Completed",  color: "bg-green-100 text-green-700" },
+  { key: "partial",    label: "Partial",    color: "bg-orange-100 text-orange-700" },
+  { key: "failed",     label: "Failed",     color: "bg-red-100 text-red-700" },
+];
+
+export default function CPOrdersStats({ search, status, fromDate, toDate }) {
+  const [stats, setStats] = useState({ total:0, pending:0, processing:0, completed:0, partial:0, failed:0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    API.get("/cp/orders/wallets/stats")
-      .then((res) => setStats(res.data || {}))
-      .catch(() => {});
-  }, []);
+    setLoading(true);
+    API.get("/cp/orders/stats", { params: { search, status, fromDate, toDate } })
+      .then((r) => setStats(r.data || {}))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [search, status, fromDate, toDate]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-          <FiDollarSign size={18} />
-        </div>
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide">
-            Total in User Wallets
-          </p>
-          <p className="text-xl font-bold text-gray-800">
-            ${Number(stats.totalBalance || 0).toFixed(2)}
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-5">
+      {CARDS.map(({ key, label, color }) => (
+        <div key={key} className="bg-white rounded-xl shadow-sm p-4">
+          <p className="text-xs text-gray-400 mb-1">{label}</p>
+          <p className={`text-lg font-bold rounded px-1 inline-block ${color}`}>
+            {loading ? "…" : stats[key] ?? 0}
           </p>
         </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-          <FiTrendingUp size={18} />
-        </div>
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide">
-            Total Money Used
-          </p>
-          <p className="text-xl font-bold text-gray-800">
-            ${Number(stats.totalUsed || 0).toFixed(2)}
-          </p>
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
