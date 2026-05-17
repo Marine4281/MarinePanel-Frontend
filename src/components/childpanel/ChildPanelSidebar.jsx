@@ -12,6 +12,7 @@ import {
   FiLogOut,
   FiHome,
   FiUserCheck,
+  FiBookOpen,
   FiCreditCard,
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -49,6 +50,7 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/providers", icon: <FiServer />, label: "Providers" },
     { to: "/child-panel/wallet", icon: <FiCreditCard />, label: "Wallet" },
     { to: "/child-panel/settings", icon: <FiSliders />, label: "Settings" },
+    { to: "/child-panel/guides", icon: <FiBookOpen />, label: "Guides" },
   ];
 
   const SidebarBody = () => (
