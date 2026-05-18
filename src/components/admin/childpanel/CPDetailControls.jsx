@@ -1,7 +1,7 @@
 // src/components/admin/childpanel/CPDetailControls.jsx
 
 import { useState } from "react";
-import { FiEdit2, FiCheck, FiX, FiRotateCcw } from "react-icons/fi";
+import { FiEdit2, FiCheck, FiX, FiRotateCcw, FiPlus, FiTrash2 } from "react-icons/fi";
 import API from "../../../api/axios";
 import toast from "react-hot-toast";
 import { fmt } from "./CPDetailHelpers";
@@ -12,7 +12,7 @@ const INTERVAL_PRESETS = [1, 7, 14, 30, 45, 60, 90];
 // ── Inline number field ───────────────────────────────────────────────
 function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
   const [editing, setEditing] = useState(false);
-  const [val, setVal]         = useState(value);
+  const [val,     setVal]     = useState(value);
   const [loading, setLoading] = useState(false);
 
   const handle = async () => {
@@ -55,16 +55,83 @@ function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
   );
 }
 
+// ── Tiers builder ─────────────────────────────────────────────────────
+function TiersBuilder({ tiers, onChange }) {
+  const add = () =>
+    onChange([...tiers, { minOrders: 0, maxOrders: null, fee: 0 }]);
+
+  const update = (i, field, val) =>
+    onChange(
+      tiers.map((t, idx) =>
+        idx === i ? { ...t, [field]: val === "" ? null : Number(val) } : t
+      )
+    );
+
+  const remove = (i) => onChange(tiers.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="space-y-2">
+      {tiers.length === 0 && (
+        <p className="text-xs text-gray-400 italic">
+          No tiers set — flat monthly fee will be used.
+        </p>
+      )}
+
+      {tiers.map((t, i) => (
+        <div key={i}
+          className="flex items-center gap-2 flex-wrap bg-white rounded-lg p-2 border">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500">Orders</span>
+            <input
+              type="number" min="0" value={t.minOrders}
+              onChange={(e) => update(i, "minOrders", e.target.value)}
+              className="w-16 border rounded px-1.5 py-1 text-xs focus:outline-none"
+              placeholder="Min"
+            />
+            <span className="text-xs text-gray-400">–</span>
+            <input
+              type="number" min="0" value={t.maxOrders ?? ""}
+              onChange={(e) =>
+                update(i, "maxOrders", e.target.value === "" ? "" : e.target.value)
+              }
+              className="w-16 border rounded px-1.5 py-1 text-xs focus:outline-none"
+              placeholder="Max (∞)"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500">Fee $</span>
+            <input
+              type="number" min="0" step="0.01" value={t.fee}
+              onChange={(e) => update(i, "fee", e.target.value)}
+              className="w-16 border rounded px-1.5 py-1 text-xs focus:outline-none"
+            />
+          </div>
+          <button onClick={() => remove(i)}
+            className="text-red-400 hover:text-red-600 ml-auto">
+            <FiTrash2 size={13} />
+          </button>
+        </div>
+      ))}
+
+      <button onClick={add}
+        className="flex items-center gap-1 text-xs text-blue-500 hover:underline mt-1">
+        <FiPlus size={12} /> Add tier
+      </button>
+    </div>
+  );
+}
+
 // ── Billing editor ────────────────────────────────────────────────────
 function BillingEdit({ cp, onSaved }) {
-  const [open, setOpen]           = useState(false);
-  const [mode, setMode]           = useState(cp?.childPanelBillingMode || "monthly");
-  const [monthly, setMonthly]     = useState(cp?.childPanelMonthlyFee ?? 0);
-  const [perOrder, setPerOrder]   = useState(cp?.childPanelPerOrderFee ?? 0);
+  const [open,         setOpen]         = useState(false);
+  const [mode,         setMode]         = useState(cp?.childPanelBillingMode        || "monthly");
+  const [monthly,      setMonthly]      = useState(cp?.childPanelMonthlyFee         ?? 0);
+  const [perOrder,     setPerOrder]     = useState(cp?.childPanelPerOrderFee        ?? 0);
   const [intervalDays, setIntervalDays] = useState(cp?.childPanelBillingIntervalDays ?? 30);
-  const [customDays, setCustomDays]     = useState(false);
-  const [loading, setLoading]           = useState(false);
-  const [resetting, setResetting]       = useState(false);
+  const [customDays,   setCustomDays]   = useState(false);
+  const [tiers,        setTiers]        = useState(cp?.childPanelMonthlyTiers       ?? []);
+  const [loading,      setLoading]      = useState(false);
+  const [resetting,    setResetting]    = useState(false);
 
   const isCustomFee = cp?.childPanelFeeIsCustom;
 
@@ -72,18 +139,20 @@ function BillingEdit({ cp, onSaved }) {
     setLoading(true);
     try {
       await API.put(`/admin/child-panels/${cp._id}/billing`, {
-        billingMode:        mode,
-        monthlyFee:         Number(monthly),
-        perOrderFee:        Number(perOrder),
+        billingMode:         mode,
+        monthlyFee:          Number(monthly),
+        perOrderFee:         Number(perOrder),
         billingIntervalDays: Number(intervalDays),
+        monthlyTiers:        tiers,
       });
       toast.success("Billing updated");
       onSaved({
-        childPanelBillingMode:        mode,
-        childPanelMonthlyFee:         Number(monthly),
-        childPanelPerOrderFee:        Number(perOrder),
+        childPanelBillingMode:         mode,
+        childPanelMonthlyFee:          Number(monthly),
+        childPanelPerOrderFee:         Number(perOrder),
         childPanelBillingIntervalDays: Number(intervalDays),
-        childPanelFeeIsCustom:        true,
+        childPanelMonthlyTiers:        tiers,
+        childPanelFeeIsCustom:         true,
       });
       setOpen(false);
     } catch {
@@ -98,8 +167,7 @@ function BillingEdit({ cp, onSaved }) {
     try {
       await API.put(`/admin/child-panels/${cp._id}/billing/reset`);
       toast.success("Reset to global default");
-      // Refetch so we get the new values from server
-      onSaved({ childPanelFeeIsCustom: false });
+      onSaved({ childPanelFeeIsCustom: false, childPanelMonthlyTiers: [] });
       setOpen(false);
     } catch {
       toast.error("Failed to reset billing");
@@ -123,12 +191,11 @@ function BillingEdit({ cp, onSaved }) {
           <FiEdit2 size={11} /> Edit Billing
         </button>
 
-        {isCustomFee && (
+        {isCustomFee ? (
           <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">
             Custom
           </span>
-        )}
-        {!isCustomFee && (
+        ) : (
           <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">
             Global Default
           </span>
@@ -140,7 +207,9 @@ function BillingEdit({ cp, onSaved }) {
 
           {/* Billing Mode */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1">Billing Mode</label>
+            <label className="text-xs font-semibold text-gray-600 block mb-1">
+              Billing Mode
+            </label>
             <select value={mode} onChange={(e) => setMode(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
               <option value="monthly">Monthly</option>
@@ -150,26 +219,49 @@ function BillingEdit({ cp, onSaved }) {
             </select>
           </div>
 
+          {/* Monthly flat fee */}
           {(mode === "monthly" || mode === "both") && (
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Monthly Fee ($)</label>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">
+                Monthly Flat Fee ($)
+              </label>
               <input type="number" min="0" value={monthly}
                 onChange={(e) => setMonthly(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" />
             </div>
           )}
 
+          {/* Per-order fee */}
           {(mode === "per_order" || mode === "both") && (
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Per-Order Fee ($)</label>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">
+                Per-Order Fee ($)
+              </label>
               <input type="number" min="0" value={perOrder}
                 onChange={(e) => setPerOrder(e.target.value)}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" />
             </div>
           )}
 
+          {/* Tiered billing — only for monthly / both */}
+          {(mode === "monthly" || mode === "both") && (
+            <div className="border-t pt-3">
+              <h4 className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                Tiered Monthly Billing
+                <span className="font-normal text-gray-400 ml-1">
+                  (overrides flat fee when set)
+                </span>
+              </h4>
+              <p className="text-xs text-gray-400 mb-3">
+                Define order-count ranges with a monthly fee per range.
+                e.g. 0–100 orders = $0, 101–500 = $2, 501+ = $5
+              </p>
+              <TiersBuilder tiers={tiers} onChange={setTiers} />
+            </div>
+          )}
+
           {/* Billing Interval */}
-          <div>
+          <div className="border-t pt-3">
             <label className="text-xs font-semibold text-gray-600 block mb-2">
               Billing Interval
             </label>
@@ -208,7 +300,7 @@ function BillingEdit({ cp, onSaved }) {
             </p>
           </div>
 
-          {/* Actions */}
+          {/* Save / Cancel */}
           <div className="flex gap-2">
             <button onClick={() => setOpen(false)}
               className="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
@@ -240,18 +332,16 @@ function NextBillingBadge({ nextBilledAt }) {
 
   const now  = new Date();
   const due  = new Date(nextBilledAt);
-  const diff = due - now;
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const days = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
 
   const label = due.toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric",
   });
 
-  const color = days < 0
-    ? "text-red-600 bg-red-50"
-    : days <= 3
-    ? "text-amber-600 bg-amber-50"
-    : "text-green-700 bg-green-50";
+  const color =
+    days < 0  ? "text-red-600 bg-red-50"   :
+    days <= 3 ? "text-amber-600 bg-amber-50" :
+                "text-green-700 bg-green-50";
 
   return (
     <span className={`text-xs px-2 py-0.5 rounded font-medium ${color}`}>
@@ -290,6 +380,11 @@ export default function CPDetailControls({ cp, onCommissionSaved, onBillingSaved
           {cp.childPanelBillingIntervalDays && (
             <> · every {cp.childPanelBillingIntervalDays}d</>
           )}
+          {cp.childPanelMonthlyTiers?.length > 0 && (
+            <span className="ml-1 text-xs px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded font-medium">
+              {cp.childPanelMonthlyTiers.length} tier{cp.childPanelMonthlyTiers.length !== 1 ? "s" : ""}
+            </span>
+          )}
         </p>
         <NextBillingBadge nextBilledAt={cp.childPanelNextBilledAt} />
         <BillingEdit cp={cp} onSaved={onBillingSaved} />
@@ -309,4 +404,4 @@ export default function CPDetailControls({ cp, onCommissionSaved, onBillingSaved
       </div>
     </div>
   );
-            }
+                       }
