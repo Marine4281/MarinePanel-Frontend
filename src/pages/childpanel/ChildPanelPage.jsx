@@ -66,15 +66,17 @@ export default function ChildPanelPage() {
 
   // If already an active child panel owner → go straight to dashboard
   useEffect(() => {
-    if (user) {
-      if (user.isChildPanel && user.childPanelIsActive) {
-        navigate("/child-panel/dashboard");
-      } else {
-        fetchGuides();
-      }
-      setCheckingStatus(false);
+  if (user) {
+    if (user.isChildPanel) {
+      // Always send CP owners toward the dashboard route.
+      // ChildPanelRoute handles suspension/expiry blocking from there.
+      navigate("/child-panel/dashboard");
+      return;
     }
-  }, [user, navigate]);
+    fetchGuides();
+    setCheckingStatus(false);
+  }
+}, [user, navigate]);
 
   const fetchGuides = async () => {
     try {
