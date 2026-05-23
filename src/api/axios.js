@@ -7,6 +7,7 @@ const BASE_DOMAIN = "marinepanel.online";
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true,
+  timeout: 8000, // ← KEY FIX: fail fast so detectDomainType can retry
   headers: {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache",
@@ -24,23 +25,16 @@ api.interceptors.request.use(
     1. LOAD USER SAFELY
     ===================================================== */
     let user = {};
-
     try {
       user = JSON.parse(localStorage.getItem("user") || "{}");
-    } catch (err) {
+    } catch {
       user = {};
     }
 
     /* =====================================================
-    2. SUPPORT OLD + NEW TOKEN STORAGE
-       - localStorage.token
-       - user.token
+    2. TOKEN
     ===================================================== */
-    const standaloneToken = localStorage.getItem("token");
-    const userToken = user?.token;
-
-    const token = standaloneToken || userToken;
-
+    const token = localStorage.getItem("token") || user?.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -58,26 +52,23 @@ api.interceptors.request.use(
       hostname === "127.0.0.1";
 
     /* =====================================================
-    4. MAIN PLATFORM — no extra headers needed
+    4. MAIN PLATFORM — no extra headers
     ===================================================== */
-    if (isMainPlatform) {
-      return config;
-    }
+    if (isMainPlatform) return config;
 
     /* =====================================================
-    5. EXTERNAL DOMAIN — always send the host header.
-       The backend middleware figures out if it's a child
-       panel or reseller by looking up the host in the DB.
-       We must NOT gate this on the user object because
-       unauthenticated users (login, register) have no
-       user in localStorage yet.
+    5. NON-MAIN DOMAIN
+       Send BOTH headers so the backend can detect which type
+       this domain is without us needing to know up front.
+       The backend middleware (reseller first, then childPanel)
+       picks up whichever one matches.
+       This is intentional — do NOT remove one of them.
+       detectDomainType() calls /child-panel/branding and
+       /end-user/branding WITHOUT a user token, so it needs
+       the domain headers to let the backend identify the panel.
     ===================================================== */
     config.headers["x-childpanel-domain"] = fullHost;
-
-    /* ===================================================
-    6. RESELLER DOMAIN
-    =================================================== */
-    config.headers["x-reseller-domain"] = fullHost;
+    config.headers["x-reseller-domain"]   = fullHost;
 
     return config;
   },
@@ -90,23 +81,13 @@ RESPONSE INTERCEPTOR
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error(
-      "API Error:",
-      error?.response?.data || error.message
-    );
-
-    /*
-    OPTIONAL:
-    Auto logout if token becomes invalid
-    Uncomment if desired
-
-    if (error?.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+    // Log for debugging — never swallow silently
+    if (error.code === "ECONNABORTED" || !error.response) {
+      // Network / timeout error — the detectDomainType retry loop handles this
+      console.warn("Network error or timeout:", error.message);
+    } else {
+      console.error("API Error:", error?.response?.data || error.message);
     }
-    */
-
     return Promise.reject(error);
   }
 );
