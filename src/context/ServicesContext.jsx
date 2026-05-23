@@ -1,35 +1,30 @@
-// src/context/CachedServicesContext.jsx
+// src/context/ServicesContext.jsx
 
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { io } from "socket.io-client";
 import API from "../api/axios";
+import { getResellerSlug } from "../utils/domain";
 
-const CachedServicesContext = createContext();
+const ServicesContext = createContext();
 
 const MAIN_DOMAIN = "marinepanel.online";
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 /**
- * Detects domain type with NO silent fallback.
+ * Detects domain type with NO silent fallback to "main".
  *
- * Strategy:
- * 1. If the hostname is the main platform → "main" immediately (no network call).
- * 2. Otherwise we are on a custom/subdomain — ask the backend which type it is.
- *    - /child-panel/branding returns 200  → "childPanel"
- *    - /end-user/branding   returns 200  → "reseller"
- *    - Both fail with network error       → RETRY up to 3 times before giving up.
- *    - Both return 404                    → unknown non-main domain; keep as
- *                                           "childPanel" or "reseller" based on
- *                                           which one returned a non-404 status,
- *                                           or stay as "unknown" so UI can show
- *                                           a proper error instead of main panel.
- *
- * The key change vs the old version: we NEVER return "main" for a non-main domain.
- * An unknown non-main domain shows an error page rather than the main landing page.
+ * Returns:
+ *   "main"        — marinepanel.online or localhost
+ *   "reseller"    — reseller subdomain / custom domain
+ *   "childPanel"  — child panel subdomain / custom domain
+ *   "unknown"     — non-main domain not registered on the platform
+ *   "unreachable" — backend could not be reached after retries
  */
 const detectDomainType = async () => {
   const host = window.location.hostname;
 
-  // ── 1. Main platform — instant, no network call ──────────────────────────
+  // ── 1. Main platform — instant, no network call ──
   if (
     host === MAIN_DOMAIN ||
     host === `www.${MAIN_DOMAIN}` ||
@@ -39,39 +34,27 @@ const detectDomainType = async () => {
     return "main";
   }
 
-  // ── 2. Non-main domain — ask the backend ─────────────────────────────────
-  // We retry up to 3 times to survive cold-start latency on Render / Railway.
+  // ── 2. Non-main domain — ask the backend, with retries ──
   const MAX_RETRIES = 3;
   const RETRY_DELAY_MS = 1200;
-
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       await API.get("/child-panel/branding");
       return "childPanel";
     } catch (cpErr) {
-      // 404 = backend confirmed this is NOT a child panel domain.
-      // Any other status = backend reached but said no.
-      // Network error = backend unreachable → retry.
       const cpStatus = cpErr.response?.status;
 
-      if (cpStatus && cpStatus !== 404) {
-        // Backend responded but rejected — not a child panel.
-        // Fall through to reseller check immediately.
-      } else if (!cpStatus) {
-        // No response at all (network error / CORS / timeout).
+      if (!cpStatus) {
+        // Network error / timeout — retry
         if (attempt < MAX_RETRIES) {
           await sleep(RETRY_DELAY_MS * attempt);
-          continue; // retry the whole loop
+          continue;
         }
-        // Exhausted retries — we cannot reach the backend.
-        // Return "unreachable" so the UI shows a friendly error
-        // instead of the main landing page.
         return "unreachable";
       }
 
-      // ── Try reseller ──────────────────────────────────────────────────────
+      // Backend responded — not a child panel. Try reseller.
       try {
         await API.get("/end-user/branding");
         return "reseller";
@@ -79,7 +62,7 @@ const detectDomainType = async () => {
         const reStatus = reErr.response?.status;
 
         if (!reStatus) {
-          // Network error on reseller check too.
+          // Network error on reseller check too — retry
           if (attempt < MAX_RETRIES) {
             await sleep(RETRY_DELAY_MS * attempt);
             continue;
@@ -87,8 +70,7 @@ const detectDomainType = async () => {
           return "unreachable";
         }
 
-        // Both endpoints responded with errors (likely both 404).
-        // This domain exists in DNS but is not registered in the platform.
+        // Both endpoints responded but neither matched — unregistered domain
         return "unknown";
       }
     }
@@ -97,14 +79,13 @@ const detectDomainType = async () => {
   return "unreachable";
 };
 
-export const CachedServicesProvider = ({ children }) => {
-  const [services,       setServices]       = useState([]);
-  const [commission,     setCommission]     = useState(0);
-  const [loading,        setLoading]        = useState(true);
-  const [domainType,     setDomainType]     = useState(null);
-  const [domainResolved, setDomainResolved] = useState(false);
+export const ServicesProvider = ({ children }) => {
+  const [services,   setServices]   = useState([]);
+  const [commission, setCommission] = useState(0);
+  const [loading,    setLoading]    = useState(true);
+  const [domainType, setDomainType] = useState(null);
 
-  const fetchData = async (type) => {
+  const fetchServices = async (type) => {
     try {
       setLoading(true);
 
@@ -112,15 +93,14 @@ export const CachedServicesProvider = ({ children }) => {
       let commissionData = 0;
 
       if (type === "reseller") {
-        const res  = await API.get("/reseller/services");
+        const res      = await API.get("/reseller/services");
         servicesData   = res.data.services  || [];
         commissionData = res.data.commission || 0;
       } else if (type === "main" || type === "childPanel") {
-        const res  = await API.get("/services");
+        const res    = await API.get("/services");
         servicesData = res.data || [];
-        commissionData = 0;
       }
-      // For "unknown" / "unreachable" — don't attempt a services fetch.
+      // For "unknown" / "unreachable" — skip the fetch entirely
 
       setServices(servicesData);
       setCommission(commissionData);
@@ -138,11 +118,8 @@ export const CachedServicesProvider = ({ children }) => {
 
     const init = async () => {
       const type = await detectDomainType();
-
       setDomainType(type);
-      setDomainResolved(true); // unblocks App.jsx router
-
-      await fetchData(type);
+      await fetchServices(type);
 
       // Socket only makes sense for real panel types
       if (type === "main" || type === "reseller" || type === "childPanel") {
@@ -155,11 +132,8 @@ export const CachedServicesProvider = ({ children }) => {
         );
 
         socket.on("servicesUpdated", () => {
-          fetchData(type);
-        });
-
-        socket.on("commissionUpdated", (data) => {
-          if (type === "reseller") setCommission(data.commission);
+          console.log("🔄 Services updated — refreshing...");
+          fetchServices(type);
         });
 
         socket.on("disconnect", () => console.log("❌ Socket disconnected"));
@@ -174,8 +148,10 @@ export const CachedServicesProvider = ({ children }) => {
   }, []);
 
   const refreshServices = async () => {
-    if (domainType) await fetchData(domainType);
+    if (domainType) await fetchServices(domainType);
   };
+
+  // ======================= DERIVED DATA =======================
 
   const platforms = useMemo(
     () => [...new Set(services.map((s) => s.platform || "General"))],
@@ -196,23 +172,33 @@ export const CachedServicesProvider = ({ children }) => {
         (s.platform || "General") === platform && s.category === category
     );
 
+  const getGlobalDefault = () =>
+    services.find((s) => s.isDefaultCategoryGlobal);
+
+  const getPlatformDefault = (platform) =>
+    services.find(
+      (s) =>
+        (s.platform || "General") === platform && s.isDefaultCategoryPlatform
+    );
+
   return (
-    <CachedServicesContext.Provider
+    <ServicesContext.Provider
       value={{
         services,
-        loading,
         commission,
+        loading,
         domainType,
-        domainResolved,
         platforms,
         getCategoriesByPlatform,
         getServicesByCategory,
+        getGlobalDefault,
+        getPlatformDefault,
         refreshServices,
       }}
     >
       {children}
-    </CachedServicesContext.Provider>
+    </ServicesContext.Provider>
   );
 };
 
-export const useCachedServices = () => useContext(CachedServicesContext);
+export const useServices = () => useContext(ServicesContext);
