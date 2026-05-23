@@ -11,20 +11,9 @@ const MAIN_DOMAIN = "marinepanel.online";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/**
- * Detects domain type with NO silent fallback to "main".
- *
- * Returns:
- *   "main"        — marinepanel.online or localhost
- *   "reseller"    — reseller subdomain / custom domain
- *   "childPanel"  — child panel subdomain / custom domain
- *   "unknown"     — non-main domain not registered on the platform
- *   "unreachable" — backend could not be reached after retries
- */
 const detectDomainType = async () => {
   const host = window.location.hostname;
 
-  // ── 1. Main platform — instant, no network call ──
   if (
     host === MAIN_DOMAIN ||
     host === `www.${MAIN_DOMAIN}` ||
@@ -34,7 +23,6 @@ const detectDomainType = async () => {
     return "main";
   }
 
-  // ── 2. Non-main domain — ask the backend, with retries ──
   const MAX_RETRIES = 3;
   const RETRY_DELAY_MS = 1200;
 
@@ -46,7 +34,6 @@ const detectDomainType = async () => {
       const cpStatus = cpErr.response?.status;
 
       if (!cpStatus) {
-        // Network error / timeout — retry
         if (attempt < MAX_RETRIES) {
           await sleep(RETRY_DELAY_MS * attempt);
           continue;
@@ -54,7 +41,6 @@ const detectDomainType = async () => {
         return "unreachable";
       }
 
-      // Backend responded — not a child panel. Try reseller.
       try {
         await API.get("/end-user/branding");
         return "reseller";
@@ -62,7 +48,6 @@ const detectDomainType = async () => {
         const reStatus = reErr.response?.status;
 
         if (!reStatus) {
-          // Network error on reseller check too — retry
           if (attempt < MAX_RETRIES) {
             await sleep(RETRY_DELAY_MS * attempt);
             continue;
@@ -70,7 +55,6 @@ const detectDomainType = async () => {
           return "unreachable";
         }
 
-        // Both endpoints responded but neither matched — unregistered domain
         return "unknown";
       }
     }
@@ -100,7 +84,6 @@ export const ServicesProvider = ({ children }) => {
         const res    = await API.get("/services");
         servicesData = res.data || [];
       }
-      // For "unknown" / "unreachable" — skip the fetch entirely
 
       setServices(servicesData);
       setCommission(commissionData);
@@ -121,7 +104,6 @@ export const ServicesProvider = ({ children }) => {
       setDomainType(type);
       await fetchServices(type);
 
-      // Socket only makes sense for real panel types
       if (type === "main" || type === "reseller" || type === "childPanel") {
         socket = io("https://marinepanel-backend.onrender.com", {
           transports: ["websocket"],
@@ -134,6 +116,15 @@ export const ServicesProvider = ({ children }) => {
         socket.on("servicesUpdated", () => {
           console.log("🔄 Services updated — refreshing...");
           fetchServices(type);
+        });
+
+        // For reseller domains: a commission change means all pre-baked
+        // prices in the services array are stale — full refetch needed.
+        socket.on("commissionUpdated", () => {
+          if (type === "reseller") {
+            console.log("💰 Commission updated — refreshing reseller services...");
+            fetchServices(type);
+          }
         });
 
         socket.on("disconnect", () => console.log("❌ Socket disconnected"));
