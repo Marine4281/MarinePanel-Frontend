@@ -11,14 +11,84 @@ const LandingPage = () => {
   const { childPanel } = useChildPanel();
   const { domainType } = useCachedServices();
 
-  // Redirect reseller and child panel domains straight to login — no landing page for them
   useEffect(() => {
     if (domainType === "reseller" || domainType === "childPanel") {
       navigate("/login", { replace: true });
     }
   }, [domainType, navigate]);
 
-  // Render nothing while redirecting to avoid flash
+  // ── Unknown domain — not registered on the platform ──
+  if (domainType === "unknown") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          background: "#0f172a",
+          color: "#f1f5f9",
+          textAlign: "center",
+          padding: "2rem",
+        }}
+      >
+        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔍</div>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+          Panel Not Found
+        </h1>
+        <p style={{ color: "#94a3b8", maxWidth: 400 }}>
+          This domain is not registered on MarinePanel. If you are the panel
+          owner, please contact platform support.
+        </p>
+      </div>
+    );
+  }
+
+  // ── Backend unreachable after retries ──
+  if (domainType === "unreachable") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          background: "#0f172a",
+          color: "#f1f5f9",
+          textAlign: "center",
+          padding: "2rem",
+        }}
+      >
+        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⚠️</div>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+          Service Unavailable
+        </h1>
+        <p style={{ color: "#94a3b8", maxWidth: 400, marginBottom: "1.5rem" }}>
+          We could not reach the server. This is usually a temporary issue.
+          Please wait a moment and refresh the page.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: "0.6rem 1.5rem",
+            background: "#f97316",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            fontWeight: 600,
+            cursor: "pointer",
+            fontSize: "0.95rem",
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Render nothing while redirect is in flight — prevents flash
   if (domainType === "reseller" || domainType === "childPanel") return null;
 
   // ── Branding — falls back gracefully for any domain type ──
@@ -43,7 +113,6 @@ const LandingPage = () => {
       ? reseller.logo
       : null;
 
-  // Derive Tailwind-compatible inline gradient from themeColor
   const heroBg = `linear-gradient(to bottom right, ${themeColor}cc, ${themeColor}88, ${themeColor}44)`;
   const cardBgA = `${themeColor}bb`;
   const cardBgB = `${themeColor}dd`;
