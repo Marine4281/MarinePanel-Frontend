@@ -16,6 +16,7 @@ import {
   FiCreditCard,
   FiDollarSign,
   FiClipboard,
+  FiTag,
   
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -53,6 +54,7 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/providers", icon: <FiServer />, label: "Providers" },
     { to: "/child-panel/wallet", icon: <FiCreditCard />, label: "Wallet" },
     { to: "/child-panel/financial", icon: <FiDollarSign />, label: "Financial" },
+    { to: "/child-panel/categories", icon: <FiTag />, label: "Categories" },
     { to: "/child-panel/settings", icon: <FiSliders />, label: "Settings" },
     { to: "/child-panel/reseller-guides", icon: <FiBookOpen />, label: "Reseller Guides" },
     { to: "/child-panel/guides", icon: <FiClipboard />, label: "Guides" },
