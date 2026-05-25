@@ -62,7 +62,7 @@ export default function CpAdminLogs() {
       if (dateFrom)        params.set("dateFrom", dateFrom);
       if (dateTo)          params.set("dateTo",   dateTo);
 
-      const res = await API.get(`/child-panel/logs?${params.toString()}`);
+      const res = await API.get(`/cp/logs?${params.toString()}`);
 
       setLogs(res.data.logs || []);
       setPage(res.data.page  || 1);
