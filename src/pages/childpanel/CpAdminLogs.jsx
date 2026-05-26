@@ -21,6 +21,10 @@ const ACTION_META = {
   RESET_PASSWORD:          { label: "Reset Password",          color: "bg-amber-100 text-amber-800",    group: "Auth" },
   FORGOT_PASSWORD:         { label: "Forgot Password",         color: "bg-amber-100 text-amber-800",    group: "Auth" },
   UPDATE_PROFILE:          { label: "Update Profile",          color: "bg-slate-100 text-slate-800",    group: "Profile" },
+  UPDATE_BRANDING:        { label: "Update Branding",        color: "bg-pink-100 text-pink-800",    group: "Settings" },
+  UPDATE_DOMAIN:          { label: "Update Domain",           color: "bg-pink-100 text-pink-800",    group: "Settings" },
+  UPDATE_PAYMENT_MODE:    { label: "Update Payment Mode",     color: "bg-pink-100 text-pink-800",    group: "Settings" },
+  TOGGLE_RESELLER_STATUS: { label: "Toggle Reseller Status",  color: "bg-orange-100 text-orange-800",group: "Reseller" },
 };
 
 const FILTER_GROUPS = [
@@ -32,6 +36,7 @@ const FILTER_GROUPS = [
   { label: "Reseller",    actions: ["UPDATE_RESELLER_SETTINGS"] },
   { label: "Auth",        actions: ["REGISTER_USER","RESET_PASSWORD","FORGOT_PASSWORD"] },
   { label: "Profile",     actions: ["UPDATE_PROFILE"] },
+  { label: "Settings", actions: ["UPDATE_BRANDING", "UPDATE_DOMAIN", "UPDATE_PAYMENT_MODE"] },
 ];
 
 const DEFAULT_COLOR = "bg-gray-100 text-gray-700";
