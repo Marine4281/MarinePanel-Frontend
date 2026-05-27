@@ -1,5 +1,5 @@
 // src/pages/AdminService.jsx
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import API from "../api/axios";
 import toast from "react-hot-toast";
@@ -41,18 +41,26 @@ const AdminService = () => {
   const [form, setForm] = useState(initialForm);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ================= COMMISSION =================
   const [commission, setCommission] = useState(null);
+  const [categoryCommissions, setCategoryCommissions] = useState({});
 
-  useEffect(() => {
-    API.get("/admin/settings/commission")
-      .then((res) => setCommission(res.data.commission))
-      .catch(console.error);
+  const loadCommissions = useCallback(async () => {
+    try {
+      const [globalRes, catRes] = await Promise.all([
+        API.get("/admin/settings/commission"),
+        API.get("/admin/services/category-commissions"),
+      ]);
+      setCommission(globalRes.data.commission);
+      setCategoryCommissions(catRes.data.categoryCommissions || {});
+    } catch {
+      console.error("Failed to load commissions");
+    }
   }, []);
+
+  useEffect(() => { loadCommissions(); }, [loadCommissions]);
 
   const isAddingNewProvider = form.providerProfileId === "new";
 
-  /* ================= FETCH SERVICES ================= */
   const { data: services = [], isLoading } = useQuery({
     queryKey: [QUERY_KEYS.SERVICES],
     queryFn: async () => {
@@ -61,7 +69,6 @@ const AdminService = () => {
     },
   });
 
-  /* ================= FETCH PROVIDERS ================= */
   const { data: providers = [] } = useQuery({
     queryKey: ["providers"],
     queryFn: async () => {
@@ -70,7 +77,6 @@ const AdminService = () => {
     },
   });
 
-  /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(services.length / SERVICES_PER_PAGE) || 1;
 
   const paginatedServices = useMemo(() => {
@@ -81,64 +87,44 @@ const AdminService = () => {
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       const left = Math.max(1, currentPage - 2);
       const right = Math.min(totalPages, currentPage + 2);
-
       if (left > 1) pages.push(1, "...");
       for (let i = left; i <= right; i++) pages.push(i);
       if (right < totalPages) pages.push("...", totalPages);
     }
-
     return pages;
   };
 
-  /* ================= FORM HANDLER ================= */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
-  /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (
-      !form.platform ||
-      !form.category ||
-      !form.name ||
-      (!form.providerProfileId && !isAddingNewProvider) ||
-      (!form.isFree && !form.rate)
-    ) {
+    if (!form.platform || !form.category || !form.name ||
+        (!form.providerProfileId && !isAddingNewProvider) ||
+        (!form.isFree && !form.rate)) {
       return toast.error("Please fill all required fields");
     }
-
     try {
       let providerId = form.providerProfileId;
-
       if (isAddingNewProvider) {
-        if (!form.newProviderName || !form.providerApiUrl || !form.providerApiKey) {
+        if (!form.newProviderName || !form.providerApiUrl || !form.providerApiKey)
           return toast.error("Fill all new provider fields");
-        }
-
         const res = await API.post("/provider/profiles", {
           name: form.newProviderName,
           apiUrl: form.providerApiUrl,
           apiKey: form.providerApiKey,
         });
-
         providerId = res.data._id;
         toast.success("Provider created");
       }
-
       const payload = { ...form, providerProfileId: providerId };
-
       if (selectedService) {
         await API.put(`/admin/services/${selectedService._id}`, payload);
         toast.success("Service updated");
@@ -146,11 +132,9 @@ const AdminService = () => {
         await API.post("/admin/services", payload);
         toast.success("Service added");
       }
-
       setForm(initialForm);
       setSelectedService(null);
       setCurrentPage(1);
-
       queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
       queryClient.invalidateQueries(["providers"]);
     } catch (err) {
@@ -158,50 +142,42 @@ const AdminService = () => {
     }
   };
 
-  /* ================= EDIT ================= */
   const handleEdit = (service) => {
     setSelectedService(service);
-    setForm({
-      ...initialForm,
-      ...service,
-      providerProfileId: service.providerProfileId?._id || "",
-    });
+    setForm({ ...initialForm, ...service, providerProfileId: service.providerProfileId?._id || "" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  /* ================= DELETE ================= */
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this service?")) return;
     try {
       await API.delete(`/admin/services/${id}`);
       toast.success("Deleted");
       queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
-    } catch {
-      toast.error("Delete failed");
-    }
+    } catch { toast.error("Delete failed"); }
   };
 
-  /* ================= TOGGLE STATUS ================= */
   const handleToggleStatus = async (id) => {
     try {
       await API.patch(`/admin/services/${id}/toggle`);
       toast.success("Updated");
       queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
-    } catch {
-      toast.error("Failed to update");
-    }
+    } catch { toast.error("Failed to update"); }
+  };
+
+  const handleCommissionSaved = () => {
+    queryClient.invalidateQueries([QUERY_KEYS.SERVICES]);
+    loadCommissions();
   };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-
       <div className="flex-1 p-6">
         <h2 className="text-3xl font-bold mb-8">
           {selectedService ? "Edit Service" : "Add New Service"}
         </h2>
 
-        {/* FORM */}
         <AdminServiceForm
           form={form}
           handleChange={handleChange}
@@ -211,21 +187,20 @@ const AdminService = () => {
           selectedService={selectedService}
         />
 
-        {/* GLOBAL TOGGLES */}
         <ServiceToggleActions />
 
-        {/* TABLE */}
         <AdminServiceTable
           services={paginatedServices}
           commission={commission}
+          categoryCommissions={categoryCommissions}
+          onCommissionSaved={handleCommissionSaved}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleStatus={handleToggleStatus}
           isLoading={isLoading}
-          pageOffset={(currentPage - 1) * SERVICES_PER_PAGE} // ← ADDED
+          pageOffset={(currentPage - 1) * SERVICES_PER_PAGE}
         />
 
-        {/* PAGINATION */}
         {!isLoading && totalPages > 1 && (
           <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
             <button
@@ -238,12 +213,7 @@ const AdminService = () => {
 
             {getPageNumbers().map((page, idx) =>
               page === "..." ? (
-                <span
-                  key={`ellipsis-${idx}`}
-                  className="px-2 py-1.5 text-sm text-gray-400"
-                >
-                  ...
-                </span>
+                <span key={`ellipsis-${idx}`} className="px-2 py-1.5 text-sm text-gray-400">...</span>
               ) : (
                 <button
                   key={page}
