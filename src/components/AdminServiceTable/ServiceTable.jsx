@@ -11,40 +11,30 @@ const ServiceTable = ({
   onToggleStatus,
   setSelectedDescription,
   commission,
-  pageOffset = 0, // ← ADDED
+  categoryCommissions,
+  onCommissionSaved,
+  pageOffset = 0,
 }) => {
 
-  // ================= SELECT =================
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
   const toggleSelectAll = () => {
-    const allIds = groupedServices.flatMap(([_, items]) =>
-      items.map((s) => s._id)
-    );
-    if (selectedIds.length === allIds.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(allIds);
-    }
+    const allIds = groupedServices.flatMap(([_, items]) => items.map((s) => s._id));
+    if (selectedIds.length === allIds.length) setSelectedIds([]);
+    else setSelectedIds(allIds);
   };
 
   const toggleSelectCategory = (items) => {
     const ids = items.map((i) => i._id);
     const allSelected = ids.every((id) => selectedIds.includes(id));
-    if (allSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
-    } else {
-      setSelectedIds((prev) => [...new Set([...prev, ...ids])]);
-    }
+    if (allSelected) setSelectedIds((prev) => prev.filter((id) => !ids.includes(id)));
+    else setSelectedIds((prev) => [...new Set([...prev, ...ids])]);
   };
 
-  // ================= EMPTY / LOADING =================
   if (!groupedServices.length) {
     return (
       <div className="space-y-3">
@@ -55,23 +45,15 @@ const ServiceTable = ({
     );
   }
 
-  // ================= GLOBAL OFFSET =================
-  // Starts from pageOffset so # is continuous across pages
-  let globalOffset = pageOffset; // ← CHANGED from 0
+  let globalOffset = pageOffset;
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm text-left min-w-full bg-white rounded-xl shadow overflow-hidden">
-
-        {/* HEADER */}
         <thead>
           <tr className="bg-orange-500 text-white text-left text-xs uppercase tracking-wide">
             <th className="px-3 py-3">
-              <input
-                type="checkbox"
-                onChange={toggleSelectAll}
-                className="accent-white"
-              />
+              <input type="checkbox" onChange={toggleSelectAll} className="accent-white" />
             </th>
             <th className="px-3 py-3">#</th>
             <th className="px-3 py-3">System ID</th>
@@ -84,7 +66,7 @@ const ServiceTable = ({
               Rate
               {commission != null && (
                 <span className="ml-1 text-[10px] text-orange-200 font-normal">
-                  (+{commission}%)
+                  (+{commission}% default)
                 </span>
               )}
             </th>
@@ -93,7 +75,6 @@ const ServiceTable = ({
           </tr>
         </thead>
 
-        {/* BODY */}
         <tbody>
           {groupedServices.map(([category, items]) => {
             const offset = globalOffset;
@@ -105,6 +86,9 @@ const ServiceTable = ({
                 category={category}
                 items={items}
                 toggleSelectCategory={toggleSelectCategory}
+                globalCommission={commission}
+                categoryCommissions={categoryCommissions}
+                onCommissionSaved={onCommissionSaved}
               >
                 {items.map((s, index) => (
                   <ServiceRow
@@ -112,6 +96,8 @@ const ServiceTable = ({
                     index={offset + index}
                     service={s}
                     commission={commission}
+                    categoryCommissions={categoryCommissions}
+                    onCommissionSaved={onCommissionSaved}
                     selectedIds={selectedIds}
                     toggleSelect={toggleSelect}
                     onEdit={onEdit}
