@@ -1,16 +1,22 @@
 // src/components/childpanel/services/CPServiceTable.jsx
-import { useState } from "react";
+import React, { useState } from "react";
 import CPServiceRow from "./CPServiceRow";
 import CommissionModal from "../../CommissionModal";
 import API from "../../../api/axios";
 import toast from "react-hot-toast";
 
 function CPCategoryHeader({
-  category, items, selectedIds, toggleSelectCategory,
-  globalCommission, categoryCommissions, onCommissionSaved,
+  category,
+  items,
+  selectedIds,
+  toggleSelectCategory,
+  globalCommission,
+  categoryCommissions,
+  onCommissionSaved,
 }) {
   const [showModal, setShowModal] = useState(false);
   const currentOverride = categoryCommissions?.[category] ?? null;
+  const allCatSel = items.every((s) => selectedIds.includes(s._id));
 
   const handleSave = async (value) => {
     await API.patch("/cp/services/category-commissions", { category, commission: value });
@@ -21,8 +27,6 @@ function CPCategoryHeader({
     );
     onCommissionSaved?.();
   };
-
-  const allCatSel = items.every((s) => selectedIds.includes(s._id));
 
   return (
     <>
@@ -35,7 +39,9 @@ function CPCategoryHeader({
               onChange={() => toggleSelectCategory(items)}
               className="accent-blue-600"
             />
-            <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">{category}</span>
+            <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">
+              {category}
+            </span>
             <span className="text-[10px] text-gray-400">({items.length})</span>
 
             <button
@@ -78,7 +84,9 @@ export default function CPServiceTable({
   onCommissionSaved,
 }) {
   const toggleSelect = (id) =>
-    setSelectedIds((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
 
   const toggleSelectAll = () => {
     const allIds = groupedServices.flatMap(([, items]) => items.map((s) => s._id));
@@ -89,7 +97,9 @@ export default function CPServiceTable({
     const ids = items.map((i) => i._id);
     const allSel = ids.every((id) => selectedIds.includes(id));
     setSelectedIds((prev) =>
-      allSel ? prev.filter((id) => !ids.includes(id)) : [...new Set([...prev, ...ids])]
+      allSel
+        ? prev.filter((id) => !ids.includes(id))
+        : [...new Set([...prev, ...ids])]
     );
   };
 
@@ -122,7 +132,9 @@ export default function CPServiceTable({
             <th className="px-3 py-3">
               End-user Rate
               {commission > 0 && (
-                <span className="ml-1 text-[10px] text-blue-200 font-normal">(+{commission}% default)</span>
+                <span className="ml-1 text-[10px] text-blue-200 font-normal">
+                  (+{commission}% default)
+                </span>
               )}
             </th>
             <th className="px-3 py-3">Min / Max</th>
@@ -137,16 +149,17 @@ export default function CPServiceTable({
             globalOffset += items.length;
 
             return (
-              <CPCategoryHeader
-                key={`cat-${category}`}
-                category={category}
-                items={items}
-                selectedIds={selectedIds}
-                toggleSelectCategory={toggleSelectCategory}
-                globalCommission={commission}
-                categoryCommissions={categoryCommissions}
-                onCommissionSaved={onCommissionSaved}
-              >
+              <React.Fragment key={category}>
+                <CPCategoryHeader
+                  category={category}
+                  items={items}
+                  selectedIds={selectedIds}
+                  toggleSelectCategory={toggleSelectCategory}
+                  globalCommission={commission}
+                  categoryCommissions={categoryCommissions}
+                  onCommissionSaved={onCommissionSaved}
+                />
+
                 {items.map((s, index) => (
                   <CPServiceRow
                     key={s._id}
@@ -163,11 +176,11 @@ export default function CPServiceTable({
                     onCommissionSaved={onCommissionSaved}
                   />
                 ))}
-              </CPCategoryHeader>
+              </React.Fragment>
             );
           })}
         </tbody>
       </table>
     </div>
   );
-}
+    }
