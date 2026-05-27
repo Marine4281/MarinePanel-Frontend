@@ -69,26 +69,29 @@ const TABS = [
 export default function ChildPanelServices() {
   const [activeTab, setActiveTab] = useState("services");
 
-  const [services, setServices]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [commission, setCommission] = useState(0);
+  const [services, setServices]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [commission, setCommission]     = useState(0);
+  const [categoryCommissions, setCategoryCommissions] = useState({});
 
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [search, setSearch]           = useState("");
+  const [selectedIds, setSelectedIds]   = useState([]);
+  const [search, setSearch]             = useState("");
 
-  const [editService, setEditService] = useState(null);
-  const [addOpen, setAddOpen]         = useState(false);
-  const [descText, setDescText]       = useState(null);
+  const [editService, setEditService]   = useState(null);
+  const [addOpen, setAddOpen]           = useState(false);
+  const [descText, setDescText]         = useState(null);
 
   const loadServices = useCallback(async () => {
     setLoading(true);
     try {
-      const [svcRes, comRes] = await Promise.all([
+      const [svcRes, comRes, catComRes] = await Promise.all([
         API.get("/cp/services"),
         API.get("/cp/services/commission"),
+        API.get("/cp/services/category-commissions"),
       ]);
       setServices(svcRes.data || []);
       setCommission(comRes.data?.commission ?? 0);
+      setCategoryCommissions(catComRes.data?.categoryCommissions || {});
     } catch {
       toast.error("Failed to load services");
     } finally {
@@ -150,6 +153,12 @@ export default function ChildPanelServices() {
     }
   };
 
+  // Called after any commission override is saved — refreshes services
+  // so the updated commissionOverride fields are reflected in the table
+  const handleCommissionSaved = useCallback(() => {
+    loadServices();
+  }, [loadServices]);
+
   const handleImportDone = () => {
     setActiveTab("services");
     loadServices();
@@ -158,6 +167,7 @@ export default function ChildPanelServices() {
   return (
     <ChildPanelLayout>
       <div className="max-w-7xl mx-auto space-y-5 px-4 py-6">
+
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -183,7 +193,7 @@ export default function ChildPanelServices() {
           </div>
         </div>
 
-        {/* Commission Bar */}
+        {/* Commission Bar (global CP rate) */}
         <CPCommissionBar commission={commission} onUpdate={setCommission} />
 
         {/* Tabs */}
@@ -207,11 +217,13 @@ export default function ChildPanelServices() {
         {/* ── TAB: MY SERVICES ── */}
         {activeTab === "services" && (
           <div className="space-y-4">
-            {/* ── INLINE ADD SERVICE FORM (always visible at top) ── */}
+
+            {/* Inline Add */}
             <CPInlineAddService onAdded={(svc) => setServices((prev) => [svc, ...prev])} />
 
             {/* Search */}
             <CPServiceSearchBar value={search} onChange={setSearch} />
+
             {!loading && (
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <span><strong className="text-gray-800">{services.length}</strong> total</span>
@@ -237,12 +249,14 @@ export default function ChildPanelServices() {
               <CPServiceTable
                 groupedServices={groupedServices}
                 commission={commission}
+                categoryCommissions={categoryCommissions}
                 selectedIds={selectedIds}
                 setSelectedIds={setSelectedIds}
                 onEdit={(s) => setEditService(s)}
                 onDelete={handleDelete}
                 onToggle={handleToggle}
                 onShowDesc={(d) => setDescText(d)}
+                onCommissionSaved={handleCommissionSaved}
               />
             )}
           </div>
@@ -262,6 +276,7 @@ export default function ChildPanelServices() {
         {activeTab === "deleted-sync" && (
           <CPDeletedSyncPanel onDeleted={loadServices} />
         )}
+
       </div>
 
       {/* Modals */}
@@ -281,4 +296,4 @@ export default function ChildPanelServices() {
       )}
     </ChildPanelLayout>
   );
-    }
+  }
