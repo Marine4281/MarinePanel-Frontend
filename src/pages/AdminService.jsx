@@ -65,7 +65,7 @@ const AdminService = () => {
     queryKey: [QUERY_KEYS.SERVICES],
     queryFn: async () => {
       const res = await API.get("/admin/services");
-      return res.data.slice().sort((a, b) => (a.serviceId ?? 0) - (b.serviceId ?? 0));
+      return res.data.;
     },
   });
 
