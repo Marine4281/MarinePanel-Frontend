@@ -65,7 +65,7 @@ const AdminService = () => {
     queryKey: [QUERY_KEYS.SERVICES],
     queryFn: async () => {
       const res = await API.get("/admin/services");
-      return res.data.;
+      return res.data;
     },
   });
 
