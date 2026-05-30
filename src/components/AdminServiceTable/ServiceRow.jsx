@@ -171,6 +171,31 @@ const ServiceRow = ({
               Edit
             </button>
 
+            {/* CP toggle */}
+<button
+  onClick={async () => {
+    try {
+      const res = await API.patch(`/admin/services/${s._id}/toggle-cp`);
+      toast.success(
+        res.data.availableToChildPanels
+          ? "Published to child panels"
+          : "Hidden from child panels"
+      );
+      onCommissionSaved?.(); // reuse refresh callback
+    } catch {
+      toast.error("Failed to toggle");
+    }
+  }}
+  title="Toggle child panel visibility"
+  className={`px-2 py-[3px] rounded text-[10px] font-semibold transition ${
+    s.availableToChildPanels
+      ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+      : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+  }`}
+>
+  CP
+</button>
+
             {/* 💰 Commission */}
             <button
               onClick={() => setShowCommModal(true)}
