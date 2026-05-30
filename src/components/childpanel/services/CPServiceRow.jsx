@@ -84,11 +84,11 @@ export default function CPServiceRow({
 
         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{s.platform}</td>
 
-        <td className="px-3 py-2 min-w-[160px] max-w-[220px]">
-          <div className="flex items-start gap-1 flex-wrap">
-            {s.isFree && <FiGift size={11} className="text-yellow-500 flex-shrink-0 mt-0.5" />}
-            <span className="text-xs font-medium text-gray-800 line-clamp-2">{s.name}</span>
-          </div>
+        <td className="px-3 py-2 min-w-[160px]">
+  <div className="flex items-start gap-1 flex-wrap">
+    {s.isFree && <FiGift size={11} className="text-yellow-500 flex-shrink-0 mt-0.5" />}
+    <span className="text-xs font-medium text-gray-800">{s.name}</span>
+  </div>
           {defaultFlags.length > 0 && (
             <div className="flex gap-1 mt-0.5 flex-wrap">
               {defaultFlags.map((f) => (
