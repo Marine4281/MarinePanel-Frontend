@@ -72,8 +72,8 @@ export default function CPPlatformServicesTab({ onImportDone }) {
       setLoading(true);
       try {
         const res = await API.get("/cp/services/platform");
-        const sorted = (res.data || []).slice().sort((a, b) => (b._id || "").localeCompare(a._id || ""));
-        setServices(sorted);
+        
+        setServices(res.data || []);
       } catch {
         toast.error("Failed to load platform services");
       } finally {
@@ -99,7 +99,7 @@ export default function CPPlatformServicesTab({ onImportDone }) {
       if (!map[cat]) map[cat] = [];
       map[cat].push(s);
     });
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+    return Object.entries(map);
   }, [services, search]);
 
   const allServices = useMemo(() => grouped.flatMap(([, svcs]) => svcs), [grouped]);
