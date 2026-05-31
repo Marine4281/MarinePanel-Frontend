@@ -106,11 +106,8 @@ export default function CPOwnProvidersTab({ onImportDone }) {
     setFetching(true);
     try {
       const res = await API.post("/cp/providers/services", { provider: provider.name });
-      const cats = (res.data || []).map((c) => ({
-        ...c,
-        services: [...(c.services || [])].reverse(), // newest first
-      }));
-      setFetchedCategories(cats);
+      
+      setFetchedCategories(res.data || []);
     } catch {
       toast.error("Failed to fetch services");
     } finally {
