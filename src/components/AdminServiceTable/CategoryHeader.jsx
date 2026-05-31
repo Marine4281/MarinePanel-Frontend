@@ -4,13 +4,56 @@ import CommissionModal from "../CommissionModal";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 
+function CPCategoryToggle({ category, items, onDone }) {
+  const allEnabled  = items.every((s) => s.availableToChildPanels);
+  const someEnabled = items.some((s) => s.availableToChildPanels);
+  const [loading, setLoading] = useState(false);
+
+  const toggle = async () => {
+    setLoading(true);
+    try {
+      await API.patch("/admin/services/category-toggle-cp", {
+        category,
+        available: !allEnabled,
+      });
+      toast.success(
+        !allEnabled
+          ? `"${category}" published to child panels`
+          : `"${category}" hidden from child panels`
+      );
+      onDone?.();
+    } catch {
+      toast.error("Failed to update category");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={loading}
+      title="Toggle child panel visibility for entire category"
+      className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition border disabled:opacity-60 ${
+        allEnabled
+          ? "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200"
+          : someEnabled
+          ? "bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-200"
+          : "bg-white text-gray-400 border-gray-300 hover:bg-gray-50"
+      }`}
+    >
+      {loading ? "..." : allEnabled ? "CP ✓" : someEnabled ? "CP ~" : "CP Off"}
+    </button>
+  );
+}
+
 const CategoryHeader = ({
   category,
   items,
   toggleSelectCategory,
   children,
   globalCommission,
-  categoryCommissions,  // { [cat]: number }
+  categoryCommissions,
   onCommissionSaved,
 }) => {
   const [showModal, setShowModal] = useState(false);
@@ -58,6 +101,13 @@ const CategoryHeader = ({
                 ? `${currentOverride}% (cat override)`
                 : "Set Category %"}
             </button>
+
+            {/* CP toggle for entire category */}
+            <CPCategoryToggle
+              category={category}
+              items={items}
+              onDone={onCommissionSaved}
+            />
           </div>
         </td>
       </tr>
