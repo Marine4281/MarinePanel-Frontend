@@ -93,13 +93,14 @@ export default function CPPlatformServicesTab({ onImportDone }) {
             s.category?.toLowerCase().includes(q)
         )
       : services;
-    const map = {};
-    filtered.forEach((s) => {
-      const cat = s.category || "Other";
-      if (!map[cat]) map[cat] = [];
-      map[cat].push(s);
-    });
-    return Object.entries(map);
+    const seen = [];
+const map = {};
+filtered.forEach((s) => {
+  const cat = s.category || "Other";
+  if (!map[cat]) { map[cat] = []; seen.push(cat); }
+  map[cat].push(s);
+});
+return seen.map((cat) => [cat, map[cat]]);
   }, [services, search]);
 
   const allServices = useMemo(() => grouped.flatMap(([, svcs]) => svcs), [grouped]);
