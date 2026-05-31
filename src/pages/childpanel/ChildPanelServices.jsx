@@ -120,7 +120,7 @@ export default function ChildPanelServices() {
       if (!map[cat]) map[cat] = [];
       map[cat].push(s);
     });
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+    return Object.entries(map);
   }, [filtered]);
 
   const handleToggle = async (id) => {
