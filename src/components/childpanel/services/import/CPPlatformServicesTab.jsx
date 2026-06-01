@@ -82,7 +82,6 @@ export default function CPPlatformServicesTab({ onImportDone }) {
     };
     load();
   }, []);
-const 
 const grouped = useMemo(() => {
   const q = search.toLowerCase();
   const filtered = q
