@@ -19,6 +19,21 @@ const isCustomComments = (serviceData) =>
   serviceData?.serviceType === "Custom Comments" ||
   serviceData?.serviceType === "Custom Comments Package";
 
+// Static icon mapping — extend as needed
+const PLATFORM_ICONS = {
+  TikTok:    "tiktok",
+  Instagram: "instagram",
+  YouTube:   "youtube",
+  Facebook:  "facebook",
+  WhatsApp:  "whatsapp",
+  Telegram:  "telegram",
+  "X/Twitter": "x-twitter",
+  LinkedIn:  "linkedin",
+  Snapchat:  "snapchat",
+  Spotify:   "spotify",
+  Free:      "gift",
+};
+
 const Home = () => {
   const { user, setUser } = useAuth();
   const { services, loading, getGlobalDefault, getPlatformDefault } = useServices();
@@ -34,20 +49,45 @@ const Home = () => {
   const [comments, setComments] = useState("");
   const [charge, setCharge] = useState(0);
 
-  const categoriesGrid = [
-    { name: "All" },
-    { name: "TikTok", icon: "tiktok" },
-    { name: "Instagram", icon: "instagram" },
-    { name: "YouTube", icon: "youtube" },
-    { name: "Facebook", icon: "facebook" },
-    { name: "WhatsApp", icon: "whatsapp" },
-    { name: "Telegram", icon: "telegram" },
-    { name: "X/Twitter", icon: "x-twitter" },
-    { name: "LinkedIn", icon: "linkedin" },
-    { name: "Snapchat", icon: "snapchat" },
-    { name: "Spotify", icon: "spotify" },
-    { name: "Free", icon: "gift" },
-  ];
+  // ── Dynamic platform order from category meta ─────────────────────────────
+  const [categoryMeta, setCategoryMeta] = useState([]);
+  useEffect(() => {
+    API.get("/category-meta")
+      .then((res) => setCategoryMeta(res.data || []))
+      .catch(() => setCategoryMeta([]));
+  }, []);
+
+  // Build categoriesGrid: "All" first, then platforms sorted by their
+  // minimum category sortOrder, then any platform not in meta at the end
+  const categoriesGrid = useMemo(() => {
+    // Map platform → lowest sortOrder among its categories
+    const platformMinOrder = {};
+    categoryMeta.forEach(({ platform, sortOrder }) => {
+      if (
+        platformMinOrder[platform] === undefined ||
+        (sortOrder ?? 999) < platformMinOrder[platform]
+      ) {
+        platformMinOrder[platform] = sortOrder ?? 999;
+      }
+    });
+
+    // Collect all platforms that actually have services
+    const activePlatforms = [...new Set(services.map((s) => s.platform))];
+
+    const sorted = activePlatforms.sort((a, b) => {
+      const orderA = platformMinOrder[a] ?? 999;
+      const orderB = platformMinOrder[b] ?? 999;
+      return orderA - orderB;
+    });
+
+    return [
+      { name: "All" },
+      ...sorted.map((name) => ({
+        name,
+        icon: PLATFORM_ICONS[name] ?? "grid",
+      })),
+    ];
+  }, [services, categoryMeta]);
 
   /* =============================
      PREFILL (REPLACE ORDER)
@@ -120,10 +160,7 @@ const Home = () => {
     return servicesList.find((s) => s.name === service) || null;
   }, [service, servicesList]);
 
-  // Reset comments when service changes
-  useEffect(() => {
-    setComments("");
-  }, [service]);
+  useEffect(() => { setComments(""); }, [service]);
 
   const commentLines = comments
     .split("\n")
@@ -147,6 +184,11 @@ const Home = () => {
     }
   };
 
+  function debounce(fn, delay) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+  }
+
   const calculateChargeDebounced = useCallback(
     debounce((qty, serviceName) => { calculateChargeBackend(qty, serviceName); }, 200),
     []
@@ -157,7 +199,6 @@ const Home = () => {
       if (selectedServiceData.isFree) {
         setCharge(0);
       } else if (isCustomComments(selectedServiceData)) {
-        // For custom comments, quantity = number of comment lines
         if (commentLines.length > 0) {
           calculateChargeDebounced(commentLines.length, service);
         } else {
@@ -172,11 +213,6 @@ const Home = () => {
       setCharge(0);
     }
   }, [service, quantity, comments, selectedServiceData]);
-
-  function debounce(fn, delay) {
-    let timer;
-    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
-  }
 
   /* =============================
      SUBMIT ORDER
@@ -284,7 +320,6 @@ const Home = () => {
             </div>
           )}
 
-          {/* LINK */}
           <div className="mb-4">
             <label className="font-semibold block mb-1">Link</label>
             <input
@@ -295,7 +330,6 @@ const Home = () => {
             />
           </div>
 
-          {/* CUSTOM COMMENTS BOX */}
           {customCommentsService ? (
             <div className="mb-4">
               <label className="font-semibold block mb-1">
@@ -308,7 +342,6 @@ const Home = () => {
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
               />
-              {/* Live counter */}
               <div className="mt-1 w-[90%] flex justify-between text-xs text-gray-500">
                 <span>
                   {commentLines.length} comment{commentLines.length !== 1 ? "s" : ""}
@@ -327,7 +360,6 @@ const Home = () => {
               </div>
             </div>
           ) : (
-            /* REGULAR QUANTITY */
             <div className="mb-4">
               <label className="font-semibold block mb-1">Quantity</label>
               <input
@@ -340,7 +372,6 @@ const Home = () => {
             </div>
           )}
 
-          {/* CHARGE */}
           <div className="mb-4">
             <label className="font-semibold block mb-1">Charge (USD)</label>
             <input
