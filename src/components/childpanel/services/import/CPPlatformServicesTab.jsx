@@ -100,15 +100,7 @@ const grouped = useMemo(() => {
     map[cat].push(s);
   });
 
-  Object.values(map).forEach((svcs) =>
-    svcs.sort((a, b) => a.serviceId - b.serviceId)
-  );
-
-  return Object.entries(map).sort(
-    (a, b) =>
-      a[1].reduce((m, s) => Math.min(m, s.serviceId), Infinity) -
-      b[1].reduce((m, s) => Math.min(m, s.serviceId), Infinity)
-  );
+  return Object.entries(map);
 }, [services, search]);
   
 
