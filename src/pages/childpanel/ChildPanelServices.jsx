@@ -114,14 +114,14 @@ export default function ChildPanelServices() {
   }, [services, search]);
 
   const groupedServices = useMemo(() => {
-    const map = {};
-    filtered.forEach((s) => {
-      const cat = s.category || "Uncategorized";
-      if (!map[cat]) map[cat] = [];
-      map[cat].push(s);
-    });
-    return Object.entries(map);
-  }, [filtered]);
+  const map = {};
+  filtered.forEach((s) => {
+    const cat = s.category || "Uncategorized";
+    if (!map[cat]) map[cat] = [];
+    map[cat].push(s);
+  });
+  return Object.entries(map);
+}, [filtered]);
 
   const handleToggle = async (id) => {
     try {
