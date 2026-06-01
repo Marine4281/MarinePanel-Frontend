@@ -82,26 +82,37 @@ export default function CPPlatformServicesTab({ onImportDone }) {
     };
     load();
   }, []);
+const grouped = useMemo(() => {
+  const q = search.toLowerCase();
+  const filtered = q
+    ? services.filter(
+        (s) =>
+          s.name?.toLowerCase().includes(q) ||
+          String(s.serviceId || "").includes(q) ||
+          s.category?.toLowerCase().includes(q)
+      )
+    : services;
 
-  const grouped = useMemo(() => {
-    const q = search.toLowerCase();
-    const filtered = q
-      ? services.filter(
-          (s) =>
-            s.name?.toLowerCase().includes(q) ||
-            String(s.serviceId || "").includes(q) ||
-            s.category?.toLowerCase().includes(q)
-        )
-      : services;
-    const seen = [];
-const map = {};
-filtered.forEach((s) => {
-  const cat = s.category || "Other";
-  if (!map[cat]) { map[cat] = []; seen.push(cat); }
-  map[cat].push(s);
-});
-return seen.map((cat) => [cat, map[cat]]);
-  }, [services, search]);
+  const map = {};
+  filtered.forEach((s) => {
+    const cat = s.category || "Other";
+    if (!map[cat]) map[cat] = [];
+    map[cat].push(s);
+  });
+
+  // Sort services within each category: newest serviceId first
+  Object.values(map).forEach((svcs) =>
+    svcs.sort((a, b) => b.serviceId - a.serviceId)
+  );
+
+  // Sort categories by their highest serviceId: newest category on top
+  return Object.entries(map).sort(
+    (a, b) =>
+      Math.max(...b[1].map((s) => s.serviceId)) -
+      Math.max(...a[1].map((s) => s.serviceId))
+  );
+}, [services, search]);
+  
 
   const allServices = useMemo(() => grouped.flatMap(([, svcs]) => svcs), [grouped]);
 
