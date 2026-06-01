@@ -100,16 +100,16 @@ const grouped = useMemo(() => {
     map[cat].push(s);
   });
 
-  // Sort services within each category: newest serviceId first
+  // Sort services within each category: lowest serviceId first (newest first)
   Object.values(map).forEach((svcs) =>
-    svcs.sort((a, b) => b.serviceId - a.serviceId)
+    svcs.sort((a, b) => a.serviceId - b.serviceId)
   );
 
-  // Sort categories by their highest serviceId: newest category on top
+  // Sort categories by their lowest serviceId: newest category on top
   return Object.entries(map).sort(
     (a, b) =>
-      Math.max(...b[1].map((s) => s.serviceId)) -
-      Math.max(...a[1].map((s) => s.serviceId))
+      Math.min(...a[1].map((s) => s.serviceId)) -
+      Math.min(...b[1].map((s) => s.serviceId))
   );
 }, [services, search]);
   
