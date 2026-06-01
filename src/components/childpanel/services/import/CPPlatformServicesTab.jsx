@@ -83,6 +83,7 @@ export default function CPPlatformServicesTab({ onImportDone }) {
     load();
   }, []);
 const grouped = useMemo(() => {
+const grouped = useMemo(() => {
   const q = search.toLowerCase();
   const filtered = q
     ? services.filter(
@@ -100,16 +101,14 @@ const grouped = useMemo(() => {
     map[cat].push(s);
   });
 
-  // Sort services within each category: lowest serviceId first (newest first)
   Object.values(map).forEach((svcs) =>
     svcs.sort((a, b) => a.serviceId - b.serviceId)
   );
 
-  // Sort categories by their lowest serviceId: newest category on top
   return Object.entries(map).sort(
     (a, b) =>
-      Math.min(...a[1].map((s) => s.serviceId)) -
-      Math.min(...b[1].map((s) => s.serviceId))
+      a[1].reduce((m, s) => Math.min(m, s.serviceId), Infinity) -
+      b[1].reduce((m, s) => Math.min(m, s.serviceId), Infinity)
   );
 }, [services, search]);
   
