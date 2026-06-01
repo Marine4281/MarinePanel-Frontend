@@ -34,7 +34,11 @@ const PAYMENT_MODES = [
   { value: "manual",  label: "Manual (instructions only)" },
 ];
 
-const EMPTY_PROVIDER = { name: "", providerType: "", credentials: {}, isActive: true };
+// ── visibleToCp added ─────────────────────────────────────────────────
+const EMPTY_PROVIDER = {
+  name: "", providerType: "", credentials: {},
+  isActive: true, visibleToCp: false,
+};
 
 const EMPTY_GATEWAY = {
   name: "", description: "", paymentMode: "hosted", providerProfile: "",
@@ -131,7 +135,13 @@ export default function AdminPaymentGateways() {
   };
 
   const handleEditProvider = (p) => {
-    setProviderForm({ name: p.name, providerType: p.providerType, credentials: {}, isActive: p.isActive });
+    setProviderForm({
+      name:         p.name,
+      providerType: p.providerType,
+      credentials:  {},
+      isActive:     p.isActive,
+      visibleToCp:  p.visibleToCp || false, // ← include visibleToCp
+    });
     setEditingProvider(p._id);
     setShowProviderForm(true);
   };
@@ -236,13 +246,10 @@ export default function AdminPaymentGateways() {
     } catch { toast.error("Failed to reject"); }
   };
 
-  // ── Selected provider type for form fields ───────────────
   const selectedProviderType = PROVIDER_TYPES.find((p) => p.value === providerForm.providerType);
   const providerOptions = providers
     .filter((p) => p.isActive)
     .map((p) => ({ value: p._id, label: `${p.name} (${p.providerType})` }));
-
-  const needsProvider = !["binance", "manual"].includes(gatewayForm.paymentMode) || gatewayForm.paymentMode === "hosted";
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -272,9 +279,9 @@ export default function AdminPaymentGateways() {
         {/* ── Tabs ── */}
         <div className="flex gap-1 bg-white rounded-2xl shadow p-1 w-fit">
           {[
-            { key: "gateways",  label: "Gateways",         count: gateways.length },
-            { key: "providers", label: "Providers",         count: providers.length },
-            { key: "pending",   label: "Pending Deposits",  count: pendingDeposits.length },
+            { key: "gateways",  label: "Gateways",        count: gateways.length },
+            { key: "providers", label: "Providers",        count: providers.length },
+            { key: "pending",   label: "Pending Deposits", count: pendingDeposits.length },
           ].map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${
@@ -295,65 +302,67 @@ export default function AdminPaymentGateways() {
         ════════════════════════════════ */}
         {tab === "gateways" && (
           <div className="bg-white rounded-2xl shadow overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  {["Name","Mode","Provider","Currency","Fee","Min","Visible","CP","Hidden","Actions"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {gateways.length === 0 && (
-                  <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">No gateways yet</td></tr>
-                )}
-                {gateways.map((gw) => (
-                  <tr key={gw._id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-semibold text-gray-800">{gw.name}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
-                        {gw.paymentMode}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      {gw.providerProfile?.name || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{gw.processingCurrency}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{gw.feeType}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">${gw.minDeposit}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${gw.isVisible ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
-                        {gw.isVisible ? "Yes" : "No"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${gw.visibleToCp ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}>
-                        {gw.visibleToCp ? "Yes" : "No"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${gw.adminHidden ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-400"}`}>
-                        {gw.adminHidden ? "Hidden" : "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button onClick={() => handleEditGateway(gw)}
-                          className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-100">Edit</button>
-                        <button onClick={() => handleToggleHidden(gw._id)}
-                          className="px-2 py-1 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-semibold hover:bg-yellow-100">
-                          {gw.adminHidden ? "Show" : "Hide"}
-                        </button>
-                        <button onClick={() => handleRotateToken(gw._id, gw.providerType || "")}
-                          className="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-semibold hover:bg-green-100">🔄</button>
-                        <button onClick={() => handleDeleteGateway(gw._id)}
-                          className="px-2 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100">Del</button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {["Name","Mode","Provider","Currency","Fee","Min","Visible","CP","Hidden","Actions"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {gateways.length === 0 && (
+                    <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">No gateways yet</td></tr>
+                  )}
+                  {gateways.map((gw) => (
+                    <tr key={gw._id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">{gw.name}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
+                          {gw.paymentMode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                        {gw.providerProfile?.name || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500">{gw.processingCurrency}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500">{gw.feeType}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500">${gw.minDeposit}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${gw.isVisible ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                          {gw.isVisible ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${gw.visibleToCp ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}>
+                          {gw.visibleToCp ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${gw.adminHidden ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-400"}`}>
+                          {gw.adminHidden ? "Hidden" : "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          <button onClick={() => handleEditGateway(gw)}
+                            className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-100">Edit</button>
+                          <button onClick={() => handleToggleHidden(gw._id)}
+                            className="px-2 py-1 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-semibold hover:bg-yellow-100">
+                            {gw.adminHidden ? "Show" : "Hide"}
+                          </button>
+                          <button onClick={() => handleRotateToken(gw._id, gw.providerProfile?.providerType || "")}
+                            className="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-semibold hover:bg-green-100">🔄</button>
+                          <button onClick={() => handleDeleteGateway(gw._id)}
+                            className="px-2 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100">Del</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -362,48 +371,57 @@ export default function AdminPaymentGateways() {
         ════════════════════════════════ */}
         {tab === "providers" && (
           <div className="bg-white rounded-2xl shadow overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  {["Name","Type","Status","Credentials","Actions"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {providers.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No providers yet</td></tr>
-                )}
-                {providers.map((p) => (
-                  <tr key={p._id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-semibold text-gray-800">{p.name}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-full text-xs font-semibold capitalize">
-                        {p.providerType}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.isActive ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
-                        {p.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.hasCredentials ? "bg-green-50 text-green-600" : "bg-yellow-50 text-yellow-600"}`}>
-                        {p.hasCredentials ? "✓ Configured" : "⚠ Missing"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleEditProvider(p)}
-                          className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-100">Edit</button>
-                        <button onClick={() => handleDeleteProvider(p._id)}
-                          className="px-2 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100">Del</button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {/* ── CP Visible column added ── */}
+                    {["Name","Type","Status","CP Visible","Credentials","Actions"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {providers.length === 0 && (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No providers yet</td></tr>
+                  )}
+                  {providers.map((p) => (
+                    <tr key={p._id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 font-semibold text-gray-800">{p.name}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-full text-xs font-semibold capitalize">
+                          {p.providerType}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.isActive ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                          {p.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      {/* ── CP Visible badge ── */}
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.visibleToCp ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}>
+                          {p.visibleToCp ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${p.hasCredentials ? "bg-green-50 text-green-600" : "bg-yellow-50 text-yellow-600"}`}>
+                          {p.hasCredentials ? "✓ Configured" : "⚠ Missing"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1.5">
+                          <button onClick={() => handleEditProvider(p)}
+                            className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-100">Edit</button>
+                          <button onClick={() => handleDeleteProvider(p._id)}
+                            className="px-2 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100">Del</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -412,52 +430,54 @@ export default function AdminPaymentGateways() {
         ════════════════════════════════ */}
         {tab === "pending" && (
           <div className="bg-white rounded-2xl shadow overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  {["User","Gateway","Amount","Details","Date","Actions"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {pendingDeposits.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No pending deposits</td></tr>
-                )}
-                {pendingDeposits.map((d) => (
-                  <tr key={d._id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 text-gray-700">{d.user?.email || "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
-                        {d.gateway?.name || "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-green-600">${d.amount}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
-                      {d.details?.binanceOrderId && (
-                        <span>Order ID: <b>{d.details.binanceOrderId}</b> · Sent: {d.details.amountSent}</span>
-                      )}
-                      {!d.details?.binanceOrderId && <span className="text-gray-300">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">
-                      {new Date(d.createdAt).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1.5">
-                        <button onClick={() => handleApprove(d._id)}
-                          className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs font-semibold hover:bg-green-600">
-                          Approve
-                        </button>
-                        <button onClick={() => handleReject(d._id)}
-                          className="px-3 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100">
-                          Reject
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {["User","Gateway","Amount","Details","Date","Actions"].map((h) => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {pendingDeposits.length === 0 && (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No pending deposits</td></tr>
+                  )}
+                  {pendingDeposits.map((d) => (
+                    <tr key={d._id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 text-gray-700">{d.user?.email || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
+                          {d.gateway?.name || "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-green-600">${d.amount}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500">
+                        {d.details?.binanceOrderId
+                          ? <span>Order ID: <b>{d.details.binanceOrderId}</b> · Sent: {d.details.amountSent}</span>
+                          : <span className="text-gray-300">—</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                        {new Date(d.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1.5">
+                          <button onClick={() => handleApprove(d._id)}
+                            className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs font-semibold hover:bg-green-600">
+                            Approve
+                          </button>
+                          <button onClick={() => handleReject(d._id)}
+                            className="px-3 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100">
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>
@@ -477,9 +497,18 @@ export default function AdminPaymentGateways() {
             onChange={(v) => setProviderForm({ ...providerForm, providerType: v, credentials: {} })}
             options={PROVIDER_TYPES} />
 
-          <Toggle label="Active" sublabel="Inactive providers cannot process payments"
+          <Toggle label="Active"
+            sublabel="Inactive providers cannot process payments"
             checked={providerForm.isActive}
             onChange={(v) => setProviderForm({ ...providerForm, isActive: v })} />
+
+          {/* ── NEW: visibleToCp toggle ── */}
+          <Toggle
+            label="Visible to child panel owners"
+            sublabel="CP owners can select this provider when creating their own gateways"
+            checked={providerForm.visibleToCp}
+            onChange={(v) => setProviderForm({ ...providerForm, visibleToCp: v })}
+          />
 
           {selectedProviderType && selectedProviderType.fields.length > 0 && (
             <div className="space-y-3 pt-2 border-t">
@@ -527,7 +556,7 @@ export default function AdminPaymentGateways() {
             onChange={(v) => setGatewayForm({ ...gatewayForm, paymentMode: v })}
             options={PAYMENT_MODES} />
 
-          {/* Only show provider selector when NOT binance/manual */}
+          {/* Provider — hidden for binance/manual */}
           {!["binance","manual"].includes(gatewayForm.paymentMode) && (
             <Select label="Provider (processes this gateway)"
               value={gatewayForm.providerProfile}
@@ -535,7 +564,7 @@ export default function AdminPaymentGateways() {
               options={providerOptions} />
           )}
 
-          {/* Binance ID field */}
+          {/* Binance ID */}
           {gatewayForm.paymentMode === "binance" && (
             <Input label="Your Binance ID (shown to user)"
               value={gatewayForm.binanceId}
@@ -576,7 +605,6 @@ export default function AdminPaymentGateways() {
               placeholder="1" />
           </div>
 
-          {/* Fee */}
           <Select label="Fee Type" value={gatewayForm.feeType}
             onChange={(v) => setGatewayForm({ ...gatewayForm, feeType: v })}
             options={[
@@ -596,7 +624,6 @@ export default function AdminPaymentGateways() {
               onChange={(v) => setGatewayForm({ ...gatewayForm, feeFixed: Number(v) })} placeholder="50" />
           )}
 
-          {/* Notes */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Admin Note (shown to CP owners)
@@ -607,7 +634,6 @@ export default function AdminPaymentGateways() {
               className="w-full px-4 py-2.5 border rounded-xl text-sm text-gray-800 outline-none focus:border-orange-400 resize-none" />
           </div>
 
-          {/* Toggles */}
           <div className="space-y-2 pt-1">
             <Toggle label="Visible to end users"
               sublabel="End users can see and use this gateway"
@@ -615,7 +641,7 @@ export default function AdminPaymentGateways() {
               onChange={(v) => setGatewayForm({ ...gatewayForm, isVisible: v })} />
 
             <Toggle label="Visible to child panel owners"
-              sublabel="CP owners can use this gateway on their panels"
+              sublabel="CP owners can connect and use this gateway on their panels"
               checked={gatewayForm.visibleToCp}
               onChange={(v) => setGatewayForm({ ...gatewayForm, visibleToCp: v })} />
           </div>
@@ -644,4 +670,4 @@ function Modal({ title, onClose, children }) {
       </div>
     </div>
   );
-}
+        }
