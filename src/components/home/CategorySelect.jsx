@@ -1,29 +1,38 @@
 // src/components/home/CategorySelect.jsx
 import { useState, useMemo, useEffect } from "react";
 import {
-  FaTiktok,
-  FaInstagram,
-  FaYoutube,
-  FaFacebook,
-  FaTelegram,
+  FaTiktok, FaInstagram, FaYoutube,
+  FaFacebook, FaTelegram,
 } from "react-icons/fa";
 import { ChevronDown } from "lucide-react";
 import API from "../../api/axios";
 
 const icons = {
-  TikTok: <FaTiktok className="text-black text-lg" />,
+  TikTok:    <FaTiktok className="text-black text-lg" />,
   Instagram: <FaInstagram className="text-pink-500 text-lg" />,
-  YouTube: <FaYoutube className="text-red-600 text-lg" />,
-  Facebook: <FaFacebook className="text-blue-600 text-lg" />,
-  Telegram: <FaTelegram className="text-blue-500 text-lg" />,
+  YouTube:   <FaYoutube className="text-red-600 text-lg" />,
+  Facebook:  <FaFacebook className="text-blue-600 text-lg" />,
+  Telegram:  <FaTelegram className="text-blue-500 text-lg" />,
 };
 
 const platformBg = {
-  TikTok: "bg-gray-100",
+  TikTok:    "bg-gray-100",
   Instagram: "bg-pink-50",
-  YouTube: "bg-red-50",
-  Facebook: "bg-blue-50",
-  Telegram: "bg-blue-50",
+  YouTube:   "bg-red-50",
+  Facebook:  "bg-blue-50",
+  Telegram:  "bg-blue-50",
+};
+
+// Star appearance per colour
+const FEATURE_STYLES = {
+  orange: {
+    emoji:  "⭐",
+    filter: "drop-shadow(0 0 6px rgba(249,115,22,0.95)) drop-shadow(0 0 12px rgba(249,115,22,0.6))",
+  },
+  blue: {
+    emoji:  "🔵",
+    filter: "drop-shadow(0 0 6px rgba(59,130,246,0.95)) drop-shadow(0 0 12px rgba(59,130,246,0.6))",
+  },
 };
 
 const CategorySelect = ({ services, category, setCategory, selectedPlatform }) => {
@@ -64,12 +73,18 @@ const CategorySelect = ({ services, category, setCategory, selectedPlatform }) =
     return sorted;
   }, [services, selectedPlatform, metaMap]);
 
-  const isFeatured = (platform, cat) =>
-    metaMap[`${platform}::${cat}`]?.isFeatured ?? false;
+  const getMeta = (platform, cat) => metaMap[`${platform}::${cat}`];
 
   const selectedPlatformForCategory = Object.keys(grouped).find((p) =>
     grouped[p]?.includes(category)
   );
+
+  // Feature badge for the trigger button
+  const selectedMeta = selectedPlatformForCategory
+    ? getMeta(selectedPlatformForCategory, category)
+    : null;
+  const selectedFeatured = selectedMeta?.isFeatured ?? false;
+  const selectedFeatureStyle = FEATURE_STYLES[selectedMeta?.featuredColor ?? "orange"];
 
   return (
     <div className="relative w-[95%] mb-5">
@@ -82,13 +97,14 @@ const CategorySelect = ({ services, category, setCategory, selectedPlatform }) =
         <span className="text-gray-700 font-medium flex items-center gap-2">
           {category ? (
             <>
-              {selectedPlatformForCategory &&
-                isFeatured(selectedPlatformForCategory, category) && (
-                  <span className="animate-pulse text-yellow-400"
-                    style={{ filter: "drop-shadow(0 0 6px rgba(250,204,21,0.9))" }}>
-                    ⭐
-                  </span>
-                )}
+              {selectedFeatured && (
+                <span
+                  className="animate-pulse leading-none"
+                  style={{ filter: selectedFeatureStyle.filter }}
+                >
+                  {selectedFeatureStyle.emoji}
+                </span>
+              )}
               {category}
             </>
           ) : (
@@ -118,7 +134,10 @@ const CategorySelect = ({ services, category, setCategory, selectedPlatform }) =
               {cats
                 .filter((c) => c.toLowerCase().includes(search.toLowerCase()))
                 .map((cat) => {
-                  const featured = isFeatured(platform, cat);
+                  const meta     = getMeta(platform, cat);
+                  const featured = meta?.isFeatured ?? false;
+                  const fStyle   = FEATURE_STYLES[meta?.featuredColor ?? "orange"];
+
                   return (
                     <div
                       key={cat}
@@ -133,10 +152,10 @@ const CategorySelect = ({ services, category, setCategory, selectedPlatform }) =
                     >
                       {featured && (
                         <span
-                          className="text-yellow-400 text-base leading-none animate-pulse"
-                          style={{ filter: "drop-shadow(0 0 5px rgba(250,204,21,0.95)) drop-shadow(0 0 10px rgba(250,204,21,0.6))" }}
+                          className="text-base leading-none animate-pulse"
+                          style={{ filter: fStyle.filter }}
                         >
-                          ⭐
+                          {fStyle.emoji}
                         </span>
                       )}
                       {cat}
