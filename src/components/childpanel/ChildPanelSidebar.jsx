@@ -18,15 +18,18 @@ import {
   FiClipboard,
   FiTag,
   FiShield,
-  
+  FiMessageSquare,
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useSupport } from "../../context/SupportContext";
 
 export default function ChildPanelSidebar({ mobileOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const auth = useAuth();
+  const { cpUnread, fmt } = useSupport();
+
   const logout = typeof auth?.logout === "function" ? auth.logout : () => {};
 
   const brandName = auth?.user?.childPanelBrandName || "Child Panel";
@@ -41,10 +44,18 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/users", icon: <FiUsers />, label: "Users" },
     { to: "/child-panel/orders", icon: <FiShoppingCart />, label: "Orders" },
 
+    // ✅ NEW: Support
+    {
+      to: "/child-panel/support",
+      icon: <FiMessageSquare />,
+      label: "Support",
+      badge: cpUnread,
+    },
+
     // ✅ Services
     { to: "/child-panel/services", icon: <FiServer />, label: "Services" },
 
-    // ✅ NEW: Payment Gateways
+    // ✅ Payment Gateways
     {
       to: "/child-panel/payment-gateways",
       icon: <FiCreditCard />,
@@ -58,7 +69,11 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/categories", icon: <FiTag />, label: "Categories" },
     { to: "/child-panel/logs", icon: <FiShield />, label: "Staff Actions" },
     { to: "/child-panel/settings", icon: <FiSliders />, label: "Settings" },
-    { to: "/child-panel/reseller-guides", icon: <FiBookOpen />, label: "Reseller Guides" },
+    {
+      to: "/child-panel/reseller-guides",
+      icon: <FiBookOpen />,
+      label: "Reseller Guides",
+    },
     { to: "/child-panel/guides", icon: <FiClipboard />, label: "Guides" },
   ];
 
@@ -83,16 +98,24 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
 
         <div className="border-t mb-2" />
 
-        {links.map(({ to, icon, label }) => (
+        {links.map(({ to, icon, label, badge }) => (
           <Link
             key={to}
             to={to}
             onClick={onClose}
-            className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${active(
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${active(
               to
             )}`}
           >
-            {icon} {label}
+            {icon}
+
+            <span className="flex-1">{label}</span>
+
+            {badge > 0 && (
+              <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center px-1 shadow animate-pulse">
+                {fmt(badge)}
+              </span>
+            )}
           </Link>
         ))}
 
@@ -131,4 +154,4 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       )}
     </>
   );
-     }
+}
