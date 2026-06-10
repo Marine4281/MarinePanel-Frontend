@@ -1,41 +1,54 @@
 // src/components/Sidebar.jsx
+
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
-
-const links = [
-  { name: "Dashboard", icon: "fa-solid fa-chart-line", path: "/admin", exact: true },
-  { name: "Users", icon: "fa-solid fa-users", path: "/admin/users" },
-  { name: "Financial", icon: "fa-solid fa-coins", path: "/admin/financial" },
-  { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
-  { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
-
-  // ✅ NEW: Categories (ADDED HERE)
-  { name: "Categories", icon: "fa-solid fa-tags", path: "/admin/categories" },
-
-  // ✅ NEW PAGE: Provider Sync
-  { name: "Provider Sync", icon: "fa-solid fa-arrows-rotate", path: "/admin/provider-sync" },
-
-  // ✅ NEW PAGE: User Orders
-  { name: "User Orders", icon: "fa-solid fa-clipboard-list", path: "/admin/user-orders" },
-
-  // ✅ NEW PAGE: Resellers
-  { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
-
-  // ✅ NEW PAGE: Child Panels
-  { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/admin/child-panels" },
-
-  { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-gateways" },
-
-  // 🔥 Staff Actions Page
-  { name: "Staff Actions", icon: "fa-solid fa-shield-halved", path: "/admin/logs" },
-
-  { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
-  { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
-];
+import { FiHeadphones } from "react-icons/fi";
+import { useSupport } from "../context/SupportContext";
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
+
+  const { adminUnread, fmt } = useSupport();
+
+  const links = [
+    { name: "Dashboard", icon: "fa-solid fa-chart-line", path: "/admin", exact: true },
+    { name: "Users", icon: "fa-solid fa-users", path: "/admin/users" },
+    { name: "Financial", icon: "fa-solid fa-coins", path: "/admin/financial" },
+    { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
+    { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
+
+    // ✅ NEW: Categories
+    { name: "Categories", icon: "fa-solid fa-tags", path: "/admin/categories" },
+
+    // ✅ NEW PAGE: Provider Sync
+    { name: "Provider Sync", icon: "fa-solid fa-arrows-rotate", path: "/admin/provider-sync" },
+
+    // ✅ NEW PAGE: User Orders
+    { name: "User Orders", icon: "fa-solid fa-clipboard-list", path: "/admin/user-orders" },
+
+    // ✅ NEW PAGE: Resellers
+    { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
+
+    // ✅ NEW PAGE: Child Panels
+    { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/admin/child-panels" },
+
+    { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-gateways" },
+
+    // 🎧 Support
+    {
+      name: "Support",
+      path: "/admin/support",
+      badge: adminUnread,
+      customIcon: <FiHeadphones />,
+    },
+
+    // 🔥 Staff Actions Page
+    { name: "Staff Actions", icon: "fa-solid fa-shield-halved", path: "/admin/logs" },
+
+    { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
+    { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
+  ];
 
   // ✅ LOGOUT FUNCTION
   const handleLogout = () => {
@@ -91,10 +104,26 @@ const Sidebar = () => {
                   <span className="absolute left-0 top-0 h-full w-1 bg-orange-500 rounded-r-lg"></span>
                 )}
 
-                <i className={`${link.icon} text-sm w-5`}></i>
+                {link.customIcon ? (
+                  <span className="text-sm w-5 flex justify-center">
+                    {link.customIcon}
+                  </span>
+                ) : (
+                  <i className={`${link.icon} text-sm w-5`}></i>
+                )}
 
                 {!isCollapsed && (
-                  <span className="text-sm font-medium">{link.name}</span>
+                  <>
+                    <span className="text-sm font-medium flex-1">
+                      {link.name}
+                    </span>
+
+                    {link.badge > 0 && (
+                      <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-semibold">
+                        {fmt ? fmt(link.badge) : link.badge}
+                      </span>
+                    )}
+                  </>
                 )}
               </>
             )}
