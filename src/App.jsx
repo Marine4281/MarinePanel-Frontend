@@ -20,8 +20,6 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import TermsPublic from "./pages/TermsPublic";
 import AddFunds              from "./pages/AddFunds";
 import PaymentSuccess        from "./pages/payment/PaymentSuccess";
-import { ServicesProvider } from "./context/ServicesContext";
-import { SupportProvider } from "./context/SupportContext";
 
 // User pages
 import Home from "./pages/Home";
