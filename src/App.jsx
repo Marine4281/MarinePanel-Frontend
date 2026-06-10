@@ -20,6 +20,8 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import TermsPublic from "./pages/TermsPublic";
 import AddFunds              from "./pages/AddFunds";
 import PaymentSuccess        from "./pages/payment/PaymentSuccess";
+import { ServicesProvider } from "./context/ServicesContext";
+import { SupportProvider } from "./context/SupportContext";
 
 // User pages
 import Home from "./pages/Home";
@@ -29,6 +31,8 @@ import Orders from "./pages/Orders";
 import Services from "./pages/Services";
 import Reseller from "./pages/Reseller";
 import ApiDocsPage from "./pages/ApiDocsPage";
+import SupportPage from "./pages/SupportPage";
+import SupportChatPage from "./pages/SupportChatPage";
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -46,6 +50,7 @@ import ProviderSync from "./pages/ProviderSync";
 import AdminCategoryMeta from "./pages/AdminCategoryMeta";
 import Financial from "./pages/Financial";
 import AdminPaymentGateways  from "./pages/AdminPaymentGateways";
+import AdminSupportPage from "./pages/AdminSupportPage";
 
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
@@ -80,6 +85,7 @@ import ChildPanelFinancial from "./pages/childpanel/ChildPanelFinancial";
 import ChildPanelResellerGuides from "./pages/childpanel/ChildPanelResellerGuides";
 import ChildPanelCategories from "./pages/childpanel/ChildPanelCategories";
 import CpAdminLogs from "./pages/childpanel/CpAdminLogs";
+import ChildPanelSupport from "./pages/childpanel/ChildPanelSupport";
 
 // Template router — renders template version of page on child panel domains
 import TemplateRouter from "./templates/TemplateRouter";
@@ -247,6 +253,8 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+         <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
+         <Route path="/support/:id" element={<ProtectedRoute><SupportChatPage /></ProtectedRoute>} />
 
         {/* Resellers tab — templates don't override this.
             CP end users cannot access child panel activation
@@ -300,6 +308,7 @@ function AppRoutes() {
         <Route path="/child-panel/reseller-guides" element={<ChildPanelResellerGuides />} />
         <Route path="/child-panel/categories" element={<ChildPanelCategories />} />
          <Route path="/child-panel/logs" element={<CpAdminLogs />} />
+         <Route path="/child-panel/support" element={<ChildPanelRoute><ChildPanelSupport /></ChildPanelRoute>} />
          
         {/* ================================================
             ADMIN ROUTES — unchanged
@@ -323,7 +332,7 @@ function AppRoutes() {
         <Route path="/admin/categories"         element={<AdminCategoryMeta />} />
         <Route path="/admin/financial"          element={<AdminRoute><Financial /></AdminRoute>} />
         <Route path="/admin/payment-gateways" element={<AdminRoute><AdminPaymentGateways /></AdminRoute>} />
-
+      <Route path="/admin/support" element={<AdminRoute><AdminSupportPage /></AdminRoute>} />
 
       </Routes>
     </>
@@ -346,13 +355,15 @@ export default function App() {
         <ResellerProvider>
           <ChildPanelProvider>
             <CachedServicesProvider>
-              <ServicesProvider>
-                <AppRoutes />
-              </ServicesProvider>
+              <SupportProvider>
+                <ServicesProvider>
+                  <AppRoutes />
+                </ServicesProvider>
+              </SupportProvider>
             </CachedServicesProvider>
           </ChildPanelProvider>
         </ResellerProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
-   }
+}
