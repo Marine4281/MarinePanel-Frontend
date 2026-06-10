@@ -19,21 +19,6 @@ const isCustomComments = (serviceData) =>
   serviceData?.serviceType === "Custom Comments" ||
   serviceData?.serviceType === "Custom Comments Package";
 
-// Static icon mapping — extend as needed
-const PLATFORM_ICONS = {
-  TikTok:    "tiktok",
-  Instagram: "instagram",
-  YouTube:   "youtube",
-  Facebook:  "facebook",
-  WhatsApp:  "whatsapp",
-  Telegram:  "telegram",
-  "X/Twitter": "x-twitter",
-  LinkedIn:  "linkedin",
-  Snapchat:  "snapchat",
-  Spotify:   "spotify",
-  Free:      "gift",
-};
-
 const Home = () => {
   const { user, setUser } = useAuth();
   const { services, loading, getGlobalDefault, getPlatformDefault } = useServices();
@@ -48,46 +33,22 @@ const Home = () => {
   const [quantity, setQuantity] = useState("");
   const [comments, setComments] = useState("");
   const [charge, setCharge] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
-  // ── Dynamic platform order from category meta ─────────────────────────────
-  const [categoryMeta, setCategoryMeta] = useState([]);
-  useEffect(() => {
-    API.get("/category-meta")
-      .then((res) => setCategoryMeta(res.data || []))
-      .catch(() => setCategoryMeta([]));
-  }, []);
-
-  // Build categoriesGrid: "All" first, then platforms sorted by their
-  // minimum category sortOrder, then any platform not in meta at the end
-  const categoriesGrid = useMemo(() => {
-    // Map platform → lowest sortOrder among its categories
-    const platformMinOrder = {};
-    categoryMeta.forEach(({ platform, sortOrder }) => {
-      if (
-        platformMinOrder[platform] === undefined ||
-        (sortOrder ?? 999) < platformMinOrder[platform]
-      ) {
-        platformMinOrder[platform] = sortOrder ?? 999;
-      }
-    });
-
-    // Collect all platforms that actually have services
-    const activePlatforms = [...new Set(services.map((s) => s.platform))];
-
-    const sorted = activePlatforms.sort((a, b) => {
-      const orderA = platformMinOrder[a] ?? 999;
-      const orderB = platformMinOrder[b] ?? 999;
-      return orderA - orderB;
-    });
-
-    return [
-      { name: "All" },
-      ...sorted.map((name) => ({
-        name,
-        icon: PLATFORM_ICONS[name] ?? "grid",
-      })),
-    ];
-  }, [services, categoryMeta]);
+  const categoriesGrid = [
+    { name: "All" },
+    { name: "TikTok", icon: "tiktok" },
+    { name: "Instagram", icon: "instagram" },
+    { name: "YouTube", icon: "youtube" },
+    { name: "Facebook", icon: "facebook" },
+    { name: "WhatsApp", icon: "whatsapp" },
+    { name: "Telegram", icon: "telegram" },
+    { name: "X/Twitter", icon: "x-twitter" },
+    { name: "LinkedIn", icon: "linkedin" },
+    { name: "Snapchat", icon: "snapchat" },
+    { name: "Spotify", icon: "spotify" },
+    { name: "Free", icon: "gift" },
+  ];
 
   /* =============================
      PREFILL (REPLACE ORDER)
@@ -160,7 +121,10 @@ const Home = () => {
     return servicesList.find((s) => s.name === service) || null;
   }, [service, servicesList]);
 
-  useEffect(() => { setComments(""); }, [service]);
+  // Reset comments when service changes
+  useEffect(() => {
+    setComments("");
+  }, [service]);
 
   const commentLines = comments
     .split("\n")
@@ -183,11 +147,6 @@ const Home = () => {
       toast.error("Failed to calculate charge");
     }
   };
-
-  function debounce(fn, delay) {
-    let timer;
-    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
-  }
 
   const calculateChargeDebounced = useCallback(
     debounce((qty, serviceName) => { calculateChargeBackend(qty, serviceName); }, 200),
@@ -214,12 +173,18 @@ const Home = () => {
     }
   }, [service, quantity, comments, selectedServiceData]);
 
+  function debounce(fn, delay) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+  }
+
   /* =============================
      SUBMIT ORDER
   ============================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (submitting) return;
     if (!user?._id) return toast.error("User not logged in");
     if (!category || !service || !link) return toast.error("Please fill in all fields");
 
@@ -238,6 +203,7 @@ const Home = () => {
         return toast.error(`Quantity must be between ${selectedServiceData?.min} and ${selectedServiceData?.max}`);
     }
 
+    setSubmitting(true);
     try {
       await API.post("/orders", {
         userId: user._id,
@@ -253,15 +219,17 @@ const Home = () => {
       setQuantity("");
       setComments("");
       setCharge(0);
-    } catch (err) {
-      return toast.error(err.response?.data?.message || "Order failed");
-    }
 
-    try {
-      const res = await API.get("/users/profile");
-      setUser(res.data);
-    } catch {
-      console.log("Profile refresh failed, but order is fine");
+      try {
+        const res = await API.get("/users/profile");
+        setUser(res.data);
+      } catch {
+        console.log("Profile refresh failed, but order is fine");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Order failed");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -320,6 +288,7 @@ const Home = () => {
             </div>
           )}
 
+          {/* LINK */}
           <div className="mb-4">
             <label className="font-semibold block mb-1">Link</label>
             <input
@@ -330,6 +299,7 @@ const Home = () => {
             />
           </div>
 
+          {/* CUSTOM COMMENTS BOX */}
           {customCommentsService ? (
             <div className="mb-4">
               <label className="font-semibold block mb-1">
@@ -360,6 +330,7 @@ const Home = () => {
               </div>
             </div>
           ) : (
+            /* REGULAR QUANTITY */
             <div className="mb-4">
               <label className="font-semibold block mb-1">Quantity</label>
               <input
@@ -372,6 +343,7 @@ const Home = () => {
             </div>
           )}
 
+          {/* CHARGE */}
           <div className="mb-4">
             <label className="font-semibold block mb-1">Charge (USD)</label>
             <input
@@ -384,10 +356,10 @@ const Home = () => {
 
           <button
             type="submit"
-            className="w-[90%] bg-green-600 text-white p-3 rounded-xl font-bold mb-20"
-            disabled={!selectedServiceData || (!customCommentsService && !quantity)}
+            className="w-[90%] bg-green-600 text-white p-3 rounded-xl font-bold mb-20 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={submitting || !selectedServiceData || (!customCommentsService && !quantity)}
           >
-            {selectedServiceData?.isFree ? "Claim Free Service" : "Place Order"}
+            {submitting ? "Placing Order..." : selectedServiceData?.isFree ? "Claim Free Service" : "Place Order"}
           </button>
         </form>
       </main>
