@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { useEffect, useState } from "react";
 import { SupportProvider } from "./context/SupportContext";
+import { useSEO } from "./hooks/useSEO"; 
 
 // Public pages
 import LandingPage from "./pages/LandingPage";
@@ -183,6 +184,7 @@ function useMaintenance(user) {
    reseller and child panel users.
 ====================================================== */
 function AppRoutes() {
+  useSEO(); // ← NEW: injects title, meta, OG, Twitter Card, favicon, schema.org
   const authContext     = useAuthContext();
   const servicesContext = useCachedServices();
   const { domainResolved } = servicesContext;
