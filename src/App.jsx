@@ -67,7 +67,6 @@ import EndUserDashboard from "./pages/reseller/EndUserDashboard";
 import ResellersAdminList from "./pages/reseller/ResellersAdminList";
 import ResellerAdminDetails from "./pages/reseller/ResellerAdminDetails";
 import ResellerGuides from "./pages/reseller/ResellerGuides";
-import ResellerSeoSettings from "./components/reseller/ResellerSeoSettings";
 
 // Child panel pages
 import ChildPanelRoute from "./components/childpanel/ChildPanelRoute";
