@@ -395,7 +395,7 @@ function AppRoutes() {
         <Route path="/admin/support"            element={<AdminRoute><AdminSupportPage /></AdminRoute>} />
         <Route path="/admin/maintenance"        element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
          <Route path="/admin/seo" element={<AdminRoute><AdminSeoSettings /></AdminRoute>} />
-
+         
       </Routes>
     </>
   );
