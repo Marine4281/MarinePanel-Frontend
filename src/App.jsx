@@ -88,7 +88,6 @@ import ChildPanelResellerGuides from "./pages/childpanel/ChildPanelResellerGuide
 import ChildPanelCategories from "./pages/childpanel/ChildPanelCategories";
 import CpAdminLogs from "./pages/childpanel/CpAdminLogs";
 import ChildPanelSupport from "./pages/childpanel/ChildPanelSupport";
-import ChildPanelSeoSettings from "./components/childpanel/ChildPanelSeoSettings";
 
 // Maintenance
 import MaintenancePage from "./pages/MaintenancePage";
@@ -368,8 +367,7 @@ function AppRoutes() {
         <Route path="/child-panel/categories" element={<ChildPanelCategories />} />
         <Route path="/child-panel/logs" element={<CpAdminLogs />} />
         <Route path="/child-panel/support" element={<ChildPanelRoute><ChildPanelSupport /></ChildPanelRoute>} />
-         <Route path="/child-panel/seo" element={<ChildPanelRoute><ChildPanelSeoSettings /></ChildPanelRoute>} />
-
+         
         {/* ================================================
             ADMIN ROUTES
         ================================================ */}
