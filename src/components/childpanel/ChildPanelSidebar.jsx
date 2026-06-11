@@ -1,4 +1,7 @@
 // src/components/childpanel/ChildPanelSidebar.jsx
+// Child panel owner sidebar — mirrors reseller Sidebar.jsx.
+// No "Child Panels" link — child panel owners cannot create
+// sub-panels. That feature simply does not exist here.
 
 import {
   FiGrid,
@@ -16,7 +19,6 @@ import {
   FiTag,
   FiShield,
   FiMessageSquare,
-  FiGlobe,
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -38,47 +40,41 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       : "text-gray-700 hover:bg-blue-50 hover:text-blue-500";
 
   const links = [
-    { to: "/child-panel/dashboard",        icon: <FiGrid />,          label: "Dashboard" },
-    { to: "/child-panel/users",            icon: <FiUsers />,         label: "Users" },
-    { to: "/child-panel/orders",           icon: <FiShoppingCart />,  label: "Orders" },
+    { to: "/child-panel/dashboard", icon: <FiGrid />, label: "Dashboard" },
+    { to: "/child-panel/users", icon: <FiUsers />, label: "Users" },
+    { to: "/child-panel/orders", icon: <FiShoppingCart />, label: "Orders" },
 
-    // Support
+    // ✅ NEW: Support
     {
-      to:    "/child-panel/support",
-      icon:  <FiMessageSquare />,
+      to: "/child-panel/support",
+      icon: <FiMessageSquare />,
       label: "Support",
       badge: cpUnread,
     },
 
-    // Services
-    { to: "/child-panel/services",         icon: <FiServer />,        label: "Services" },
+    // ✅ Services
+    { to: "/child-panel/services", icon: <FiServer />, label: "Services" },
 
-    // Payment Gateways
+    // ✅ Payment Gateways
     {
-      to:    "/child-panel/payment-gateways",
-      icon:  <FiCreditCard />,
+      to: "/child-panel/payment-gateways",
+      icon: <FiCreditCard />,
       label: "Payments",
     },
 
-    { to: "/child-panel/resellers",        icon: <FiUserCheck />,     label: "Resellers" },
-    { to: "/child-panel/providers",        icon: <FiServer />,        label: "Providers" },
-    { to: "/child-panel/wallet",           icon: <FiCreditCard />,    label: "Wallet" },
-    { to: "/child-panel/financial",        icon: <FiDollarSign />,    label: "Financial" },
-    { to: "/child-panel/categories",       icon: <FiTag />,           label: "Categories" },
-    { to: "/child-panel/logs",             icon: <FiShield />,        label: "Staff Actions" },
-    { to: "/child-panel/settings",         icon: <FiSliders />,       label: "Settings" },
+    { to: "/child-panel/resellers", icon: <FiUserCheck />, label: "Resellers" },
+    { to: "/child-panel/providers", icon: <FiServer />, label: "Providers" },
+    { to: "/child-panel/wallet", icon: <FiCreditCard />, label: "Wallet" },
+    { to: "/child-panel/financial", icon: <FiDollarSign />, label: "Financial" },
+    { to: "/child-panel/categories", icon: <FiTag />, label: "Categories" },
+    { to: "/child-panel/logs", icon: <FiShield />, label: "Staff Actions" },
+    { to: "/child-panel/settings", icon: <FiSliders />, label: "Settings" },
     {
-      to:    "/child-panel/reseller-guides",
-      icon:  <FiBookOpen />,
+      to: "/child-panel/reseller-guides",
+      icon: <FiBookOpen />,
       label: "Reseller Guides",
     },
-    { to: "/child-panel/guides",           icon: <FiClipboard />,     label: "Guides" },
-
-    // ✅ Branding
-    { to: "/child-panel/branding",         icon: <FiSliders />,       label: "Branding" },
-
-    // ✅ SEO
-    { to: "/child-panel/seo",              icon: <FiGlobe />,         label: "SEO" },
+    { to: "/child-panel/guides", icon: <FiClipboard />, label: "Guides" },
   ];
 
   const SidebarBody = () => (
@@ -107,7 +103,9 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
             key={to}
             to={to}
             onClick={onClose}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${active(to)}`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${active(
+              to
+            )}`}
           >
             {icon}
 
