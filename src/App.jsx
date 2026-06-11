@@ -8,7 +8,7 @@ import { ChildPanelProvider } from "./context/ChildPanelContext";
 import { ServicesProvider } from "./context/ServicesContext";
 import { Toaster } from "react-hot-toast";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SupportProvider } from "./context/SupportContext";
 
 // Public pages
@@ -50,6 +50,7 @@ import AdminCategoryMeta from "./pages/AdminCategoryMeta";
 import Financial from "./pages/Financial";
 import AdminPaymentGateways  from "./pages/AdminPaymentGateways";
 import AdminSupportPage from "./pages/AdminSupportPage";
+import AdminMaintenance from "./pages/AdminMaintenance";
 
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
@@ -86,6 +87,9 @@ import ChildPanelCategories from "./pages/childpanel/ChildPanelCategories";
 import CpAdminLogs from "./pages/childpanel/CpAdminLogs";
 import ChildPanelSupport from "./pages/childpanel/ChildPanelSupport";
 
+// Maintenance
+import MaintenancePage from "./pages/MaintenancePage";
+
 // Template router — renders template version of page on child panel domains
 import TemplateRouter from "./templates/TemplateRouter";
 
@@ -94,6 +98,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import { setupNetworkManager } from "./utils/networkManager";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import API from "./api/axios";
 
 const client = new QueryClient();
 
@@ -134,6 +139,43 @@ const DomainBootScreen = () => (
 );
 
 /* ======================================================
+   MAINTENANCE HOOK
+   Polls /api/maintenance/status once on mount (and
+   whenever the logged-in user changes).  Admin users
+   are never redirected to the maintenance page.
+====================================================== */
+function useMaintenance(user) {
+  const [checked, setChecked] = useState(false);
+  const [totalShutdown, setTotalShutdown] = useState({ active: false });
+  const [noOrders, setNoOrders] = useState({ active: false });
+
+  useEffect(() => {
+    // Derive role from user object
+    let role = "user";
+    if (user?.isAdmin)       role = "admin";
+    else if (user?.isChildPanel) role = "cpOwner";
+    else if (user?.isReseller)   role = "reseller";
+
+    const params = new URLSearchParams({ role });
+    if (user?.email) params.set("email", user.email);
+
+    API.get(`/maintenance/status?${params.toString()}`)
+      .then(({ data }) => {
+        setTotalShutdown(data.totalShutdown || { active: false });
+        setNoOrders(data.noOrders || { active: false });
+      })
+      .catch(() => {
+        // fail open — never block users due to a maintenance check error
+      })
+      .finally(() => setChecked(true));
+  // Re-check whenever the logged-in user identity changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id]);
+
+  return { checked, totalShutdown, noOrders };
+}
+
+/* ======================================================
    INTERNAL ROUTES COMPONENT
    Sits inside all providers so it can consume any context.
    Blocks ALL route rendering until domainResolved is true —
@@ -145,16 +187,35 @@ function AppRoutes() {
   const servicesContext = useCachedServices();
   const { domainResolved } = servicesContext;
 
+  // Pull the current user out of auth context.
+  // Adjust the property name if your AuthContext exposes it differently.
+  const currentUser = authContext?.user ?? null;
+
+  const { checked: maintChecked, totalShutdown, noOrders } = useMaintenance(currentUser);
+
   useEffect(() => {
     const cleanup = setupNetworkManager(authContext, servicesContext);
     return cleanup;
   }, [authContext, servicesContext]);
 
-  // ── Block everything until domain type is known ──
-  // detectDomainType() runs once on boot (~200-400ms).
-  // Until it resolves, no page mounts, so no landing page
-  // can flash before the redirect fires.
+  // ── 1. Block everything until domain type is known ──
   if (!domainResolved) return <DomainBootScreen />;
+
+  // ── 2. Wait for the maintenance check to resolve ──
+  // This is fast (single GET, no auth required) so the extra
+  // ~100 ms is invisible — we already waited for domainResolved.
+  if (!maintChecked) return <DomainBootScreen />;
+
+  // ── 3. Total shutdown gate ──
+  // Admins are ALWAYS let through regardless of settings.
+  if (totalShutdown?.active && !currentUser?.isAdmin) {
+    return (
+      <MaintenancePage
+        title={totalShutdown.title}
+        message={totalShutdown.message}
+      />
+    );
+  }
 
   return (
     <>
@@ -252,13 +313,10 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-         <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
-         <Route path="/support/:id" element={<ProtectedRoute><SupportChatPage /></ProtectedRoute>} />
+        <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
+        <Route path="/support/:id" element={<ProtectedRoute><SupportChatPage /></ProtectedRoute>} />
 
-        {/* Resellers tab — templates don't override this.
-            CP end users cannot access child panel activation
-            but CAN see resellers (they can become resellers
-            under the CP owner). Default page is always used. */}
+        {/* Resellers tab — templates don't override this. */}
         <Route
           path="/resellers"
           element={
@@ -285,8 +343,6 @@ function AppRoutes() {
 
         {/* ================================================
             CHILD PANEL ROUTES — unchanged
-            These are the CP owner admin routes, not end-user
-            routes, so templates do NOT apply here.
         ================================================ */}
 
         <Route path="/child-panel"          element={<ProtectedRoute><ChildPanelPage /></ProtectedRoute>} />
@@ -306,11 +362,11 @@ function AppRoutes() {
         <Route path="/child-panel/financial" element={<ChildPanelFinancial />} />
         <Route path="/child-panel/reseller-guides" element={<ChildPanelResellerGuides />} />
         <Route path="/child-panel/categories" element={<ChildPanelCategories />} />
-         <Route path="/child-panel/logs" element={<CpAdminLogs />} />
-         <Route path="/child-panel/support" element={<ChildPanelRoute><ChildPanelSupport /></ChildPanelRoute>} />
-         
+        <Route path="/child-panel/logs" element={<CpAdminLogs />} />
+        <Route path="/child-panel/support" element={<ChildPanelRoute><ChildPanelSupport /></ChildPanelRoute>} />
+
         {/* ================================================
-            ADMIN ROUTES — unchanged
+            ADMIN ROUTES
         ================================================ */}
 
         <Route path="/admin"                    element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -330,8 +386,9 @@ function AppRoutes() {
         <Route path="/admin/child-panels/:id"   element={<AdminRoute><AdminChildPanelDetails /></AdminRoute>} />
         <Route path="/admin/categories"         element={<AdminCategoryMeta />} />
         <Route path="/admin/financial"          element={<AdminRoute><Financial /></AdminRoute>} />
-        <Route path="/admin/payment-gateways" element={<AdminRoute><AdminPaymentGateways /></AdminRoute>} />
-      <Route path="/admin/support" element={<AdminRoute><AdminSupportPage /></AdminRoute>} />
+        <Route path="/admin/payment-gateways"   element={<AdminRoute><AdminPaymentGateways /></AdminRoute>} />
+        <Route path="/admin/support"            element={<AdminRoute><AdminSupportPage /></AdminRoute>} />
+        <Route path="/admin/maintenance"        element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
 
       </Routes>
     </>
@@ -365,4 +422,4 @@ export default function App() {
       </AuthProvider>
     </QueryClientProvider>
   );
-}
+   }
