@@ -52,6 +52,7 @@ import Financial from "./pages/Financial";
 import AdminPaymentGateways  from "./pages/AdminPaymentGateways";
 import AdminSupportPage from "./pages/AdminSupportPage";
 import AdminMaintenance from "./pages/AdminMaintenance";
+import AdminSeoSettings from "./components/admin/AdminSeoSettings";
 
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
@@ -66,6 +67,7 @@ import EndUserDashboard from "./pages/reseller/EndUserDashboard";
 import ResellersAdminList from "./pages/reseller/ResellersAdminList";
 import ResellerAdminDetails from "./pages/reseller/ResellerAdminDetails";
 import ResellerGuides from "./pages/reseller/ResellerGuides";
+import ResellerSeoSettings from "./components/reseller/ResellerSeoSettings";
 
 // Child panel pages
 import ChildPanelRoute from "./components/childpanel/ChildPanelRoute";
@@ -87,6 +89,7 @@ import ChildPanelResellerGuides from "./pages/childpanel/ChildPanelResellerGuide
 import ChildPanelCategories from "./pages/childpanel/ChildPanelCategories";
 import CpAdminLogs from "./pages/childpanel/CpAdminLogs";
 import ChildPanelSupport from "./pages/childpanel/ChildPanelSupport";
+import ChildPanelSeoSettings from "./components/childpanel/ChildPanelSeoSettings";
 
 // Maintenance
 import MaintenancePage from "./pages/MaintenancePage";
@@ -342,6 +345,7 @@ function AppRoutes() {
         <Route path="/reseller/branding"   element={<ProtectedRoute><ResellerBranding /></ProtectedRoute>} />
         <Route path="/end-user/dashboard"  element={<ProtectedRoute><EndUserDashboard /></ProtectedRoute>} />
         <Route path="/reseller/guides"     element={<ResellerGuides />} />
+         <Route path="/reseller/seo" element={<ResellerRoute><ResellerSeoSettings /></ResellerRoute>} />
 
         {/* ================================================
             CHILD PANEL ROUTES — unchanged
@@ -366,6 +370,7 @@ function AppRoutes() {
         <Route path="/child-panel/categories" element={<ChildPanelCategories />} />
         <Route path="/child-panel/logs" element={<CpAdminLogs />} />
         <Route path="/child-panel/support" element={<ChildPanelRoute><ChildPanelSupport /></ChildPanelRoute>} />
+         <Route path="/child-panel/seo" element={<ChildPanelRoute><ChildPanelSeoSettings /></ChildPanelRoute>} />
 
         {/* ================================================
             ADMIN ROUTES
@@ -391,6 +396,7 @@ function AppRoutes() {
         <Route path="/admin/payment-gateways"   element={<AdminRoute><AdminPaymentGateways /></AdminRoute>} />
         <Route path="/admin/support"            element={<AdminRoute><AdminSupportPage /></AdminRoute>} />
         <Route path="/admin/maintenance"        element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
+         <Route path="/admin/seo" element={<AdminRoute><AdminSeoSettings /></AdminRoute>} />
 
       </Routes>
     </>
