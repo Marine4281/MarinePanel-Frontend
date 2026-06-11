@@ -345,8 +345,7 @@ function AppRoutes() {
         <Route path="/reseller/branding"   element={<ProtectedRoute><ResellerBranding /></ProtectedRoute>} />
         <Route path="/end-user/dashboard"  element={<ProtectedRoute><EndUserDashboard /></ProtectedRoute>} />
         <Route path="/reseller/guides"     element={<ResellerGuides />} />
-         <Route path="/reseller/seo" element={<ResellerRoute><ResellerSeoSettings /></ResellerRoute>} />
-
+         
         {/* ================================================
             CHILD PANEL ROUTES — unchanged
         ================================================ */}
