@@ -48,6 +48,7 @@ const Sidebar = () => {
 
     { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
     { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
+    { name: "Maintenance", icon: "fa-solid fa-triangle-exclamation", path: "/admin/maintenance" },
   ];
 
   // ✅ LOGOUT FUNCTION
