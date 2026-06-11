@@ -12,46 +12,36 @@ const Sidebar = () => {
   const { adminUnread, fmt } = useSupport();
 
   const links = [
-    { name: "Dashboard", icon: "fa-solid fa-chart-line", path: "/admin", exact: true },
-    { name: "Users", icon: "fa-solid fa-users", path: "/admin/users" },
-    { name: "Financial", icon: "fa-solid fa-coins", path: "/admin/financial" },
-    { name: "Orders", icon: "fa-solid fa-cart-shopping", path: "/admin/orders" },
-    { name: "Services", icon: "fa-solid fa-layer-group", path: "/admin/services" },
-
-    // ✅ NEW: Categories
-    { name: "Categories", icon: "fa-solid fa-tags", path: "/admin/categories" },
-
-    // ✅ NEW PAGE: Provider Sync
-    { name: "Provider Sync", icon: "fa-solid fa-arrows-rotate", path: "/admin/provider-sync" },
-
-    // ✅ NEW PAGE: User Orders
-    { name: "User Orders", icon: "fa-solid fa-clipboard-list", path: "/admin/user-orders" },
-
-    // ✅ NEW PAGE: Resellers
-    { name: "Resellers", icon: "fa-solid fa-handshake", path: "/admin/resellers" },
-
-    // ✅ NEW PAGE: Child Panels
-    { name: "Child Panels", icon: "fa-solid fa-diagram-project", path: "/admin/child-panels" },
-
-    { name: "Payments", icon: "fa-solid fa-credit-card", path: "/admin/payment-gateways" },
+    { name: "Dashboard",      icon: "fa-solid fa-chart-line",        path: "/admin",                exact: true },
+    { name: "Users",          icon: "fa-solid fa-users",             path: "/admin/users" },
+    { name: "Financial",      icon: "fa-solid fa-coins",             path: "/admin/financial" },
+    { name: "Orders",         icon: "fa-solid fa-cart-shopping",     path: "/admin/orders" },
+    { name: "Services",       icon: "fa-solid fa-layer-group",       path: "/admin/services" },
+    { name: "Categories",     icon: "fa-solid fa-tags",              path: "/admin/categories" },
+    { name: "Provider Sync",  icon: "fa-solid fa-arrows-rotate",     path: "/admin/provider-sync" },
+    { name: "User Orders",    icon: "fa-solid fa-clipboard-list",    path: "/admin/user-orders" },
+    { name: "Resellers",      icon: "fa-solid fa-handshake",         path: "/admin/resellers" },
+    { name: "Child Panels",   icon: "fa-solid fa-diagram-project",   path: "/admin/child-panels" },
+    { name: "Payments",       icon: "fa-solid fa-credit-card",       path: "/admin/payment-gateways" },
 
     // 🎧 Support
     {
-      name: "Support",
-      path: "/admin/support",
-      badge: adminUnread,
+      name:       "Support",
+      path:       "/admin/support",
+      badge:      adminUnread,
       customIcon: <FiHeadphones />,
     },
 
-    // 🔥 Staff Actions Page
-    { name: "Staff Actions", icon: "fa-solid fa-shield-halved", path: "/admin/logs" },
+    { name: "Staff Actions",   icon: "fa-solid fa-shield-halved",   path: "/admin/logs" },
+    { name: "Reseller Guides", icon: "fa-solid fa-book-open",       path: "/admin/reseller-guides" },
 
-    { name: "Reseller Guides", icon: "fa-solid fa-book-open", path: "/admin/reseller-guides" },
-    { name: "Settings", icon: "fa-solid fa-gear", path: "/admin/settings" },
-    { name: "Maintenance", icon: "fa-solid fa-triangle-exclamation", path: "/admin/maintenance" },
+    // ✅ SEO Settings
+    { name: "SEO",             icon: "fa-solid fa-globe",           path: "/admin/seo" },
+
+    { name: "Settings",        icon: "fa-solid fa-gear",            path: "/admin/settings" },
+    { name: "Maintenance",     icon: "fa-solid fa-triangle-exclamation", path: "/admin/maintenance" },
   ];
 
-  // ✅ LOGOUT FUNCTION
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
