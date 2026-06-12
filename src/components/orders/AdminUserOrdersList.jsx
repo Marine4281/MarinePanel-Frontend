@@ -68,9 +68,9 @@ const AdminUserOrdersList = ({
           </span>
 
           <span
-            className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status]}`}
+            className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${statusStyles[order.status] || "bg-gray-100 text-gray-600"}`}
           >
-            {order.status}
+            {order.displayStatus || order.status}
           </span>
         </div>
 
