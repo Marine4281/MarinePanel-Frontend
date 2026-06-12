@@ -221,12 +221,13 @@ export default function ResellerLogin() {
             {/* Forgot */}
             <div className="flex justify-end">
               <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-xs hover:underline"
-                style={{ color: tc, opacity: 0.8 }}
-              >
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: BRAND }}
+                >
                 Forgot password?
+                
               </button>
             </div>
 
