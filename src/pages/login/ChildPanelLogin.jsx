@@ -156,11 +156,12 @@ export default function ChildPanelLogin() {
             {/* Forgot */}
             <div className="text-right">
               <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-white/55 text-xs hover:text-white hover:underline transition-colors"
-              >
-                Forgot Password?
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: BRAND }}
+                >
+                Forgot password?
               </button>
             </div>
 
