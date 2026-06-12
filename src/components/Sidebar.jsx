@@ -19,6 +19,7 @@ const Sidebar = () => {
     { name: "Services",       icon: "fa-solid fa-layer-group",       path: "/admin/services" },
     { name: "Categories",     icon: "fa-solid fa-tags",              path: "/admin/categories" },
     { name: "Provider Sync",  icon: "fa-solid fa-arrows-rotate",     path: "/admin/provider-sync" },
+    { name: "Sync Monitor", icon: "fa-solid fa-tower-broadcast", path: "/admin/sync-monitor" },
     { name: "User Orders",    icon: "fa-solid fa-clipboard-list",    path: "/admin/user-orders" },
     { name: "Resellers",      icon: "fa-solid fa-handshake",         path: "/admin/resellers" },
     { name: "Child Panels",   icon: "fa-solid fa-diagram-project",   path: "/admin/child-panels" },
