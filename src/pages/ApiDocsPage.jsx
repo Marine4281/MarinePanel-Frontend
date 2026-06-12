@@ -1,12 +1,15 @@
 // pages/ApiDocsPage.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Copy, Check, ChevronDown, ChevronUp, ArrowLeft, KeyRound } from "lucide-react";
 import { useAuthContext } from "../context/AuthContext";
+import { useReseller } from "../context/ResellerContext";
+import { useChildPanel } from "../context/ChildPanelContext";
+import { useCachedServices } from "../context/CachedServicesContext";
 
-const API_URL = "https://marinepanel.online/api/v2";
+const MAIN_API_URL = "https://marinepanel.online/api/v2";
 
-const CodeBlock = ({ code }) => {
+const CodeBlock = ({ code, accent }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -19,9 +22,10 @@ const CodeBlock = ({ code }) => {
     <div className="relative bg-[#0f172a] rounded-lg overflow-hidden">
       <button
         onClick={handleCopy}
-        className="absolute top-2 right-2 text-gray-400 hover:text-orange-400 transition"
+        className="absolute top-2 right-2 text-gray-400 hover:opacity-80 transition"
+        style={{ color: copied ? accent : undefined }}
       >
-        {copied ? <Check size={16} className="text-orange-400" /> : <Copy size={16} />}
+        {copied ? <Check size={16} /> : <Copy size={16} />}
       </button>
       <pre className="text-sm text-green-400 p-4 overflow-x-auto whitespace-pre-wrap">
         {code}
@@ -30,7 +34,7 @@ const CodeBlock = ({ code }) => {
   );
 };
 
-const ParamTable = ({ rows }) => (
+const ParamTable = ({ rows, accent }) => (
   <div className="overflow-x-auto rounded-lg border border-gray-700">
     <table className="w-full text-sm">
       <thead className="bg-gray-800 text-gray-300">
@@ -45,7 +49,7 @@ const ParamTable = ({ rows }) => (
             key={i}
             className={i % 2 === 0 ? "bg-gray-900" : "bg-gray-800/50"}
           >
-            <td className="px-4 py-2 font-mono text-orange-400">{param}</td>
+            <td className="px-4 py-2 font-mono" style={{ color: accent }}>{param}</td>
             <td className="px-4 py-2 text-gray-300">{desc}</td>
           </tr>
         ))}
@@ -54,7 +58,7 @@ const ParamTable = ({ rows }) => (
   </div>
 );
 
-const Section = ({ title, children }) => {
+const Section = ({ title, children, accent }) => {
   const [open, setOpen] = useState(true);
 
   return (
@@ -65,9 +69,9 @@ const Section = ({ title, children }) => {
       >
         <span className="text-white font-semibold text-base">{title}</span>
         {open ? (
-          <ChevronUp size={18} className="text-orange-400" />
+          <ChevronUp size={18} style={{ color: accent }} />
         ) : (
-          <ChevronDown size={18} className="text-orange-400" />
+          <ChevronDown size={18} style={{ color: accent }} />
         )}
       </button>
 
@@ -80,14 +84,12 @@ const Section = ({ title, children }) => {
   );
 };
 
-const Badge = ({ label, color }) => {
-  const colors = {
-    POST: "bg-orange-500",
-    GET: "bg-green-600",
-  };
+const Badge = ({ label, accent }) => {
+  const bg = label === "POST" ? accent : "#16a34a"; // GET stays green
   return (
     <span
-      className={`${colors[color] || "bg-gray-600"} text-white text-xs font-bold px-2 py-0.5 rounded`}
+      className="text-white text-xs font-bold px-2 py-0.5 rounded"
+      style={{ backgroundColor: bg }}
     >
       {label}
     </span>
@@ -98,6 +100,37 @@ const ApiDocsPage = () => {
   const { user } = useAuthContext();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+
+  const { reseller } = useReseller();
+  const { childPanel } = useChildPanel();
+  const { domainType } = useCachedServices();
+
+  // Resolve brand name, accent color, and API domain based on domain type
+  const brand =
+    domainType === "childPanel" && childPanel
+      ? {
+          name: childPanel.brandName || "Panel",
+          color: childPanel.themeColor || "#f97316",
+          domain: childPanel.domain || "marinepanel.online",
+        }
+      : domainType === "reseller" && reseller
+      ? {
+          name: reseller.brandName || "Panel",
+          color: reseller.themeColor || "#f97316",
+          domain: reseller.domain || "marinepanel.online",
+        }
+      : { name: "MarinePanel", color: "#f97316", domain: "marinepanel.online" };
+
+  const apiUrl =
+    domainType === "main" ? MAIN_API_URL : `https://${brand.domain}/api/v2`;
+
+  const accent = brand.color;
+
+  // Update page title to match brand
+  useEffect(() => {
+    document.title = `API Documentation — ${brand.name}`;
+    return () => { document.title = brand.name; };
+  }, [brand.name]);
 
   const apiKey = user?.apiKey || null;
 
@@ -115,7 +148,9 @@ const ApiDocsPage = () => {
         {/* ── Back Button ── */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition text-sm"
+          className="flex items-center gap-2 text-gray-400 hover:opacity-80 transition text-sm"
+          onMouseEnter={(e) => (e.currentTarget.style.color = accent)}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "")}
         >
           <ArrowLeft size={16} />
           Back
@@ -125,7 +160,7 @@ const ApiDocsPage = () => {
         <div>
           <h1 className="text-3xl font-bold mb-1">API Documentation</h1>
           <p className="text-gray-400 text-sm">
-            Integrate Marine Panel into your own platform using our API.
+            Integrate {brand.name} into your own platform using our API.
           </p>
         </div>
 
@@ -134,11 +169,11 @@ const ApiDocsPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-gray-500 mb-1">HTTP Method</p>
-              <Badge label="POST" color="POST" />
+              <Badge label="POST" accent={accent} />
             </div>
             <div className="sm:col-span-2">
               <p className="text-gray-500 mb-1">API URL</p>
-              <code className="text-orange-400 break-all">{API_URL}</code>
+              <code className="break-all" style={{ color: accent }}>{apiUrl}</code>
             </div>
           </div>
 
@@ -152,14 +187,15 @@ const ApiDocsPage = () => {
             <p className="text-gray-500 mb-1 text-sm">Your API Key</p>
             {apiKey ? (
               <div className="flex items-center gap-2">
-                <code className="bg-gray-800 px-3 py-1.5 rounded text-orange-400 text-sm break-all flex-1">
+                <code className="bg-gray-800 px-3 py-1.5 rounded text-sm break-all flex-1" style={{ color: accent }}>
                   {apiKey}
                 </code>
                 <button
                   onClick={handleCopyKey}
-                  className="text-gray-400 hover:text-orange-400 transition shrink-0"
+                  className="text-gray-400 hover:opacity-80 transition shrink-0"
+                  style={{ color: copied ? accent : undefined }}
                 >
-                  {copied ? <Check size={16} className="text-orange-400" /> : <Copy size={16} />}
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
                 </button>
               </div>
             ) : (
@@ -172,7 +208,8 @@ const ApiDocsPage = () => {
                 {user && (
                   <button
                     onClick={() => navigate("/profile")}
-                    className="flex items-center gap-1.5 text-orange-500 hover:text-orange-400 transition font-medium shrink-0"
+                    className="flex items-center gap-1.5 font-medium shrink-0 hover:opacity-80 transition"
+                    style={{ color: accent }}
                   >
                     <KeyRound size={14} />
                     Generate one in your Profile
@@ -184,14 +221,16 @@ const ApiDocsPage = () => {
         </div>
 
         {/* ── Service List ── */}
-        <Section title="📦 Service List">
+        <Section title="📦 Service List" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "services"],
             ]}
           />
           <CodeBlock
+            accent={accent}
             code={JSON.stringify(
               [
                 {
@@ -213,8 +252,9 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Add Order ── */}
-        <Section title="➕ Add Order">
+        <Section title="➕ Add Order" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "add"],
@@ -223,14 +263,13 @@ const ApiDocsPage = () => {
               ["quantity", "Needed quantity"],
             ]}
           />
-          <CodeBlock
-            code={JSON.stringify({ order: 23501 }, null, 2)}
-          />
+          <CodeBlock accent={accent} code={JSON.stringify({ order: 23501 }, null, 2)} />
         </Section>
 
         {/* ── Order Status ── */}
-        <Section title="📊 Order Status">
+        <Section title="📊 Order Status" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "status"],
@@ -238,11 +277,12 @@ const ApiDocsPage = () => {
             ]}
           />
           <CodeBlock
+            accent={accent}
             code={JSON.stringify(
               {
                 charge: "0.27819",
                 start_count: "0",
-                status: "Partial",
+                status: "In progress",
                 remains: "157",
                 currency: "USD",
               },
@@ -253,8 +293,9 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Multiple Orders Status ── */}
-        <Section title="📊 Multiple Orders Status">
+        <Section title="📊 Multiple Orders Status" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "status"],
@@ -262,6 +303,7 @@ const ApiDocsPage = () => {
             ]}
           />
           <CodeBlock
+            accent={accent}
             code={JSON.stringify(
               {
                 1: {
@@ -275,7 +317,7 @@ const ApiDocsPage = () => {
                 100: {
                   charge: "1.44219",
                   start_count: "0",
-                  status: "Processing",
+                  status: "In progress",
                   remains: "10",
                   currency: "USD",
                 },
@@ -287,22 +329,22 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Create Refill ── */}
-        <Section title="🔄 Create Refill">
+        <Section title="🔄 Create Refill" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "refill"],
               ["order", "Order ID"],
             ]}
           />
-          <CodeBlock
-            code={JSON.stringify({ refill: "1" }, null, 2)}
-          />
+          <CodeBlock accent={accent} code={JSON.stringify({ refill: "1" }, null, 2)} />
         </Section>
 
         {/* ── Multiple Refill ── */}
-        <Section title="🔄 Create Multiple Refill">
+        <Section title="🔄 Create Multiple Refill" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "refill"],
@@ -310,6 +352,7 @@ const ApiDocsPage = () => {
             ]}
           />
           <CodeBlock
+            accent={accent}
             code={JSON.stringify(
               [
                 { order: 1, refill: 1 },
@@ -323,22 +366,22 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Refill Status ── */}
-        <Section title="📋 Get Refill Status">
+        <Section title="📋 Get Refill Status" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "refill_status"],
               ["refill", "Refill ID"],
             ]}
           />
-          <CodeBlock
-            code={JSON.stringify({ status: "Completed" }, null, 2)}
-          />
+          <CodeBlock accent={accent} code={JSON.stringify({ status: "Completed" }, null, 2)} />
         </Section>
 
         {/* ── Multiple Refill Status ── */}
-        <Section title="📋 Get Multiple Refill Status">
+        <Section title="📋 Get Multiple Refill Status" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "refill_status"],
@@ -346,6 +389,7 @@ const ApiDocsPage = () => {
             ]}
           />
           <CodeBlock
+            accent={accent}
             code={JSON.stringify(
               [
                 { refill: 1, status: "Completed" },
@@ -359,8 +403,9 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Cancel ── */}
-        <Section title="❌ Cancel Orders">
+        <Section title="❌ Cancel Orders" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "cancel"],
@@ -368,6 +413,7 @@ const ApiDocsPage = () => {
             ]}
           />
           <CodeBlock
+            accent={accent}
             code={JSON.stringify(
               [
                 { order: 9, cancel: { error: "Incorrect order ID" } },
@@ -380,25 +426,20 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Balance ── */}
-        <Section title="💰 User Balance">
+        <Section title="💰 User Balance" accent={accent}>
           <ParamTable
+            accent={accent}
             rows={[
               ["key", "Your API key"],
               ["action", "balance"],
             ]}
           />
-          <CodeBlock
-            code={JSON.stringify(
-              { balance: "100.84292", currency: "USD" },
-              null,
-              2
-            )}
-          />
+          <CodeBlock accent={accent} code={JSON.stringify({ balance: "100.84292", currency: "USD" }, null, 2)} />
         </Section>
 
         {/* ── Footer ── */}
         <p className="text-center text-gray-600 text-xs pb-6">
-          Marine Panel API v2 · {API_URL}
+          {brand.name} API v2 · {apiUrl}
         </p>
       </div>
     </div>
