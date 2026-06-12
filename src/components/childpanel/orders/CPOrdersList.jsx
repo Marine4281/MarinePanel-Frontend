@@ -78,12 +78,12 @@ export default function CPOrdersList({
                 </span>
               </div>
               <span
-                className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${
-                  STATUS_STYLES[order.status] || "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {order.status}
-              </span>
+  className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${
+    STATUS_STYLES[order.status] || "bg-gray-100 text-gray-600"
+  }`}
+>
+  {order.displayStatus || order.status}
+</span>
             </div>
 
             {/* ── Info Grid ── */}
