@@ -87,7 +87,7 @@ export default function AdminSyncMonitor() {
   const fetch = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: res } = await API.get(`/api/admin/sync/${mainTab}`, {
+      const { data: res } = await API.get(`/admin/sync/${mainTab}`, {
         params: { page, limit: 20, status: filterTab, search },
       });
       setData(res.orders);
