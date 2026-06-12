@@ -73,19 +73,25 @@ const Orders = () => {
 
   useEffect(() => {
     socket.on("orderUpdated", (data) => {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o._id === data.orderId
-            ? {
-                ...o,
-                status: data.status,
-                quantityDelivered: data.delivered,
-                refundProcessed: data.refundProcessed,
-              }
-            : o
-        )
-      );
-    });
+  setOrders((prev) =>
+    prev.map((o) =>
+      o._id === data.orderId
+        ? {
+            ...o,
+            status: data.status,
+            displayStatus: data.providerStatus   // socket sends raw providerStatus string
+              ? data.providerStatus
+                  .replace("in progress", "In progress")
+                  .replace("inprogress", "In progress")
+                  .replace(/^\w/, (c) => c.toUpperCase())
+              : data.status,
+            quantityDelivered: data.delivered,
+            refundProcessed: data.refundProcessed,
+          }
+        : o
+    )
+  );
+});
 
     return () => socket.off("orderUpdated");
   }, []);
@@ -147,6 +153,7 @@ const Orders = () => {
     const map = {
       pending: "bg-yellow-100 text-yellow-700",
       processing: "bg-blue-100 text-blue-700",
+      "in progress": "bg-blue-100 text-blue-700",
       completed: "bg-green-100 text-green-700",
       partial: "bg-indigo-100 text-indigo-700",
       failed: "bg-red-100 text-red-700",
@@ -161,7 +168,7 @@ const Orders = () => {
           "bg-gray-100 text-gray-600"
         }`}
       >
-        {status}
+        {displayStatus}
       </span>
     );
   };
@@ -337,7 +344,7 @@ const Orders = () => {
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
                           {statusBadge(
-                            order.status
+                            order.status || order.status
                           )}
 
                           {/* ✅ SHOW REFUNDED BELOW FAILED */}
