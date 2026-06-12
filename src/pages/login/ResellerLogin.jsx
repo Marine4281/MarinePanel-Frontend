@@ -218,18 +218,16 @@ export default function ResellerLogin() {
               </div>
             </div>
 
-            {/* Forgot */}
-            <div className="flex justify-end">
-              <button
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-semibold transition-opacity hover:opacity-70"
-                  style={{ color: BRAND }}
-                >
-                Forgot password?
-                
-              </button>
-            </div>
+            {/* Forgot Password */}
+<div className="flex justify-end">
+  <Link
+    to="/forgot-password"
+    className="text-xs font-semibold transition-opacity hover:opacity-70"
+    style={{ color: tc }}
+  >
+    Forgot password?
+  </Link>
+</div>
 
             {/* Submit */}
             <button
