@@ -53,6 +53,7 @@ import AdminPaymentGateways  from "./pages/AdminPaymentGateways";
 import AdminSupportPage from "./pages/AdminSupportPage";
 import AdminMaintenance from "./pages/AdminMaintenance";
 import AdminSeoSettings from "./components/admin/AdminSeoSettings";
+import AdminSyncMonitor from "./pages/AdminSyncMonitor";
 
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
@@ -393,6 +394,7 @@ function AppRoutes() {
         <Route path="/admin/support"            element={<AdminRoute><AdminSupportPage /></AdminRoute>} />
         <Route path="/admin/maintenance"        element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
          <Route path="/admin/seo" element={<AdminRoute><AdminSeoSettings /></AdminRoute>} />
+         <Route path="/admin/sync-monitor" element={<AdminRoute><AdminSyncMonitor /></AdminRoute>} />
          
       </Routes>
     </>
