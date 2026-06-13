@@ -351,15 +351,20 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
 // ======================= MAIN =======================
 
 export default function ChildPanelResellers() {
-  const [resellers, setResellers] = useState([]);
-  const [pagination, setPagination] = useState({});
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [resellers, setResellers]       = useState([]);
+  const [pagination, setPagination]     = useState({});
+  const [page, setPage]                 = useState(1);
+  const [loading, setLoading]           = useState(true);
+  const [search, setSearch]             = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "suspended"
 
   const fetchResellers = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await API.get(`/cp/resellers?page=${page}&limit=20`);
+      const params = new URLSearchParams({ page, limit: 20 });
+      if (search.trim())          params.set("search", search.trim());
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      const res = await API.get(`/cp/resellers?${params}`);
       setResellers(res.data.data || []);
       setPagination(res.data.pagination || {});
     } catch {
@@ -367,11 +372,12 @@ export default function ChildPanelResellers() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, search, statusFilter]);
 
-  useEffect(() => {
-    fetchResellers();
-  }, [fetchResellers]);
+  useEffect(() => { fetchResellers(); }, [fetchResellers]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1); }, [search, statusFilter]);
 
   const handleToggle = async (id) => {
     try {
@@ -415,21 +421,39 @@ export default function ChildPanelResellers() {
       <div className="space-y-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-800">Resellers</h1>
             <p className="text-sm text-gray-500">
-              {pagination.total || 0} reseller
-              {pagination.total !== 1 ? "s" : ""} on your panel
+              {pagination.total || 0} reseller{pagination.total !== 1 ? "s" : ""} on your panel
             </p>
           </div>
-
           <button
             onClick={fetchResellers}
             className="flex items-center gap-1.5 text-sm px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-gray-600"
           >
             <FiRefreshCw size={14} /> Refresh
           </button>
+        </div>
+
+        {/* Search + Filter bar */}
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Search by email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 min-w-[180px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
         </div>
 
         {/* List */}
@@ -439,9 +463,11 @@ export default function ChildPanelResellers() {
           </div>
         ) : resellers.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-16 text-center">
-            <p className="text-gray-400 text-sm">No resellers yet</p>
+            <p className="text-gray-400 text-sm">No resellers found</p>
             <p className="text-gray-300 text-xs mt-1">
-              Resellers who sign up on your panel will appear here
+              {search || statusFilter !== "all"
+                ? "Try adjusting your filters"
+                : "Resellers who sign up on your panel will appear here"}
             </p>
           </div>
         ) : (
@@ -485,4 +511,4 @@ export default function ChildPanelResellers() {
       </div>
     </ChildPanelLayout>
   );
-}
+              }
