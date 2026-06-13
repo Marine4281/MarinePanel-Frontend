@@ -1,47 +1,36 @@
+// src/pages/reseller/ResellerActivate.jsx
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; // <-- import auth context
+import { useAuth } from "../../context/AuthContext";
 
 export default function ResellerActivate() {
   const navigate = useNavigate();
-  const { user } = useAuth(); // <-- get logged-in user
+  const { user } = useAuth();
 
-  const [brandName, setBrandName] = useState("");
-  const [domainType, setDomainType] = useState("subdomain");
+  const [brandName, setBrandName]     = useState("");
+  const [domainType, setDomainType]   = useState("subdomain");
   const [customDomain, setCustomDomain] = useState("");
 
-  const [activationFee, setActivationFee] = useState(0);
+  const [activationFee, setActivationFee]   = useState(0);
   const [platformDomain, setPlatformDomain] = useState("");
-  const [wallet, setWallet] = useState(0);
+  const [isChildPanel, setIsChildPanel]     = useState(false);
+  const [wallet, setWallet]                 = useState(0);
+  const [loading, setLoading]               = useState(false);
 
-  const [loading, setLoading] = useState(false);
-
-  /*
-  --------------------------------
-  Redirect if already a reseller
-  --------------------------------
-  */
   useEffect(() => {
-    if (user?.isReseller) {
-      navigate("/reseller/dashboard");
-    }
+    if (user?.isReseller) navigate("/reseller/dashboard");
   }, [user, navigate]);
 
-  /*
-  --------------------------------
-  Load Activation Fee + Wallet
-  --------------------------------
-  */
   useEffect(() => {
     const fetchFee = async () => {
       try {
         const res = await API.get("/reseller/activation-fee");
         setActivationFee(res.data.fee);
         setPlatformDomain(res.data.platformDomain);
-      } catch (err) {
-        console.error(err);
+        setIsChildPanel(res.data.isChildPanel || false);
+      } catch {
         toast.error("Failed to load activation fee");
       }
     };
@@ -50,43 +39,30 @@ export default function ResellerActivate() {
       try {
         const res = await API.get("/reseller/dashboard");
         setWallet(res.data.wallet);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
     };
 
     fetchFee();
     fetchWallet();
   }, []);
 
-  /*
-  --------------------------------
-  Activate Reseller
-  --------------------------------
-  */
   const handleActivate = async () => {
     if (!brandName) return toast.error("Brand name required");
     if (domainType === "custom" && !customDomain)
       return toast.error("Custom domain required");
 
     setLoading(true);
-
     try {
       const res = await API.post("/reseller/activate", {
         brandName,
         domainType,
         customDomain,
       });
-
       toast.success(res.data.message);
-
-      setTimeout(() => {
-        navigate("/reseller/dashboard");
-      }, 1500);
+      setTimeout(() => navigate("/reseller/dashboard"), 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || "Activation failed");
     }
-
     setLoading(false);
   };
 
@@ -94,8 +70,6 @@ export default function ResellerActivate() {
 
   return (
     <div className="max-w-xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
-
-      {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
         className="mb-4 text-orange-500 font-semibold hover:underline"
@@ -103,9 +77,15 @@ export default function ResellerActivate() {
         &larr; Back
       </button>
 
-      <h1 className="text-2xl font-bold mb-6 text-center">
+      <h1 className="text-2xl font-bold mb-2 text-center">
         Activate Your Reseller Panel
       </h1>
+
+      {isChildPanel && (
+        <p className="text-center text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-1.5 mb-5">
+          You are activating under this panel's network
+        </p>
+      )}
 
       {/* Brand Name */}
       <div className="mb-4">
@@ -133,7 +113,7 @@ export default function ResellerActivate() {
             Free Subdomain
           </label>
 
-          {brandName && platformDomain && (
+          {brandName && platformDomain && domainType === "subdomain" && (
             <p className="text-sm text-gray-500 ml-6">
               {slug}.{platformDomain}
             </p>
@@ -161,7 +141,7 @@ export default function ResellerActivate() {
         </div>
       </div>
 
-      {/* Fee & Wallet Info */}
+      {/* Fee & Wallet */}
       <div className="bg-gray-50 p-4 rounded-lg mb-4">
         <div className="flex justify-between mb-2">
           <span>Activation Fee</span>
@@ -169,19 +149,28 @@ export default function ResellerActivate() {
         </div>
         <div className="flex justify-between">
           <span>Your Wallet</span>
-          <span className="font-bold">${wallet}</span>
+          <span
+            className={`font-bold ${
+              wallet < activationFee ? "text-red-500" : "text-green-600"
+            }`}
+          >
+            ${wallet}
+          </span>
         </div>
+        {wallet < activationFee && (
+          <p className="text-xs text-red-500 mt-2">
+            Insufficient balance — please top up your wallet first.
+          </p>
+        )}
       </div>
 
-      {/* Activate Button */}
       <button
         onClick={handleActivate}
-        disabled={loading}
-        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg"
+        disabled={loading || wallet < activationFee}
+        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg disabled:opacity-50"
       >
         {loading ? "Activating..." : `Activate & Pay $${activationFee}`}
       </button>
-
     </div>
   );
-  }
+}
