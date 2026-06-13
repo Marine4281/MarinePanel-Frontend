@@ -34,7 +34,7 @@ export default function SupportPage() {
 
   const flash = (t, ok = true) => { setMsg({ text: t, ok }); setTimeout(() => setMsg({ text: "", ok: true }), 3500); };
 
-  const panelOwnerId = domainType === "childPanel" ? childPanel?.owner?._id || childPanel?.owner : null;
+  const panelOwnerId = domainType === "childPanel" ? childPanel?.ownerId || null : null;
 
   const load = () => {
     setLoading(true);
@@ -72,8 +72,7 @@ export default function SupportPage() {
       const res = await API.post("/support/tickets", {
         title: finalTitle,
         description: desc.trim(),
-        scope: userScope,
-        panelOwner: panelOwnerId || undefined,
+        
         ...(file ? { file } : {}),
       });
       setShowForm(false);
