@@ -511,4 +511,4 @@ export default function ChildPanelResellers() {
       </div>
     </ChildPanelLayout>
   );
-              }
+}
