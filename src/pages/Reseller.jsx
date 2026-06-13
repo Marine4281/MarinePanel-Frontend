@@ -8,14 +8,12 @@ import { useCachedServices } from "../context/CachedServicesContext";
 const Reseller = () => {
   const { domainType } = useCachedServices();
 
-  // CP end users on a child panel domain should NOT see the Child Panel option.
-  // They can become resellers under the CP owner, but they cannot create their own
-  // child panels. All other panel types (main platform, reseller domain) show it normally.
   const isChildPanelEndUser = domainType === "childPanel";
 
-  // T&C link only shown on main platform — reseller/CP domains use their own brand
-  // and the link would expose the parent platform name
-  const isMainPlatform = domainType === "main" || !domainType;
+  // T&C shown on main platform AND child panel domains.
+  // TermsAndConditions.jsx is already brand-aware for both.
+  // Still hidden on reseller domains to avoid exposing the parent platform name.
+  const showTermsLink = domainType === "main" || !domainType || domainType === "childPanel";
 
   const allItems = [
     {
@@ -85,8 +83,8 @@ const Reseller = () => {
           ))}
         </div>
 
-        {/* T&C link — main platform only, subtle at the bottom */}
-        {isMainPlatform && (
+        {/* T&C link — main platform + child panel domains */}
+        {showTermsLink && (
           <div className="mt-10 text-center">
             <Link
               to="/terms"
