@@ -103,6 +103,7 @@ const normalizeBranding = (data = {}) => ({
   themeColor:   data.themeColor   || "#1e40af",
   slug:         data.slug         || null,
   domain:       data.domain       || null,
+  ownerId:      data.ownerId      || null,
   serviceMode:  data.serviceMode  || "none",
   paymentMode:  data.paymentMode  || "none",
   templateId:   data.templateId   || null,
