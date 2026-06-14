@@ -24,6 +24,8 @@
 //   5. Exposes isChildPanelDomain, isLoading, and error state
 //      so consumers can branch cleanly
 //   6. Updates document.title on brand load
+//   7. Always signals window.__CHILD_PANEL_DETECTED__ on finish
+//      (even on error/empty) so CachedServicesContext never hangs
 
 import {
   createContext,
@@ -115,21 +117,14 @@ const normalizeBranding = (data = {}) => ({
 });
 
 /* ============================================================
-   DEFAULT CONTEXT VALUE
-   Prevents undefined errors when a consumer mounts before the
-   provider has resolved.
-============================================================ */
-const DEFAULT_BRANDING = normalizeBranding();
-
-/* ============================================================
    CONTEXT
 ============================================================ */
 const ChildPanelContext = createContext({
-  childPanel:        null,
+  childPanel:         null,
   isChildPanelDomain: false,
-  isLoading:         true,
-  error:             null,
-  refetch:           () => {},
+  isLoading:          true,
+  error:              null,
+  refetch:            () => {},
 });
 
 export const useChildPanel = () => useContext(ChildPanelContext);
@@ -138,9 +133,9 @@ export const useChildPanel = () => useContext(ChildPanelContext);
    PROVIDER
 ============================================================ */
 export const ChildPanelProvider = ({ children }) => {
-  const [childPanel, setChildPanel]   = useState(null);
-  const [isLoading,  setIsLoading]    = useState(true);
-  const [error,      setError]        = useState(null);
+  const [childPanel, setChildPanel] = useState(null);
+  const [isLoading,  setIsLoading]  = useState(true);
+  const [error,      setError]      = useState(null);
 
   // Stable check — computed once and never changes during a session
   const isChildPanelDomain = useMemo(() => isNonMainDomain(), []);
@@ -160,10 +155,18 @@ export const ChildPanelProvider = ({ children }) => {
      Called on mount. Also exported as `refetch` so consumers
      can trigger a re-fetch after the CP owner updates branding
      (e.g. after saving from ChildPanelSettings).
+
+     IMPORTANT: Every code path must eventually set
+     window.__CHILD_PANEL_DETECTED__ = true (success) or
+     window.__CHILD_PANEL_DETECTED__ = "notCp" (not a CP domain)
+     so that CachedServicesContext.waitForChildPanelBranding()
+     never has to wait for the full 3s safety timeout.
   ---------------------------------------------------------- */
   const fetchBranding = useCallback(async () => {
-    // Never fetch on the main platform — nothing to load
+    // Never fetch on the main platform — nothing to load.
+    // Signal immediately so CachedServicesContext doesn't wait.
     if (!isChildPanelDomain) {
+      window.__CHILD_PANEL_DETECTED__ = "notCp";
       setIsLoading(false);
       return;
     }
@@ -182,31 +185,34 @@ export const ChildPanelProvider = ({ children }) => {
         applyTheme(normalized.themeColor);
         document.title = normalized.brandName;
 
-        // Signal to ServicesContext / ResellerContext that this
-        // domain is already resolved as a child panel — prevents
-        // those contexts from making redundant detection requests
-        window.__DOMAIN_TYPE__ = "childPanel";
+        // Signal success — CachedServicesContext is waiting for this
+        window.__DOMAIN_TYPE__          = "childPanel";
         window.__CHILD_PANEL_DETECTED__ = true;
 
       } else {
         // Endpoint returned 200 but with no usable data —
         // treat as not a child panel (e.g. inactive panel)
         setChildPanel(null);
-        window.__DOMAIN_TYPE__ = window.__DOMAIN_TYPE__ || "unknown";
+        window.__DOMAIN_TYPE__          = window.__DOMAIN_TYPE__ || "unknown";
+        // Signal done so CachedServicesContext isn't held up
+        window.__CHILD_PANEL_DETECTED__ = "notCp";
       }
 
     } catch (err) {
-      // 404 = backend says this is NOT a child panel domain
-      // (likely a reseller domain — ResellerContext handles it)
       if (err.response?.status === 404) {
+        // 404 = backend says this is NOT a child panel domain
+        // (likely a reseller domain — ResellerContext handles it)
         setChildPanel(null);
-        // Leave window.__DOMAIN_TYPE__ for ServicesContext to set
+        // Signal done — leave __DOMAIN_TYPE__ for ServicesContext to set
+        window.__CHILD_PANEL_DETECTED__ = "notCp";
       } else {
         // Genuine server error — store it so Login/Register can
         // show a friendly message instead of a blank page
         console.error("Child panel branding fetch failed:", err);
         setError(err.response?.data?.message || "Failed to load panel branding");
         setChildPanel(null);
+        // Still signal done — don't hang the whole app on a server error
+        window.__CHILD_PANEL_DETECTED__ = "notCp";
       }
     } finally {
       setIsLoading(false);
@@ -232,7 +238,6 @@ export const ChildPanelProvider = ({ children }) => {
       isChildPanelDomain,
 
       // Convenience alias used by Header.jsx and Login.jsx
-      // Matches the pattern used in ResellerContext
       loading: isLoading,
       isLoading,
 
