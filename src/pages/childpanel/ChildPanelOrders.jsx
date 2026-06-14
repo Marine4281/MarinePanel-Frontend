@@ -51,17 +51,50 @@ export default function ChildPanelOrders() {
 
   // ── Socket real-time ───────────────────────────────────
   useEffect(() => {
-    socket.on("order:update", (data) => {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o._id === data._id
-            ? { ...o, status: data.status, quantityDelivered: data.quantityDelivered }
-            : o
-        )
-      );
-    });
-    return () => socket.off("order:update");
-  }, []);
+  // Join the CP owner's room so targeted sync events reach this dashboard
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user?._id) {
+    socket.emit("join_user_room", user._id);
+  }
+
+  // From providerStatusSync auto-polling (broadcast)
+  socket.on("order:update", (data) => {
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === data._id
+          ? {
+              ...o,
+              status: data.status,
+              quantityDelivered: data.quantityDelivered,
+              refundProcessed: data.refundProcessed,
+              displayStatus: data.displayStatus,
+            }
+          : o
+      )
+    );
+  });
+
+  // From providerStatusSync auto-polling (targeted to CP owner's room)
+  socket.on("orderUpdated", (data) => {
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === data.orderId
+          ? {
+              ...o,
+              status: data.status,
+              quantityDelivered: data.delivered,
+              refundProcessed: data.refundProcessed,
+            }
+          : o
+      )
+    );
+  });
+
+  return () => {
+    socket.off("order:update");
+    socket.off("orderUpdated");
+  };
+}, []);
 
   // ── Actions ────────────────────────────────────────────
   const updateStatus = async (id, newStatus) => {
