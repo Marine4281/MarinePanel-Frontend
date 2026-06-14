@@ -8,7 +8,6 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiRefreshCw,
-  FiUsers,
   FiShoppingCart,
   FiDollarSign,
   FiTrendingUp,
@@ -24,9 +23,7 @@ const fmt = (val, d = 2) => Number(val || 0).toFixed(d);
 const Badge = ({ active }) => (
   <span
     className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-      active
-        ? "bg-green-100 text-green-700"
-        : "bg-red-100 text-red-600"
+      active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
     }`}
   >
     {active ? "Active" : "Suspended"}
@@ -38,9 +35,7 @@ const Badge = ({ active }) => (
 function StatCard({ title, value, icon }) {
   return (
     <div className="bg-gray-50 border rounded-xl p-3 flex items-center gap-3">
-      <div className="p-2 bg-white rounded-lg text-blue-500 shadow-sm">
-        {icon}
-      </div>
+      <div className="p-2 bg-white rounded-lg text-blue-500 shadow-sm">{icon}</div>
       <div>
         <p className="text-xs text-gray-500">{title}</p>
         <p className="text-sm font-bold text-gray-800">{value}</p>
@@ -65,7 +60,7 @@ function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500">{label}:</span>
+      {label && <span className="text-xs text-gray-500">{label}:</span>}
       {editing ? (
         <>
           <div className="relative">
@@ -105,13 +100,10 @@ function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
         </>
       ) : (
         <>
-          <span className="text-xs font-semibold text-gray-800">
+          <span className="text-xs font-semibold text-green-600">
             {prefix}{fmt(value)}{suffix}
           </span>
-          <button
-            onClick={() => setEditing(true)}
-            className="text-gray-400 hover:text-blue-500"
-          >
+          <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-blue-500">
             <FiEdit2 size={11} />
           </button>
         </>
@@ -122,7 +114,7 @@ function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
 
 // ======================= RESELLER ROW =======================
 
-function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }) {
+function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate, onResellerUserBalanceUpdate }) {
   const [expanded, setExpanded] = useState(false);
   const [details, setDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -155,20 +147,15 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
       {/* Row header */}
       <div className="flex items-center justify-between px-4 py-3 gap-3 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar */}
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
             {reseller.email?.charAt(0).toUpperCase()}
           </div>
-
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-800 truncate">
-              {reseller.email}
-            </p>
+            <p className="text-sm font-semibold text-gray-800 truncate">{reseller.email}</p>
             <div className="flex items-center gap-3 flex-wrap mt-0.5">
               <Badge active={!reseller.isSuspended} />
               <span className="text-xs text-gray-400">
-                {reseller.usersCount || 0} users ·{" "}
-                {reseller.ordersCount || 0} orders
+                {reseller.usersCount || 0} users · {reseller.ordersCount || 0} orders
               </span>
               <span className="text-xs text-green-600 font-medium">
                 Wallet: ${fmt(reseller.resellerWallet || reseller.wallet)}
@@ -177,7 +164,6 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleToggle}
@@ -188,13 +174,8 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
                 : "bg-red-50 text-red-600 hover:bg-red-100"
             }`}
           >
-            {toggling
-              ? "..."
-              : reseller.isSuspended
-              ? "Activate"
-              : "Suspend"}
+            {toggling ? "..." : reseller.isSuspended ? "Activate" : "Suspend"}
           </button>
-
           <button
             onClick={fetchDetails}
             className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -216,41 +197,21 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
             <>
               {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard
-                  title="Wallet"
-                  value={`$${fmt(details.stats?.wallet)}`}
-                  icon={<FiDollarSign size={14} />}
-                />
-                <StatCard
-                  title="Orders"
-                  value={details.stats?.totalOrders || 0}
-                  icon={<FiShoppingCart size={14} />}
-                />
-                <StatCard
-                  title="Revenue"
-                  value={`$${fmt(details.stats?.totalRevenue)}`}
-                  icon={<FiTrendingUp size={14} />}
-                />
-                <StatCard
-                  title="Earnings"
-                  value={`$${fmt(details.stats?.resellerEarnings)}`}
-                  icon={<FiDollarSign size={14} />}
-                />
+                <StatCard title="Wallet" value={`$${fmt(details.stats?.wallet)}`} icon={<FiDollarSign size={14} />} />
+                <StatCard title="Orders" value={details.stats?.totalOrders || 0} icon={<FiShoppingCart size={14} />} />
+                <StatCard title="Revenue" value={`$${fmt(details.stats?.totalRevenue)}`} icon={<FiTrendingUp size={14} />} />
+                <StatCard title="Earnings" value={`$${fmt(details.stats?.resellerEarnings)}`} icon={<FiDollarSign size={14} />} />
               </div>
 
               {/* Controls */}
               <div className="bg-white rounded-xl border p-4 space-y-3">
-                <p className="text-xs font-semibold text-gray-600 uppercase">
-                  Controls
-                </p>
-
+                <p className="text-xs font-semibold text-gray-600 uppercase">Controls</p>
                 <InlineEdit
                   label="Commission Rate"
                   value={details.reseller?.resellerCommissionRate || 0}
                   suffix="%"
                   onSave={(v) => onCommissionUpdate(reseller._id, v)}
                 />
-
                 <InlineEdit
                   label="Wallet Balance"
                   value={details.stats?.wallet || 0}
@@ -259,7 +220,7 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
                 />
               </div>
 
-              {/* Recent users */}
+              {/* Users */}
               {details.users?.length > 0 && (
                 <div className="bg-white rounded-xl border p-4">
                   <p className="text-xs font-semibold text-gray-600 uppercase mb-3">
@@ -277,11 +238,13 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
                       <tbody>
                         {details.users.map((u) => (
                           <tr key={u._id} className="border-t">
-                            <td className="py-1.5 pr-4 truncate max-w-[160px]">
-                              {u.email}
-                            </td>
-                            <td className="py-1.5 text-green-600 font-medium">
-                              ${fmt(u.balance)}
+                            <td className="py-1.5 pr-4 truncate max-w-[160px]">{u.email}</td>
+                            <td className="py-1.5">
+                              <InlineEdit
+                                value={u.balance || 0}
+                                prefix="$"
+                                onSave={(v) => onResellerUserBalanceUpdate(reseller._id, u._id, v, u.email)}
+                              />
                             </td>
                             <td className="py-1.5 text-gray-400">
                               {new Date(u.createdAt).toLocaleDateString()}
@@ -297,9 +260,7 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
               {/* Recent orders */}
               {details.orders?.length > 0 && (
                 <div className="bg-white rounded-xl border p-4">
-                  <p className="text-xs font-semibold text-gray-600 uppercase mb-3">
-                    Recent Orders
-                  </p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase mb-3">Recent Orders</p>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead className="text-gray-400 uppercase">
@@ -313,12 +274,8 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate }
                       <tbody>
                         {details.orders.slice(0, 5).map((o) => (
                           <tr key={o._id} className="border-t">
-                            <td className="py-1.5 font-bold">
-                              #{o.customOrderId || o._id?.slice(-6)}
-                            </td>
-                            <td className="py-1.5 truncate max-w-[120px]">
-                              {o.service}
-                            </td>
+                            <td className="py-1.5 font-bold">#{o.customOrderId || o._id?.slice(-6)}</td>
+                            <td className="py-1.5 truncate max-w-[120px]">{o.service}</td>
                             <td className="py-1.5">${fmt(o.charge)}</td>
                             <td className="py-1.5">
                               <span
@@ -356,7 +313,7 @@ export default function ChildPanelResellers() {
   const [page, setPage]                 = useState(1);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "suspended"
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetchResellers = useCallback(async () => {
     try {
@@ -375,8 +332,6 @@ export default function ChildPanelResellers() {
   }, [page, search, statusFilter]);
 
   useEffect(() => { fetchResellers(); }, [fetchResellers]);
-
-  // Reset to page 1 when filters change
   useEffect(() => { setPage(1); }, [search, statusFilter]);
 
   const handleToggle = async (id) => {
@@ -384,9 +339,7 @@ export default function ChildPanelResellers() {
       await API.put(`/cp/resellers/${id}/toggle-status`);
       toast.success("Status updated");
       setResellers((prev) =>
-        prev.map((r) =>
-          r._id === id ? { ...r, isSuspended: !r.isSuspended } : r
-        )
+        prev.map((r) => r._id === id ? { ...r, isSuspended: !r.isSuspended } : r)
       );
     } catch {
       toast.error("Failed to update status");
@@ -398,9 +351,7 @@ export default function ChildPanelResellers() {
       await API.put(`/cp/resellers/${id}/commission`, { commission: value });
       toast.success("Commission updated");
       setResellers((prev) =>
-        prev.map((r) =>
-          r._id === id ? { ...r, resellerCommissionRate: value } : r
-        )
+        prev.map((r) => r._id === id ? { ...r, resellerCommissionRate: value } : r)
       );
     } catch {
       toast.error("Failed to update commission");
@@ -413,6 +364,15 @@ export default function ChildPanelResellers() {
       toast.success("Balance updated");
     } catch {
       toast.error("Failed to update balance");
+    }
+  };
+
+  const handleResellerUserBalanceUpdate = async (resellerId, userId, value, email) => {
+    try {
+      await API.put(`/cp/resellers/${resellerId}/users/${userId}/balance`, { balance: value });
+      toast.success(`Balance updated for ${email}`);
+    } catch {
+      toast.error("Failed to update user balance");
     }
   };
 
@@ -479,6 +439,7 @@ export default function ChildPanelResellers() {
                 onToggle={handleToggle}
                 onCommissionUpdate={handleCommissionUpdate}
                 onBalanceUpdate={handleBalanceUpdate}
+                onResellerUserBalanceUpdate={handleResellerUserBalanceUpdate}
               />
             ))}
           </div>
