@@ -5,22 +5,34 @@ import API from "../api/axios";
 const ResellerContext = createContext();
 export const useReseller = () => useContext(ResellerContext);
 
+// ── Normalizer — guaranteed complete shape every time ──────────────────
+const normalizeBranding = (data = {}) => ({
+  brandName:  data?.brandName  || "Reseller Panel",
+  logo:       data?.logo       || null,
+  themeColor: data?.themeColor || "#16a34a",
+  domain:     data?.domain     || data?.resellerDomain || "marinepanel.online",
+  support: {
+    whatsapp:        data?.supportWhatsapp        || data?.support?.whatsapp        || "",
+    telegram:        data?.supportTelegram        || data?.support?.telegram        || "",
+    whatsappChannel: data?.supportWhatsappChannel || data?.support?.whatsappChannel || "",
+  },
+});
+
+const DEFAULT_BRANDING = {
+  brandName:  "MarinePanel",
+  logo:       null,
+  themeColor: "#f97316",
+  domain:     "marinepanel.online",
+  support: {
+    whatsapp:        "",
+    telegram:        "",
+    whatsappChannel: "",
+  },
+};
+
 export const ResellerProvider = ({ children }) => {
-  const [reseller, setReseller] = useState({
-    brandName: "MarinePanel",
-    logo: null,
-    themeColor: "#f97316",
-    domain: "marinepanel.online",
-
-    // ✅ ADD SAFE DEFAULT SUPPORT
-    support: {
-      whatsapp: "",
-      telegram: "",
-      whatsappChannel: "",
-    },
-  });
-
-  const [ready, setReady] = useState(false);
+  const [reseller, setReseller] = useState(DEFAULT_BRANDING);
+  const [ready,    setReady]    = useState(false);
 
   const applyTheme = (color) => {
     if (color) {
@@ -28,27 +40,16 @@ export const ResellerProvider = ({ children }) => {
     }
   };
 
-  const updateTitle = (name) => {
-    document.title = name || "MarinePanel";
-  };
-
-  // ✅ FIXED NORMALIZER (never breaks)
-  const normalizeBranding = (data = {}) => ({
-    brandName: data?.brandName || "Reseller Panel",
-    logo: data?.logo || null,
-    themeColor: data?.themeColor || "#16a34a",
-    domain: data?.domain || data?.resellerDomain || "marinepanel.online",
-
-    support: {
-      whatsapp: data?.supportWhatsapp || "",
-      telegram: data?.supportTelegram || "",
-      whatsappChannel: data?.supportWhatsappChannel || "",
-    },
-  });
-
   useEffect(() => {
     const fetchBranding = async () => {
       try {
+        // If ChildPanelContext already claimed this domain, skip —
+        // this is not a reseller domain.
+        if (window.__DOMAIN_TYPE__ === "childPanel") {
+          setReady(true);
+          return;
+        }
+
         const hostname = window.location.hostname;
 
         const res = await API.get("/branding/public", {
@@ -59,7 +60,6 @@ export const ResellerProvider = ({ children }) => {
         if (res.data) {
           const branding = normalizeBranding(res.data);
 
-          // ✅ CRITICAL FIX: MERGE instead of replace
           setReseller((prev) => ({
             ...prev,
             ...branding,
@@ -70,11 +70,19 @@ export const ResellerProvider = ({ children }) => {
           }));
 
           applyTheme(branding.themeColor);
-          updateTitle(branding.brandName);
+          document.title = branding.brandName || "MarinePanel";
+
+          // Signal domain type so other contexts don't re-fetch
+          if (!window.__DOMAIN_TYPE__) {
+            window.__DOMAIN_TYPE__ = "reseller";
+          }
         }
       } catch (err) {
-        console.error("Branding fetch failed:", err);
+        // Branding fetch failed — fall back to defaults silently.
+        // Don't crash the app over a missing brand.
+        console.error("Reseller branding fetch failed:", err);
       } finally {
+        // Always unblock — never leave the app stuck on a fetch error
         setReady(true);
       }
     };
@@ -82,16 +90,17 @@ export const ResellerProvider = ({ children }) => {
     fetchBranding();
   }, []);
 
+  // Keep theme in sync if reseller state changes after initial load
+  // (e.g. after a reseller updates their branding from settings)
   useEffect(() => {
-    applyTheme(reseller?.themeColor);
-    updateTitle(reseller?.brandName);
-  }, [reseller]);
+    if (ready) {
+      applyTheme(reseller?.themeColor);
+    }
+  }, [reseller?.themeColor, ready]);
 
   return (
-    <ResellerContext.Provider value={{ reseller, setReseller }}>
-      <div style={{ visibility: ready ? "visible" : "hidden" }}>
-        {children}
-      </div>
+    <ResellerContext.Provider value={{ reseller, setReseller, ready }}>
+      {children}
     </ResellerContext.Provider>
   );
 };
