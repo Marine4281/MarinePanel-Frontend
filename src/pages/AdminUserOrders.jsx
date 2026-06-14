@@ -1,5 +1,5 @@
 //src/pages/AdminUserOrders.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import toast, { Toaster } from "react-hot-toast";
@@ -31,7 +31,7 @@ const AdminUserOrders = () => {
   const [progressInput, setProgressInput] = useState({});
 
   /* FETCH */
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -53,36 +53,56 @@ const AdminUserOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, status, fromDate, toDate, page]);
 
   useEffect(() => {
     fetchOrders();
   }, [page]);
 
-  /* SOCKET */
+  /* SOCKET — fix: backend emits "order:update", not "orderUpdated" */
   useEffect(() => {
-    socket.on("orderUpdated", (data) => {
+    socket.on("order:update", (data) => {
       setOrders((prev) =>
         prev.map((o) =>
-          o._id === data.orderId
-            ? { ...o, status: data.status, quantityDelivered: data.delivered }
+          o._id?.toString() === data._id?.toString()
+            ? {
+                ...o,
+                status: data.status ?? o.status,
+                quantityDelivered:
+                  data.quantityDelivered ?? o.quantityDelivered,
+              }
             : o
         )
       );
     });
 
-    return () => socket.off("orderUpdated");
+    return () => socket.off("order:update");
   }, []);
 
   /* ACTIONS */
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, newStatus) => {
     try {
       setProcessingId(id);
-      await API.post(`/admin/user-orders/${id}/status`, { status });
+
+      // Optimistic update so badge flips immediately
+      setOrders((prev) =>
+        prev.map((o) => {
+          if (o._id?.toString() !== id?.toString()) return o;
+          return {
+            ...o,
+            status: newStatus,
+            quantityDelivered:
+              newStatus === "completed" ? o.quantity : o.quantityDelivered,
+          };
+        })
+      );
+
+      await API.post(`/admin/user-orders/${id}/status`, { status: newStatus });
       toast.success("Status updated");
-      fetchOrders();
+      fetchOrders(); // sync with server truth
     } catch (err) {
       toast.error(err.response?.data?.message || "Update failed");
+      fetchOrders(); // revert optimistic update on error
     } finally {
       setProcessingId(null);
     }
@@ -150,10 +170,10 @@ const AdminUserOrders = () => {
       <div className="flex-1 p-8">
         <h2 className="text-2xl font-bold mb-6">User Orders</h2>
 
-        <AdminUserOrdersStats 
+        <AdminUserOrdersStats
           fromDate={fromDate}
           toDate={toDate}
-          />
+        />
 
         <AdminUserOrdersFilters
           search={search}
