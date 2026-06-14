@@ -12,6 +12,11 @@ Returns:
   "main"       — marinepanel.online or localhost
   "reseller"   — reseller subdomain / custom domain
   "childPanel" — child panel subdomain / custom domain
+
+IMPORTANT: Checks window.__DOMAIN_TYPE__ first so that
+ChildPanelContext (which runs in parallel) can short-
+circuit this function and prevent a duplicate branding
+fetch on child panel domains.
 ===================================================== */
 const detectDomainType = async () => {
   const host = window.location.hostname;
@@ -26,25 +31,66 @@ const detectDomainType = async () => {
     return "main";
   }
 
+  // ── Short-circuit: ChildPanelContext already resolved the domain ──
+  // ChildPanelContext runs in parallel and sets this global as soon as
+  // it gets a response. If it beat us here, trust it — no second fetch.
+  if (window.__DOMAIN_TYPE__) {
+    return window.__DOMAIN_TYPE__;
+  }
+
   try {
     await API.get("/child-panel/branding");
+    window.__DOMAIN_TYPE__ = "childPanel";
+    window.__CHILD_PANEL_DETECTED__ = true;
     return "childPanel";
   } catch {
     try {
       await API.get("/end-user/branding");
+      window.__DOMAIN_TYPE__ = "reseller";
       return "reseller";
     } catch {
+      window.__DOMAIN_TYPE__ = "main";
       return "main";
     }
   }
 };
+
+/* =====================================================
+WAIT FOR CHILD PANEL BRANDING
+On child panel domains, ChildPanelContext is fetching
+branding in parallel. We wait for it to finish before
+setting domainResolved=true, so the router never unblocks
+before the brand name/logo/theme are in context.
+
+Resolves immediately if already done, times out safely
+after 3s so a branding error never hangs the whole app.
+===================================================== */
+const waitForChildPanelBranding = () =>
+  new Promise((resolve) => {
+    // Already done
+    if (window.__CHILD_PANEL_DETECTED__) return resolve();
+
+    const interval = setInterval(() => {
+      if (window.__CHILD_PANEL_DETECTED__) {
+        clearInterval(interval);
+        clearTimeout(timeout);
+        resolve();
+      }
+    }, 20);
+
+    // Safety timeout — never block the app forever
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      resolve();
+    }, 3000);
+  });
 
 export const CachedServicesProvider = ({ children }) => {
   const [services,       setServices]       = useState([]);
   const [commission,     setCommission]     = useState(0);
   const [loading,        setLoading]        = useState(true);
   const [domainType,     setDomainType]     = useState(null);
-  const [domainResolved, setDomainResolved] = useState(false); // ← NEW: true once domain detection is complete
+  const [domainResolved, setDomainResolved] = useState(false);
 
   /* =====================================================
   FETCH DATA
@@ -90,11 +136,17 @@ export const CachedServicesProvider = ({ children }) => {
 
     const init = async () => {
       const type = await detectDomainType();
-
-      // Set domain type first, then immediately mark as resolved.
-      // This is what unblocks the router — no page renders until this fires.
       setDomainType(type);
-      setDomainResolved(true); // ← unblocks App.jsx router
+
+      // On child panel domains, hold the gate until ChildPanelContext
+      // has finished loading branding. This ensures the router never
+      // unblocks with a blank logo/brand name.
+      if (type === "childPanel") {
+        await waitForChildPanelBranding();
+      }
+
+      // NOW unblock the router — branding is guaranteed to be in context
+      setDomainResolved(true);
 
       await fetchData(type);
 
@@ -161,7 +213,7 @@ export const CachedServicesProvider = ({ children }) => {
         loading,
         commission,
         domainType,     // "main" | "reseller" | "childPanel"
-        domainResolved, // ← NEW: boolean, gates the entire router in App.jsx
+        domainResolved, // boolean, gates the entire router in App.jsx
         platforms,
         getCategoriesByPlatform,
         getServicesByCategory,
