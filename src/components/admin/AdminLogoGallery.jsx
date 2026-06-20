@@ -36,7 +36,6 @@ export default function AdminLogoGallery() {
     try {
       setUploading(true);
       await API.post("/seo/admin/gallery", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
       toast.success("Logo added to gallery");
