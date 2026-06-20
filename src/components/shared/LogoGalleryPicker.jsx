@@ -43,7 +43,6 @@ export default function LogoGalleryPicker({ currentLogo, onSelect, uploadEndpoin
     try {
       setUploading(true);
       const res = await API.post(uploadEndpoint, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
       onSelect(res.data.url);
@@ -164,4 +163,4 @@ export default function LogoGalleryPicker({ currentLogo, onSelect, uploadEndpoin
       )}
     </div>
   );
-      }
+}
