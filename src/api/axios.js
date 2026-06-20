@@ -40,6 +40,23 @@ api.interceptors.request.use(
     }
 
     /* =====================================================
+    2b. FILE UPLOADS (FormData)
+       The instance default Content-Type is "application/json".
+       If that header is still present when the payload is
+       FormData, axios will serialize the FormData into a JSON
+       string instead of sending it as multipart — the file
+       never reaches the server and multer sees req.file as
+       undefined. Strip it here so the browser sets the correct
+       "multipart/form-data; boundary=..." header itself.
+    ===================================================== */
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+      if (typeof config.headers.delete === "function") {
+        config.headers.delete("Content-Type");
+      }
+    }
+
+    /* =====================================================
     3. DOMAIN DETECTION
     ===================================================== */
     const hostname = window.location.hostname;
