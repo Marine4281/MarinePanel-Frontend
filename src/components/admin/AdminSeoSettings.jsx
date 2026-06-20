@@ -52,7 +52,6 @@ export default function AdminSeoSettings() {
         ? "/seo/admin/logo"
         : `/seo/admin/seo-image?type=${type}`;
       const res = await API.post(endpoint, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
       if (type === "logo")    setMainLogoUrl(res.data.url);
