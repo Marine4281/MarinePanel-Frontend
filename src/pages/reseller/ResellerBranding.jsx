@@ -204,7 +204,6 @@ export default function ResellerBranding() {
     try {
       setUploading(type);
       const res = await API.post(`/seo/reseller/seo-image?type=${type}`, fd, {
-        headers:         { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
       if (type === "ogImage") setOgImageUrl(res.data.url);
@@ -226,7 +225,6 @@ export default function ResellerBranding() {
     try {
       setUploading("logo");
       const res = await API.post("/seo/reseller/logo", fd, {
-        headers:         { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
       setLogo(res.data.url);
@@ -635,4 +633,4 @@ export default function ResellerBranding() {
       </div>
     </div>
   );
-            }
+        }
