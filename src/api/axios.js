@@ -7,7 +7,7 @@ const BASE_DOMAIN = "marinepanel.online";
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true,
-  timeout: 8000, // ← KEY FIX: fail fast so detectDomainType can retry
+  timeout: 30000, // 30s — long enough for image uploads / Render cold starts, still bounded
   headers: {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache",
