@@ -11,6 +11,7 @@ const normalizeBranding = (data = {}) => ({
   logo:       data?.logo       || null,
   themeColor: data?.themeColor || "#16a34a",
   domain:     data?.domain     || data?.resellerDomain || "marinepanel.online",
+  landingTemplate:  data?.landingTemplate  || "default",
   support: {
     whatsapp:        data?.supportWhatsapp        || data?.support?.whatsapp        || "",
     telegram:        data?.supportTelegram        || data?.support?.telegram        || "",
