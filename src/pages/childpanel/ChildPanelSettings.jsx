@@ -10,6 +10,7 @@ import FeesTab      from "../../components/childpanel/settings/FeesTab";
 import GatewayTab   from "../../components/childpanel/settings/GatewayTab";
 import TemplatesTab from "../../components/childpanel/settings/TemplatesTab";
 import SeoTab       from "../../components/childpanel/settings/SeoTab";
+import LandingTab from "../../components/childpanel/settings/LandingTab";
 import {
   FiGlobe, FiZap, FiDollarSign, FiCreditCard,
   FiMessageCircle, FiImage, FiLayout, FiSearch,
@@ -22,6 +23,7 @@ const TABS = [
   { key: "fees",       label: "Fees",       icon: <FiDollarSign size={14} /> },
   { key: "gateway",    label: "Gateway",    icon: <FiCreditCard size={14} /> },
   { key: "templates",  label: "Templates",  icon: <FiLayout size={14} /> },
+  { key: "landing", label: "Landing Page", icon: <FiGlobe size={14} /> },
   { key: "seo",        label: "SEO",        icon: <FiSearch size={14} /> },
 ];
 
@@ -126,6 +128,7 @@ export default function ChildPanelSettings() {
           {activeTab === "fees"      && <FeesTab      settings={settings} onSaved={handleSaved} />}
           {activeTab === "gateway"   && <GatewayTab   settings={settings} onSaved={handleSaved} />}
           {activeTab === "templates" && <TemplatesTab settings={settings} onSaved={handleSaved} />}
+          {activeTab === "landing" && <LandingTab settings={settings} onSaved={handleSaved} />}
           {activeTab === "seo" && (
             <SeoTab
               cpSeo={cpSeo}         setCpSeo={setCpSeo}
