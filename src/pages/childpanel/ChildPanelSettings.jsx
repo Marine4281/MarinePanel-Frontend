@@ -46,7 +46,7 @@ export default function ChildPanelSettings() {
       try {
         const [settingsRes, seoRes] = await Promise.all([
           API.get("/cp/settings"),
-          API.get("/seo/public"),
+          API.get("/seo/cp"),
         ]);
         setSettings(settingsRes.data);
 
