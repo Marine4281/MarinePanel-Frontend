@@ -1,86 +1,149 @@
 // src/pages/landing/templates/DarkProLanding.jsx
 import { Link } from "react-router-dom";
 
+const PLATFORMS = [
+  { name: "Instagram", handle: "@instagram" },
+  { name: "TikTok",   handle: "@tiktok" },
+  { name: "YouTube",  handle: "youtube.com" },
+  { name: "Twitter",  handle: "@twitter" },
+  { name: "Facebook", handle: "facebook.com" },
+  { name: "Telegram", handle: "t.me" },
+  { name: "Spotify",  handle: "spotify.com" },
+  { name: "LinkedIn", handle: "linkedin.com" },
+];
+
 export default function DarkProLanding({ brandName, themeColor, logo }) {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-950 text-white font-sans">
-      {/* Nav */}
+    <div className="min-h-screen flex flex-col bg-[#080b10] text-white font-mono">
+
+      {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-8 py-5 border-b border-white/5">
         <div className="flex items-center gap-3">
           {logo
-            ? <img src={logo} alt={brandName} className="h-9 w-9 rounded-xl object-contain" />
-            : <div className="h-9 w-9 rounded-xl flex items-center justify-center font-black text-lg" style={{ backgroundColor: themeColor }}>{brandName[0]}</div>
+            ? <img src={logo} alt={brandName} className="h-8 w-8 rounded-lg object-contain" />
+            : <div className="h-8 w-8 rounded-lg flex items-center justify-center font-black text-black text-sm" style={{ backgroundColor: themeColor }}>{brandName[0]}</div>
           }
-          <span className="font-bold text-lg tracking-tight">{brandName}</span>
+          <span className="font-bold tracking-widest text-sm uppercase text-white/80">{brandName}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <Link to="/login" className="px-5 py-2 rounded-xl text-sm text-gray-300 hover:text-white transition-colors">Login</Link>
-          <Link to="/register" className="px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90" style={{ backgroundColor: themeColor }}>
-            Start Free
+        <div className="flex gap-3">
+          <Link to="/login" className="text-xs px-5 py-2.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all tracking-widest uppercase">Login</Link>
+          <Link to="/register" className="text-xs px-5 py-2.5 rounded-lg font-bold tracking-widest uppercase transition-all hover:opacity-80" style={{ backgroundColor: themeColor, color: "#000" }}>
+            Start →
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="flex-1 flex flex-col justify-center items-center text-center px-6 py-24 relative">
-        {/* Glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none" style={{ backgroundColor: themeColor }} />
+      {/* ── HERO ── */}
+      <section className="flex-1 px-8 py-20 md:py-32 max-w-6xl mx-auto w-full">
+        {/* terminal header */}
+        <div className="flex items-center gap-2 mb-8">
+          <div className="w-3 h-3 rounded-full bg-red-500/70" />
+          <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
+          <div className="w-3 h-3 rounded-full bg-green-500/70" />
+          <span className="ml-3 text-xs text-white/20 tracking-widest">~/smm/{brandName.toLowerCase().replace(/\s/g, "-")}</span>
+        </div>
 
-        <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-8 border"
-            style={{ borderColor: `${themeColor}44`, backgroundColor: `${themeColor}15`, color: themeColor }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
-            Live Panel — Orders Processing Now
+        <div className="grid md:grid-cols-2 gap-16 items-center">
+          <div>
+            <div className="text-xs tracking-widest text-white/30 uppercase mb-4 font-sans">
+              <span style={{ color: themeColor }}>▶</span> System Online · All services operational
+            </div>
+
+            <h1 className="text-4xl md:text-6xl font-black leading-tight mb-6 font-sans">
+              Automate.<br />
+              Scale.<br />
+              <span style={{ color: themeColor }}>Dominate.</span>
+            </h1>
+
+            <p className="text-white/40 leading-relaxed mb-8 font-sans text-sm max-w-sm">
+              {brandName} is a professional-grade SMM panel engineered for speed and scale. Built for agencies, freelancers, and power resellers.
+            </p>
+
+            <div className="flex gap-3">
+              <Link to="/register"
+                className="px-7 py-3.5 rounded-xl font-bold text-black text-sm font-sans hover:opacity-90 transition-all"
+                style={{ backgroundColor: themeColor }}>
+                Initialize Account
+              </Link>
+              <Link to="/login"
+                className="px-7 py-3.5 rounded-xl font-bold text-sm font-sans border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-all">
+                Login →
+              </Link>
+            </div>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            Grow Faster with<br />
-            <span style={{ color: themeColor }}>{brandName}</span>
-          </h1>
-
-          <p className="text-lg text-gray-400 max-w-xl mx-auto mb-10 leading-relaxed">
-            The most powerful SMM panel. Automate your social growth with our premium services, instant delivery, and 24/7 support.
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-4 mb-20">
-            <Link to="/register" className="px-8 py-3.5 rounded-xl font-bold text-white hover:opacity-90 transition-opacity shadow-lg" style={{ backgroundColor: themeColor }}>
-              Create Account →
-            </Link>
-            <Link to="/login" className="px-8 py-3.5 rounded-xl font-bold text-gray-300 hover:text-white border border-white/10 hover:border-white/20 transition-all">
-              Sign In
-            </Link>
-          </div>
-
-          {/* Feature pills */}
-          <div className="flex flex-wrap justify-center gap-3">
-            {["Instagram", "TikTok", "YouTube", "Twitter/X", "Facebook", "Telegram"].map((p) => (
-              <span key={p} className="px-4 py-2 rounded-full text-sm bg-white/5 border border-white/10 text-gray-300">
-                {p}
-              </span>
+          {/* Live stats panel */}
+          <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 space-y-4">
+            <div className="text-xs text-white/20 tracking-widest uppercase mb-2">// live stats</div>
+            {[
+              { key: "total_orders",    val: "2,247,891",  delta: "+1,204 today" },
+              { key: "active_services", val: "148",         delta: "across 8 platforms" },
+              { key: "avg_start_time",  val: "0.4s",        delta: "last 24h avg" },
+              { key: "uptime",          val: "99.97%",      delta: "30-day window" },
+            ].map((r) => (
+              <div key={r.key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+                <div>
+                  <span className="text-white/30 text-xs">{r.key}</span>
+                  <span className="text-white/10 text-xs"> = </span>
+                  <span className="font-bold text-sm font-sans" style={{ color: themeColor }}>{r.val}</span>
+                </div>
+                <span className="text-xs text-white/20">{r.delta}</span>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats bar */}
-      <div className="border-t border-white/5 py-10 px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      {/* ── PLATFORMS GRID ── */}
+      <section className="border-t border-white/5 px-8 py-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-xs text-white/20 tracking-widest uppercase mb-8 font-mono">// supported_platforms[]</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {PLATFORMS.map((p) => (
+              <div key={p.name}
+                className="border border-white/5 rounded-xl p-4 hover:border-white/10 transition-all group cursor-default">
+                <div className="font-bold text-sm text-white/70 group-hover:text-white transition-colors font-sans">{p.name}</div>
+                <div className="text-xs text-white/20 mt-1 font-mono">{p.handle}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ROW ── */}
+      <section className="border-t border-white/5 px-8 py-16">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden">
           {[
-            { n: "2M+", t: "Orders Delivered" },
-            { n: "50K+", t: "Happy Customers" },
-            { n: "0.3s", t: "Avg Start Time" },
-            { n: "24/7", t: "Support" },
-          ].map((s) => (
-            <div key={s.t}>
-              <div className="text-2xl font-black" style={{ color: themeColor }}>{s.n}</div>
-              <div className="text-xs text-gray-500 mt-1">{s.t}</div>
+            { label: "Instant Start",    desc: "Orders begin processing in under a second",     icon: "⚡" },
+            { label: "No Password Needed", desc: "Only your profile URL — completely safe",      icon: "🔑" },
+            { label: "API Access",       desc: "Full REST API for developers and automation",   icon: "⚙️" },
+          ].map((f) => (
+            <div key={f.label} className="bg-[#080b10] p-8 hover:bg-white/[0.02] transition-all">
+              <div className="text-3xl mb-4">{f.icon}</div>
+              <div className="font-bold text-white/80 mb-2 font-sans text-sm">{f.label}</div>
+              <div className="text-xs text-white/30 leading-relaxed font-sans">{f.desc}</div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      <footer className="py-5 px-6 border-t border-white/5 text-center text-gray-600 text-xs">
-        &copy; {new Date().getFullYear()} {brandName}. All rights reserved.
+      {/* ── CTA ── */}
+      <section className="border-t border-white/5 px-8 py-16 text-center">
+        <div className="max-w-xl mx-auto">
+          <div className="text-xs text-white/20 tracking-widest uppercase mb-4 font-mono">// ready to deploy?</div>
+          <h2 className="text-3xl font-black mb-4 font-sans">Start in 60 seconds.</h2>
+          <p className="text-white/30 text-sm mb-8 font-sans">Free account. No credit card. Instant access to all services.</p>
+          <Link to="/register"
+            className="inline-block px-10 py-4 rounded-xl font-black text-black hover:opacity-90 transition-all font-sans"
+            style={{ backgroundColor: themeColor }}>
+            Create Account →
+          </Link>
+        </div>
+      </section>
+
+      <footer className="border-t border-white/5 px-8 py-5 flex items-center justify-between text-xs text-white/20 font-mono">
+        <span>{brandName} · SMM Panel</span>
+        <span>&copy; {new Date().getFullYear()}</span>
       </footer>
     </div>
   );
