@@ -11,15 +11,23 @@ const FEE_FIELDS = [
   { key: "minDeposit",    label: "Min Deposit ($)" },
 ];
 
-/**
- * Props
- *  settings        object
- *  tiers           array
- *  saving          bool
- *  onSettingsChange fn(patch)
- *  onTiersChange    fn(tiers)
- *  onSave           fn
- */
+const GRACE_OPTIONS = [
+  { value: 0,   label: "No grace — suspend immediately" },
+  { value: 12,  label: "12 hours" },
+  { value: 24,  label: "1 day" },
+  { value: 48,  label: "2 days" },
+  { value: 72,  label: "3 days" },
+  { value: 168, label: "7 days" },
+];
+
+const REMINDER_OPTIONS = [
+  { value: 0,   label: "No reminder" },
+  { value: 24,  label: "1 day before due" },
+  { value: 48,  label: "2 days before due" },
+  { value: 72,  label: "3 days before due" },
+  { value: 168, label: "7 days before due" },
+];
+
 export default function CPFeesTab({
   settings,
   tiers,
@@ -28,9 +36,12 @@ export default function CPFeesTab({
   onTiersChange,
   onSave,
 }) {
+  const autoDeduct = settings.autoDeduct ?? true;
+
   return (
-    <div className="space-y-6">
-      {/* Basic fee fields */}
+    <div className="space-y-5">
+
+      {/* ── Basic fee fields ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {FEE_FIELDS.map(({ key, label }) => (
           <div key={key}>
@@ -60,7 +71,7 @@ export default function CPFeesTab({
         </div>
       </div>
 
-      {/* Global billing interval */}
+      {/* ── Global billing interval ── */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
         <CPIntervalPicker
           label="Global Billing Interval (default for all panels)"
@@ -70,7 +81,80 @@ export default function CPFeesTab({
         />
       </div>
 
-      {/* Tiered billing */}
+      {/* ── Suspension & Reminder ── */}
+      <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-gray-50 px-4 py-2.5 border-b">
+          <h4 className="text-xs font-semibold text-gray-700">Suspension &amp; Reminder Defaults</h4>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Apply to all panels unless overridden individually.
+          </p>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Grace period */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">
+                Grace period after due date
+              </label>
+              <select
+                value={settings.gracePeriodHours ?? 0}
+                onChange={(e) => onSettingsChange({ gracePeriodHours: Number(e.target.value) })}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                {GRACE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                How long after due date before the CP is suspended.
+              </p>
+            </div>
+
+            {/* Reminder window */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">
+                Reminder window before due date
+              </label>
+              <select
+                value={settings.reminderHours ?? 48}
+                onChange={(e) => onSettingsChange({ reminderHours: Number(e.target.value) })}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                {REMINDER_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                When to start showing the billing warning to the CP owner.
+              </p>
+            </div>
+          </div>
+
+          {/* Auto-deduct toggle */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <div>
+              <p className="text-sm font-medium text-gray-800">Auto-deduct fee from CP wallet</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Cron deducts the fee automatically on the due date if wallet balance is sufficient.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onSettingsChange({ autoDeduct: !autoDeduct })}
+              className={`relative inline-flex h-6 w-11 shrink-0 ml-4 items-center rounded-full transition-colors ${
+                autoDeduct ? "bg-blue-600" : "bg-gray-300"
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                autoDeduct ? "translate-x-6" : "translate-x-1"
+              }`} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tiered billing ── */}
       <div>
         <h4 className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
           Tiered Monthly Billing
@@ -91,6 +175,7 @@ export default function CPFeesTab({
           {saving ? "Saving..." : "Save Settings"}
         </button>
       </div>
+
     </div>
   );
-}
+                }
