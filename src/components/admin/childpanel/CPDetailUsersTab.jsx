@@ -18,6 +18,7 @@ export default function CPDetailUsersTab({ users, pagination, page, onPageChange
               <th className="px-4 py-2 text-left">Email</th>
               <th className="px-4 py-2 text-left">Phone</th>
               <th className="px-4 py-2 text-left">Balance</th>
+              <th className="px-4 py-2 text-left">Type</th>
               <th className="px-4 py-2 text-left">Status</th>
               <th className="px-4 py-2 text-left">Last Seen</th>
               <th className="px-4 py-2 text-left">Joined</th>
@@ -30,6 +31,17 @@ export default function CPDetailUsersTab({ users, pagination, page, onPageChange
                 <td className="px-4 py-2 text-gray-600">{u.phone || "—"}</td>
                 <td className="px-4 py-2 font-semibold text-gray-800">
                   ${fmt(u.balance)}
+                </td>
+                <td className="px-4 py-2">
+                  {u.isReseller ? (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                      Reseller
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
+                      User
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-2">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
