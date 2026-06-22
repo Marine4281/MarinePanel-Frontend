@@ -7,6 +7,25 @@ import toast from "react-hot-toast";
 import CPIntervalPicker from "./CPIntervalPicker";
 import { billingStatus } from "./CPSettingsHelpers";
 
+const GRACE_OPTIONS = [
+  { value: "",  label: "Use global default" },
+  { value: 0,   label: "No grace — suspend immediately" },
+  { value: 12,  label: "12 hours" },
+  { value: 24,  label: "1 day" },
+  { value: 48,  label: "2 days" },
+  { value: 72,  label: "3 days" },
+  { value: 168, label: "7 days" },
+];
+
+const REMINDER_OPTIONS = [
+  { value: "",  label: "Use global default" },
+  { value: 0,   label: "No reminder" },
+  { value: 24,  label: "1 day before due" },
+  { value: 48,  label: "2 days before due" },
+  { value: 72,  label: "3 days before due" },
+  { value: 168, label: "7 days before due" },
+];
+
 /**
  * Props
  *  cp        child panel object
@@ -15,10 +34,24 @@ import { billingStatus } from "./CPSettingsHelpers";
  */
 export default function CPBillingEdit({ cp, onSaved, compact = false }) {
   const [open,      setOpen]      = useState(false);
-  const [mode,      setMode]      = useState(cp?.childPanelBillingMode   || "monthly");
-  const [monthly,   setMonthly]   = useState(cp?.childPanelMonthlyFee    ?? 0);
-  const [perOrder,  setPerOrder]  = useState(cp?.childPanelPerOrderFee   ?? 0);
+  const [mode,      setMode]      = useState(cp?.childPanelBillingMode        || "monthly");
+  const [monthly,   setMonthly]   = useState(cp?.childPanelMonthlyFee         ?? 0);
+  const [perOrder,  setPerOrder]  = useState(cp?.childPanelPerOrderFee        ?? 0);
   const [interval,  setInterval]  = useState(cp?.childPanelBillingIntervalDays ?? 30);
+
+  // null = inherit global; stored as "" in the select so the
+  // "Use global default" option works, converted back on save
+  const [gracePeriodHours, setGracePeriodHours] = useState(
+    cp?.childPanelGracePeriodHours ?? ""
+  );
+  const [reminderHours, setReminderHours] = useState(
+    cp?.childPanelReminderHours ?? ""
+  );
+  // null = inherit global | true | false
+  const [autoDeduct, setAutoDeduct] = useState(
+    cp?.childPanelAutoDeduct ?? null
+  );
+
   const [loading,   setLoading]   = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -33,6 +66,10 @@ export default function CPBillingEdit({ cp, onSaved, compact = false }) {
         monthlyFee:          Number(monthly),
         perOrderFee:         Number(perOrder),
         billingIntervalDays: Number(interval),
+        // "" means "revert to global" → send null; otherwise send the number
+        gracePeriodHours:    gracePeriodHours === "" ? null : Number(gracePeriodHours),
+        reminderHours:       reminderHours    === "" ? null : Number(reminderHours),
+        autoDeduct:          autoDeduct, // null | true | false
       });
       toast.success("Billing updated");
       onSaved({
@@ -41,6 +78,9 @@ export default function CPBillingEdit({ cp, onSaved, compact = false }) {
         childPanelPerOrderFee:         Number(perOrder),
         childPanelBillingIntervalDays: Number(interval),
         childPanelFeeIsCustom:         true,
+        childPanelGracePeriodHours:    gracePeriodHours === "" ? null : Number(gracePeriodHours),
+        childPanelReminderHours:       reminderHours    === "" ? null : Number(reminderHours),
+        childPanelAutoDeduct:          autoDeduct,
       });
       setOpen(false);
     } catch { toast.error("Failed to update billing"); }
@@ -57,6 +97,12 @@ export default function CPBillingEdit({ cp, onSaved, compact = false }) {
     } catch { toast.error("Failed to reset billing"); }
     finally   { setResetting(false); }
   };
+
+  // 3-way toggle label helper
+  const autoDeductLabel =
+    autoDeduct === null  ? "Global default" :
+    autoDeduct === true  ? "Enabled for this CP" :
+                           "Disabled for this CP";
 
   return (
     <div>
@@ -144,6 +190,95 @@ export default function CPBillingEdit({ cp, onSaved, compact = false }) {
             onChange={setInterval}
           />
 
+          {/* ── Suspension & Reminder overrides ─────────────────────── */}
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-white px-3 py-2 border-b">
+              <p className="text-xs font-semibold text-gray-700">Suspension &amp; Reminder Overrides</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Leave on "Use global default" to inherit the platform-wide setting.
+              </p>
+            </div>
+
+            <div className="p-3 space-y-3 bg-gray-50">
+              {/* Grace period */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Grace period after due date</label>
+                  <select
+                    value={gracePeriodHours}
+                    onChange={(e) =>
+                      setGracePeriodHours(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  >
+                    {GRACE_OPTIONS.map((o) => (
+                      <option key={String(o.value)} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Reminder window */}
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Reminder window before due</label>
+                  <select
+                    value={reminderHours}
+                    onChange={(e) =>
+                      setReminderHours(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  >
+                    {REMINDER_OPTIONS.map((o) => (
+                      <option key={String(o.value)} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Auto-deduct 3-way toggle */}
+              <div className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-lg">
+                <div>
+                  <p className="text-xs font-medium text-gray-800">Auto-deduct fee from wallet</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{autoDeductLabel}</p>
+                </div>
+                <div className="flex gap-1.5 shrink-0 ml-3">
+                  <button
+                    type="button"
+                    onClick={() => setAutoDeduct(null)}
+                    className={`px-2 py-1 text-xs rounded transition ${
+                      autoDeduct === null
+                        ? "bg-gray-700 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    Global
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAutoDeduct(true)}
+                    className={`px-2 py-1 text-xs rounded transition ${
+                      autoDeduct === true
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    On
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAutoDeduct(false)}
+                    className={`px-2 py-1 text-xs rounded transition ${
+                      autoDeduct === false
+                        ? "bg-red-500 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    Off
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Save / Cancel */}
           <div className="flex gap-2">
             <button
@@ -174,4 +309,4 @@ export default function CPBillingEdit({ cp, onSaved, compact = false }) {
       )}
     </div>
   );
-}
+        }
