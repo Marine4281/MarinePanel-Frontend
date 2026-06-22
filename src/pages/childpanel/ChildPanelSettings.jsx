@@ -3,6 +3,7 @@ import API from "../../api/axios";
 import toast from "react-hot-toast";
 import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
 import { useAuth } from "../../context/AuthContext";
+import { useChildPanel } from "../../context/ChildPanelContext";
 import BrandingTab  from "../../components/childpanel/settings/BrandingTab";
 import SupportTab   from "../../components/childpanel/settings/SupportTab";
 import DomainTab    from "../../components/childpanel/settings/DomainTab";
@@ -23,7 +24,7 @@ const TABS = [
   { key: "fees",       label: "Fees",       icon: <FiDollarSign size={14} /> },
   { key: "gateway",    label: "Gateway",    icon: <FiCreditCard size={14} /> },
   { key: "templates",  label: "Templates",  icon: <FiLayout size={14} /> },
-  { key: "landing", label: "Landing Page", icon: <FiGlobe size={14} /> },
+  { key: "landing",    label: "Landing Page", icon: <FiGlobe size={14} /> },
   { key: "seo",        label: "SEO",        icon: <FiSearch size={14} /> },
 ];
 
@@ -34,6 +35,7 @@ const SEO_DEFAULTS = {
 
 export default function ChildPanelSettings() {
   const { updateUser } = useAuth();
+  const { refetch: refetchBranding } = useChildPanel();
   const [activeTab, setActiveTab] = useState("branding");
   const [settings,  setSettings]  = useState(null);
   const [loading,   setLoading]   = useState(true);
@@ -128,7 +130,13 @@ export default function ChildPanelSettings() {
           {activeTab === "fees"      && <FeesTab      settings={settings} onSaved={handleSaved} />}
           {activeTab === "gateway"   && <GatewayTab   settings={settings} onSaved={handleSaved} />}
           {activeTab === "templates" && <TemplatesTab settings={settings} onSaved={handleSaved} />}
-          {activeTab === "landing" && <LandingTab settings={settings} onSaved={handleSaved} />}
+          {activeTab === "landing"   && (
+            <LandingTab
+              settings={settings}
+              onSaved={handleSaved}
+              refetch={refetchBranding}
+            />
+          )}
           {activeTab === "seo" && (
             <SeoTab
               cpSeo={cpSeo}         setCpSeo={setCpSeo}
