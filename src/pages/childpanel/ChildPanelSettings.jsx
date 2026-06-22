@@ -1,3 +1,5 @@
+// src/pages/childpanel/ChildPanelSettings.jsx
+
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
@@ -11,21 +13,23 @@ import FeesTab      from "../../components/childpanel/settings/FeesTab";
 import GatewayTab   from "../../components/childpanel/settings/GatewayTab";
 import TemplatesTab from "../../components/childpanel/settings/TemplatesTab";
 import SeoTab       from "../../components/childpanel/settings/SeoTab";
-import LandingTab from "../../components/childpanel/settings/LandingTab";
+import LandingTab   from "../../components/childpanel/settings/LandingTab";
+import BillingTab   from "../../components/childpanel/settings/BillingTab";
 import {
-  FiGlobe, FiZap, FiDollarSign, FiCreditCard,
-  FiMessageCircle, FiImage, FiLayout, FiSearch,
+  FiGlobe, FiDollarSign, FiCreditCard,
+  FiMessageCircle, FiImage, FiLayout, FiSearch, FiCalendar,
 } from "react-icons/fi";
 
 const TABS = [
-  { key: "branding",   label: "Branding",   icon: <FiImage size={14} /> },
-  { key: "support",    label: "Support",    icon: <FiMessageCircle size={14} /> },
-  { key: "domain",     label: "Domain",     icon: <FiGlobe size={14} /> },
-  { key: "fees",       label: "Fees",       icon: <FiDollarSign size={14} /> },
-  { key: "gateway",    label: "Gateway",    icon: <FiCreditCard size={14} /> },
-  { key: "templates",  label: "Templates",  icon: <FiLayout size={14} /> },
-  { key: "landing",    label: "Landing Page", icon: <FiGlobe size={14} /> },
-  { key: "seo",        label: "SEO",        icon: <FiSearch size={14} /> },
+  { key: "branding",  label: "Branding",    icon: <FiImage size={14} /> },
+  { key: "support",   label: "Support",     icon: <FiMessageCircle size={14} /> },
+  { key: "domain",    label: "Domain",      icon: <FiGlobe size={14} /> },
+  { key: "fees",      label: "Fees",        icon: <FiDollarSign size={14} /> },
+  { key: "billing",   label: "Billing",     icon: <FiCalendar size={14} /> },
+  { key: "gateway",   label: "Gateway",     icon: <FiCreditCard size={14} /> },
+  { key: "templates", label: "Templates",   icon: <FiLayout size={14} /> },
+  { key: "landing",   label: "Landing Page",icon: <FiGlobe size={14} /> },
+  { key: "seo",       label: "SEO",         icon: <FiSearch size={14} /> },
 ];
 
 const SEO_DEFAULTS = {
@@ -41,9 +45,9 @@ export default function ChildPanelSettings() {
   const [loading,   setLoading]   = useState(true);
 
   // SEO state lives here so it survives tab switches
-  const [cpSeo,      setCpSeo]      = useState(SEO_DEFAULTS);
-  const [cpOgImage,  setCpOgImage]  = useState("");
-  const [cpFavicon,  setCpFavicon]  = useState("");
+  const [cpSeo,     setCpSeo]     = useState(SEO_DEFAULTS);
+  const [cpOgImage, setCpOgImage] = useState("");
+  const [cpFavicon, setCpFavicon] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -128,6 +132,7 @@ export default function ChildPanelSettings() {
           {activeTab === "support"   && <SupportTab   settings={settings} onSaved={handleSaved} />}
           {activeTab === "domain"    && <DomainTab    settings={settings} onSaved={handleSaved} />}
           {activeTab === "fees"      && <FeesTab      settings={settings} onSaved={handleSaved} />}
+          {activeTab === "billing"   && <BillingTab   settings={settings} onSaved={handleSaved} />}
           {activeTab === "gateway"   && <GatewayTab   settings={settings} onSaved={handleSaved} />}
           {activeTab === "templates" && <TemplatesTab settings={settings} onSaved={handleSaved} />}
           {activeTab === "landing"   && (
