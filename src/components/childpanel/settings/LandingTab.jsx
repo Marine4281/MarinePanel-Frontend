@@ -90,6 +90,113 @@ const TEMPLATES = [
       </div>
     ),
   },
+
+  {
+    id: "sunrise",
+    name: "Sunrise",
+    description: "White background with split hero layout and orange accents. Clean and professional.",
+    preview: ({ color }) => (
+      <div className="w-full h-full flex flex-col bg-white">
+        <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-100">
+          <div className="w-8 h-2 rounded bg-gray-800" />
+          <div className="flex gap-1">
+            <div className="w-6 h-2.5 rounded bg-gray-200" />
+            <div className="w-8 h-2.5 rounded" style={{ backgroundColor: color }} />
+          </div>
+        </div>
+        <div className="flex-1 flex gap-2 p-3">
+          <div className="flex-1 flex flex-col justify-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+            <div className="w-20 h-3 rounded bg-gray-800" />
+            <div className="w-16 h-2 rounded bg-gray-300" />
+            <div className="w-14 h-2 rounded bg-gray-200" />
+            <div className="flex gap-1 mt-1">
+              <div className="w-10 h-4 rounded-lg" style={{ backgroundColor: color }} />
+              <div className="w-8 h-4 rounded-lg bg-gray-100" />
+            </div>
+          </div>
+          <div className="w-20 flex flex-col gap-1.5">
+            <div className="flex-1 rounded-xl bg-white shadow border border-gray-100 p-1.5">
+              <div className="w-full h-2 rounded bg-gray-100 mb-1" />
+              <div className="w-8 h-1.5 rounded" style={{ backgroundColor: `${color}50` }} />
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              <div className="h-7 rounded-lg bg-gray-50 border border-gray-100" />
+              <div className="h-7 rounded-lg" style={{ backgroundColor: color }} />
+            </div>
+          </div>
+        </div>
+        <div className="h-4 border-t border-gray-100" />
+      </div>
+    ),
+  },
+  {
+    id: "bold",
+    name: "Bold",
+    description: "Editorial magazine style with giant typography and strong orange accents.",
+    preview: ({ color }) => (
+      <div className="w-full h-full flex flex-col bg-white">
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <div className="w-10 h-2.5 rounded bg-gray-900" />
+          <div className="flex gap-1">
+            <div className="w-5 h-2 rounded bg-gray-300" />
+            <div className="w-8 h-2.5 rounded" style={{ backgroundColor: color }} />
+          </div>
+        </div>
+        <div className="flex-1 px-3 pt-2 flex flex-col justify-center border-t-2 border-gray-900">
+          <div className="w-4 h-1 rounded mb-1" style={{ backgroundColor: color }} />
+          <div className="w-24 h-5 rounded bg-gray-900 mb-1" />
+          <div className="w-20 h-5 rounded bg-gray-900 mb-1" />
+          <div className="w-16 h-5 rounded border-2 mb-2" style={{ borderColor: color }} />
+          <div className="flex gap-1">
+            <div className="w-10 h-4 rounded" style={{ backgroundColor: color }} />
+            <div className="w-8 h-4 rounded border-2 border-gray-900" />
+          </div>
+        </div>
+        <div className="grid grid-cols-4 border-t-2 border-gray-900">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className={`py-1.5 px-1 text-center ${i < 3 ? "border-r-2 border-gray-900" : ""}`}>
+              <div className="h-2 w-6 rounded mx-auto" style={{ backgroundColor: color }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "neon",
+    name: "Neon",
+    description: "Deep navy background with glowing neon accents and a grid pattern. Futuristic feel.",
+    preview: ({ color }) => (
+      <div className="w-full h-full flex flex-col" style={{ backgroundColor: "#050914" }}>
+        <div className="flex items-center justify-between px-2 py-1.5 border-b" style={{ borderColor: `${color}20` }}>
+          <div className="w-8 h-2 rounded" style={{ backgroundColor: `${color}60` }} />
+          <div className="flex gap-1">
+            <div className="w-6 h-2.5 rounded border" style={{ borderColor: `${color}40`, backgroundColor: "transparent" }} />
+            <div className="w-8 h-2.5 rounded" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }} />
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 p-3 relative">
+          <div className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: `linear-gradient(${color}40 1px, transparent 1px), linear-gradient(90deg, ${color}40 1px, transparent 1px)`,
+              backgroundSize: "12px 12px",
+            }} />
+          <div className="relative w-20 h-3 rounded" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />
+          <div className="relative w-16 h-2 rounded" style={{ backgroundColor: `${color}40` }} />
+          <div className="relative flex gap-1.5 mt-1">
+            <div className="w-12 h-5 rounded-xl" style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}60` }} />
+            <div className="w-10 h-5 rounded-xl border" style={{ borderColor: `${color}40` }} />
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-1 px-2 pb-2">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-5 rounded-lg border" style={{ borderColor: `${color}20`, backgroundColor: `${color}08` }} />
+          ))}
+        </div>
+      </div>
+    ),
+  },
   {
     id: "vibrant",
     name: "Vibrant",
