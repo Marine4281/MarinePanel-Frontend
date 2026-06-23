@@ -23,12 +23,14 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useSupport } from "../../context/SupportContext";
+import { useResellerActivationFeed } from "../../context/ResellerActivationFeedContext";
 
 export default function ChildPanelSidebar({ mobileOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const auth = useAuth();
   const { cpUnread, fmt } = useSupport();
+  const { unread: resellerUnread, fmt: fmtResellerUnread } = useResellerActivationFeed();
 
   const logout = typeof auth?.logout === "function" ? auth.logout : () => {};
 
@@ -62,7 +64,12 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       label: "Payments",
     },
 
-    { to: "/child-panel/resellers", icon: <FiUserCheck />, label: "Resellers" },
+    {
+      to: "/child-panel/resellers",
+      icon: <FiUserCheck />,
+      label: "Resellers",
+      badge: resellerUnread,
+    },
     { to: "/child-panel/providers", icon: <FiServer />, label: "Providers" },
     { to: "/child-panel/wallet", icon: <FiCreditCard />, label: "Wallet" },
     { to: "/child-panel/financial", icon: <FiDollarSign />, label: "Financial" },
