@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FiEdit2, FiCheck, FiX, FiRotateCcw, FiPlus, FiTrash2 } from "react-icons/fi";
-import API from "../../../api/axios";
+import API from "./api/axios";
 import toast from "react-hot-toast";
 import { fmt } from "./CPDetailHelpers";
 
