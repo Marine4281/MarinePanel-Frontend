@@ -1,6 +1,7 @@
 // src/pages/reseller/ResellerDashboard.jsx
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import {
@@ -16,13 +17,25 @@ import {
 import Sidebar from "../../components/reseller/Sidebar";
 import StatCard from "../../components/reseller/StatCard";
 import Table from "../../components/reseller/Table";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ResellerDashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Reseller's panel exists but the CP owner's platform fee hasn't been
+  // settled yet — keep them off the dashboard until it resolves.
+  useEffect(() => {
+    if (user?.resellerActivationPending) {
+      navigate("/reseller/pending");
+    }
+  }, [user, navigate]);
 
   const copyLink = () => {
     if (!dashboardData?.domain) return;
@@ -31,6 +44,8 @@ export default function ResellerDashboard() {
   };
 
   useEffect(() => {
+    if (user?.resellerActivationPending) return;
+
     const fetchDashboard = async () => {
       try {
         const [dashRes, usersRes, ordersRes] = await Promise.all([
@@ -50,7 +65,7 @@ export default function ResellerDashboard() {
     };
 
     fetchDashboard();
-  }, []);
+  }, [user?.resellerActivationPending]);
 
   return (
     <div className="flex min-h-screen w-full max-w-full bg-gray-100 overflow-x-hidden">
