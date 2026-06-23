@@ -47,25 +47,30 @@ export default function ResellerActivate() {
   }, []);
 
   const handleActivate = async () => {
-    if (!brandName) return toast.error("Brand name required");
-    if (domainType === "custom" && !customDomain)
-      return toast.error("Custom domain required");
+  if (!brandName) return toast.error("Brand name required");
+  if (domainType === "custom" && !customDomain)
+    return toast.error("Custom domain required");
 
-    setLoading(true);
-    try {
-      const res = await API.post("/reseller/activate", {
-        brandName,
-        domainType,
-        customDomain,
-      });
-      toast.success(res.data.message);
+  setLoading(true);
+  try {
+    const res = await API.post("/reseller/activate", {
+      brandName,
+      domainType,
+      customDomain,
+    });
+    toast.success(res.data.message);
+
+    if (res.data.pending) {
+      setTimeout(() => navigate("/reseller/pending"), 1200);
+    } else {
       setTimeout(() => navigate("/reseller/dashboard"), 1500);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Activation failed");
     }
-    setLoading(false);
-  };
-
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Activation failed");
+  }
+  setLoading(false);
+};
+  
   const slug = brandName.toLowerCase().replace(/[^a-z0-9]/g, "");
 
   return (
