@@ -154,6 +154,32 @@ export default function CPFeesTab({
         </div>
       </div>
 
+      {/* ── Reseller Activation — Platform Anti-Abuse Fee ── */}
+      <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-gray-50 px-4 py-2.5 border-b">
+          <h4 className="text-xs font-semibold text-gray-700">
+            Reseller Activation — Platform Fee
+          </h4>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Silently charged to the CP owner's wallet whenever one of their
+            end-users activates a reseller panel. Separate from the CP's own
+            activation fee above — the reseller never sees this charge.
+            Acts as a throttle against misuse. Individual panels can override
+            this from their own details page.
+          </p>
+        </div>
+
+        <div className="p-4">
+          <label className="text-xs text-gray-500 mb-1 block">Platform Fee ($)</label>
+          <input
+            type="number" min="0" step="0.01"
+            value={settings.platformResellerActivationFee ?? 5}
+            onChange={(e) => onSettingsChange({ platformResellerActivationFee: e.target.value })}
+            className="w-full sm:w-1/2 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+      </div>
+
       {/* ── Tiered billing ── */}
       <div>
         <h4 className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
@@ -178,4 +204,4 @@ export default function CPFeesTab({
 
     </div>
   );
-                }
+          }
