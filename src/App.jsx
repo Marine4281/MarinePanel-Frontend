@@ -68,6 +68,7 @@ import EndUserDashboard from "./pages/reseller/EndUserDashboard";
 import ResellersAdminList from "./pages/reseller/ResellersAdminList";
 import ResellerAdminDetails from "./pages/reseller/ResellerAdminDetails";
 import ResellerGuides from "./pages/reseller/ResellerGuides";
+import ResellerPending from "./pages/reseller/ResellerPending";
 
 // Child panel pages
 import ChildPanelRoute from "./components/childpanel/ChildPanelRoute";
@@ -344,6 +345,7 @@ function AppRoutes() {
         <Route path="/reseller/branding"   element={<ProtectedRoute><ResellerBranding /></ProtectedRoute>} />
         <Route path="/end-user/dashboard"  element={<ProtectedRoute><EndUserDashboard /></ProtectedRoute>} />
         <Route path="/reseller/guides"     element={<ResellerGuides />} />
+        <Route path="/reseller/pending" element={<ProtectedRoute><ResellerPending /></ProtectedRoute>} />
          
         {/* ================================================
             CHILD PANEL ROUTES — unchanged
