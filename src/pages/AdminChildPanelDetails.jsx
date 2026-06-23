@@ -1,319 +1,526 @@
-// src/pages/AdminChildPanelDetails.jsx
+// src/components/admin/childpanel/CPDetailControls.jsx
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import API from "../api/axios";
+import { useState } from "react";
+import { FiEdit2, FiCheck, FiX, FiRotateCcw, FiPlus, FiTrash2 } from "react-icons/fi";
+import API from "../../../api/axios";
 import toast from "react-hot-toast";
-import Sidebar from "../components/Sidebar";
-import { FiArrowLeft, FiRefreshCw } from "react-icons/fi";
+import { fmt } from "./CPDetailHelpers";
 
-// Split components
-import CPDetailStatCards   from "../components/admin/childpanel/CPDetailStatCards";
-import CPDetailInfoCard    from "../components/admin/childpanel/CPDetailInfoCard";
-import CPDetailControls    from "../components/admin/childpanel/CPDetailControls";
-import CPDetailResellersTab from "../components/admin/childpanel/CPDetailResellersTab";
-import CPDetailUsersTab    from "../components/admin/childpanel/CPDetailUsersTab";
-import CPDetailOrdersTab   from "../components/admin/childpanel/CPDetailOrdersTab";
-import CPConfirmModal      from "../components/admin/childpanel/CPConfirmModal";
+// ── Interval presets ──────────────────────────────────────────────────
+const INTERVAL_PRESETS = [1, 7, 14, 30, 45, 60, 90];
 
-const TABS = [
-  { id: "resellers", label: "Resellers" },
-  { id: "users",     label: "Users"     },
-  { id: "orders",    label: "Orders"    },
-];
+// ── Inline number field ───────────────────────────────────────────────
+function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
+  const [editing, setEditing] = useState(false);
+  const [val,     setVal]     = useState(value);
+  const [loading, setLoading] = useState(false);
 
-export default function AdminChildPanelDetails() {
-  const { id }   = useParams();
-  const navigate = useNavigate();
-
-  // Data state
-  const [cp, setCp]           = useState(null);
-  const [stats, setStats]     = useState({});
-  const [resellers, setResellers] = useState([]);
-  const [users, setUsers]     = useState([]);
-  const [orders, setOrders]   = useState([]);
-  const [pagination, setPagination] = useState({});
-
-  // UI state
-  const [loading, setLoading]     = useState(true);
-  const [activeTab, setActiveTab] = useState("resellers");
-  const [confirm, setConfirm]     = useState(null); // { message, danger, showReason, onConfirm }
-
-  // Pagination per tab
-  const [resellerPage, setResellerPage] = useState(1);
-  const [userPage,     setUserPage]     = useState(1);
-  const [orderPage,    setOrderPage]    = useState(1);
-
-  // ── Fetch ──────────────────────────────────────────────────────────
-  const fetchDetails = useCallback(async (rPage = resellerPage, uPage = userPage, oPage = orderPage) => {
+  const handle = async () => {
     setLoading(true);
-    try {
-      const res = await API.get(
-        `/admin/child-panels/${id}?resellerPage=${rPage}&userPage=${uPage}&orderPage=${oPage}&limit=15`
-      );
-      const d = res.data.data;
-      setCp(d.childPanel);
-      setStats(d.stats);
-      setResellers(d.resellers  || []);
-      setUsers(d.users          || []);
-      setOrders(d.orders        || []);
-      setPagination(d.pagination || {});
-    } catch {
-      toast.error("Failed to load details");
-    } finally {
-      setLoading(false);
-    }
-  }, [id, resellerPage, userPage, orderPage]);
-
-  useEffect(() => { fetchDetails(1, 1, 1); }, [id]);
-
-  // ── Actions ────────────────────────────────────────────────────────
-
-  const handleToggle = () => {
-    const suspending = cp.childPanelIsActive;
-    setConfirm({
-      message: suspending
-        ? `Suspend "${cp.childPanelBrandName || cp.email}"? The owner will be blocked from their dashboard.`
-        : `Activate "${cp.childPanelBrandName || cp.email}"?`,
-      danger:     suspending,
-      showReason: suspending,
-      onConfirm: async (reason) => {
-        try {
-          await API.put(`/admin/child-panels/${id}/toggle-status`, {
-            ...(reason ? { reason } : {}),
-          });
-          setCp((prev) => ({
-            ...prev,
-            childPanelIsActive:      !prev.childPanelIsActive,
-            childPanelSuspendReason: suspending ? reason : null,
-          }));
-          toast.success(suspending ? "Panel suspended" : "Panel activated");
-        } catch {
-          toast.error("Failed to update status");
-        } finally {
-          setConfirm(null);
-        }
-      },
-    });
+    await onSave(Number(val));
+    setLoading(false);
+    setEditing(false);
   };
 
-  const handleCommissionSaved = async (rate) => {
-    try {
-      await API.put(`/admin/child-panels/${id}/commission`, { commission: rate });
-      setCp((prev) => ({ ...prev, childPanelCommissionRate: rate }));
-      toast.success("Commission updated");
-    } catch {
-      toast.error("Failed to update commission");
-    }
-  };
-
-  const handleBillingSaved = (patch) => {
-    setCp((prev) => ({ ...prev, ...patch }));
-  };
-
-  const handleDeactivate = () => {
-    setConfirm({
-      message: `Permanently deactivate "${cp.childPanelBrandName || "this panel"}"? Their account stays intact but the panel is shut down.`,
-      danger:     true,
-      showReason: false,
-      onConfirm: async () => {
-        try {
-          await API.delete(`/admin/child-panels/${id}`);
-          toast.success("Panel deactivated");
-          navigate("/admin/child-panels");
-        } catch {
-          toast.error("Failed to deactivate");
-        } finally {
-          setConfirm(null);
-        }
-      },
-    });
-  };
-
-  // ── Pagination handlers ────────────────────────────────────────────
-  const goResellerPage = (p) => { setResellerPage(p); fetchDetails(p, userPage, orderPage); };
-  const goUserPage     = (p) => { setUserPage(p);     fetchDetails(resellerPage, p, orderPage); };
-  const goOrderPage    = (p) => { setOrderPage(p);    fetchDetails(resellerPage, userPage, p); };
-
-  // ── Tab label helper ───────────────────────────────────────────────
-  const tabLabel = (id) => {
-    if (id === "resellers") return `Resellers (${stats.totalResellers ?? 0})`;
-    if (id === "users")     return `Users (${stats.totalUsers ?? 0})`;
-    if (id === "orders")    return `Orders (${stats.totalOrders ?? 0})`;
-    return id;
-  };
-
-  // ── Loading / not found ────────────────────────────────────────────
-  if (loading && !cp) {
-    return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!cp) {
-    return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-400">Child panel not found</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
-      <div className="flex-1 p-6 space-y-6 overflow-y-auto max-w-7xl">
-
-        {/* ── Header ── */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/admin/child-panels")}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600"
-            >
-              <FiArrowLeft size={14} /> Back
-            </button>
-
-            {cp.childPanelLogo && (
-              <img
-                src={cp.childPanelLogo}
-                alt="logo"
-                className="w-10 h-10 rounded-xl object-contain border p-0.5"
-              />
-            )}
-
-            <div>
-              <h1 className="text-xl font-bold text-gray-800">
-                {cp.childPanelBrandName || "Child Panel"}
-              </h1>
-              <p className="text-xs text-gray-500">{cp.email}</p>
-            </div>
-
-            {/* Active badge */}
-            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-              cp.childPanelIsActive
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-600"
-            }`}>
-              {cp.childPanelIsActive ? "Active" : "Suspended"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Suspend / Activate */}
-            <button
-              onClick={handleToggle}
-              className={`text-sm px-4 py-2 rounded-lg font-semibold transition ${
-                cp.childPanelIsActive
-                  ? "bg-red-50 text-red-600 hover:bg-red-100"
-                  : "bg-green-50 text-green-700 hover:bg-green-100"
-              }`}
-            >
-              {cp.childPanelIsActive ? "Suspend Panel" : "Activate Panel"}
-            </button>
-
-            {/* Refresh */}
-            <button
-              onClick={() => fetchDetails(resellerPage, userPage, orderPage)}
-              className="p-2 bg-gray-100 rounded-lg text-gray-500 hover:bg-gray-200"
-            >
-              <FiRefreshCw size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Stats ── */}
-        <CPDetailStatCards stats={stats} />
-
-        {/* ── Info + Controls ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <CPDetailInfoCard cp={cp} />
-          <CPDetailControls
-            cp={cp}
-            onCommissionSaved={handleCommissionSaved}
-            onBillingSaved={handleBillingSaved}
-            onDeactivate={handleDeactivate}
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-sm text-gray-500 shrink-0">{label}:</span>
+      {editing ? (
+        <>
+          <input
+            type="number" min="0" value={val}
+            onChange={(e) => setVal(e.target.value)}
+            className="border rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-        </div>
-
-        {/* ── Tabbed data: Resellers | Users | Orders ── */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {/* Tab bar */}
-          <div className="flex border-b bg-gray-50">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`px-5 py-3 text-xs font-semibold border-b-2 transition ${
-                  activeTab === t.id
-                    ? "border-blue-500 text-blue-600 bg-white"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                {tabLabel(t.id)}
-              </button>
-            ))}
-
-            {/* Loading indicator inside tab bar */}
-            {loading && (
-              <div className="ml-auto flex items-center pr-4">
-                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-          </div>
-
-          <div className="p-5">
-            {activeTab === "resellers" && (
-              <CPDetailResellersTab
-                resellers={resellers}
-                stats={stats}
-                pagination={pagination}
-                page={resellerPage}
-                onPageChange={goResellerPage}
-              />
-            )}
-
-            {activeTab === "users" && (
-              <CPDetailUsersTab
-                users={users}
-                pagination={pagination}
-                page={userPage}
-                onPageChange={goUserPage}
-              />
-            )}
-
-            {activeTab === "orders" && (
-              <CPDetailOrdersTab
-                orders={orders}
-                stats={stats}
-                pagination={pagination}
-                page={orderPage}
-                onPageChange={goOrderPage}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Confirm modal ── */}
-      {confirm && (
-        <CPConfirmModal
-          message={confirm.message}
-          danger={confirm.danger}
-          showReason={confirm.showReason}
-          onConfirm={confirm.onConfirm}
-          onClose={() => setConfirm(null)}
-        />
+          <button onClick={handle} disabled={loading}
+            className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60">
+            <FiCheck size={12} />
+          </button>
+          <button onClick={() => { setEditing(false); setVal(value); }}
+            className="p-1.5 bg-gray-200 rounded-lg hover:bg-gray-300">
+            <FiX size={12} />
+          </button>
+        </>
+      ) : (
+        <>
+          <span className="text-sm font-bold text-gray-800">
+            {prefix}{fmt(value)}{suffix}
+          </span>
+          <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-blue-500">
+            <FiEdit2 size={12} />
+          </button>
+        </>
       )}
     </div>
   );
-                                                             }
+}
+
+// ── Tiers builder ─────────────────────────────────────────────────────
+function TiersBuilder({ tiers, onChange }) {
+  const add = () =>
+    onChange([...tiers, { minOrders: 0, maxOrders: null, fee: 0 }]);
+
+  const update = (i, field, val) =>
+    onChange(
+      tiers.map((t, idx) =>
+        idx === i ? { ...t, [field]: val === "" ? null : Number(val) } : t
+      )
+    );
+
+  const remove = (i) => onChange(tiers.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="space-y-2">
+      {tiers.length === 0 && (
+        <p className="text-xs text-gray-400 italic">
+          No tiers set — flat monthly fee will be used.
+        </p>
+      )}
+
+      {tiers.map((t, i) => (
+        <div key={i}
+          className="flex items-center gap-2 flex-wrap bg-white rounded-lg p-2 border">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500">Orders</span>
+            <input
+              type="number" min="0" value={t.minOrders}
+              onChange={(e) => update(i, "minOrders", e.target.value)}
+              className="w-16 border rounded px-1.5 py-1 text-xs focus:outline-none"
+              placeholder="Min"
+            />
+            <span className="text-xs text-gray-400">–</span>
+            <input
+              type="number" min="0" value={t.maxOrders ?? ""}
+              onChange={(e) =>
+                update(i, "maxOrders", e.target.value === "" ? "" : e.target.value)
+              }
+              className="w-16 border rounded px-1.5 py-1 text-xs focus:outline-none"
+              placeholder="Max (∞)"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500">Fee $</span>
+            <input
+              type="number" min="0" step="0.01" value={t.fee}
+              onChange={(e) => update(i, "fee", e.target.value)}
+              className="w-16 border rounded px-1.5 py-1 text-xs focus:outline-none"
+            />
+          </div>
+          <button onClick={() => remove(i)}
+            className="text-red-400 hover:text-red-600 ml-auto">
+            <FiTrash2 size={13} />
+          </button>
+        </div>
+      ))}
+
+      <button onClick={add}
+        className="flex items-center gap-1 text-xs text-blue-500 hover:underline mt-1">
+        <FiPlus size={12} /> Add tier
+      </button>
+    </div>
+  );
+}
+
+// ── Billing editor ────────────────────────────────────────────────────
+function BillingEdit({ cp, onSaved }) {
+  const [open,         setOpen]         = useState(false);
+  const [mode,         setMode]         = useState(cp?.childPanelBillingMode        || "monthly");
+  const [monthly,      setMonthly]      = useState(cp?.childPanelMonthlyFee         ?? 0);
+  const [perOrder,     setPerOrder]     = useState(cp?.childPanelPerOrderFee        ?? 0);
+  const [intervalDays, setIntervalDays] = useState(cp?.childPanelBillingIntervalDays ?? 30);
+  const [customDays,   setCustomDays]   = useState(false);
+  const [tiers,        setTiers]        = useState(cp?.childPanelMonthlyTiers       ?? []);
+  const [loading,      setLoading]      = useState(false);
+  const [resetting,    setResetting]    = useState(false);
+
+  const isCustomFee = cp?.childPanelFeeIsCustom;
+
+  const save = async () => {
+    setLoading(true);
+    try {
+      await API.put(`/admin/child-panels/${cp._id}/billing`, {
+        billingMode:         mode,
+        monthlyFee:          Number(monthly),
+        perOrderFee:         Number(perOrder),
+        billingIntervalDays: Number(intervalDays),
+        monthlyTiers:        tiers,
+      });
+      toast.success("Billing updated");
+      onSaved({
+        childPanelBillingMode:         mode,
+        childPanelMonthlyFee:          Number(monthly),
+        childPanelPerOrderFee:         Number(perOrder),
+        childPanelBillingIntervalDays: Number(intervalDays),
+        childPanelMonthlyTiers:        tiers,
+        childPanelFeeIsCustom:         true,
+      });
+      setOpen(false);
+    } catch {
+      toast.error("Failed to update billing");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reset = async () => {
+    setResetting(true);
+    try {
+      await API.put(`/admin/child-panels/${cp._id}/billing/reset`);
+      toast.success("Reset to global default");
+      onSaved({ childPanelFeeIsCustom: false, childPanelMonthlyTiers: [] });
+      setOpen(false);
+    } catch {
+      toast.error("Failed to reset billing");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const handleIntervalSelect = (days) => {
+    setIntervalDays(days);
+    setCustomDays(false);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mt-1">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+        >
+          <FiEdit2 size={11} /> Edit Billing
+        </button>
+
+        {isCustomFee ? (
+          <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">
+            Custom
+          </span>
+        ) : (
+          <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">
+            Global Default
+          </span>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-3 bg-gray-50 border rounded-xl p-4 space-y-4">
+
+          {/* Billing Mode */}
+          <div>
+            <label className="text-xs font-semibold text-gray-600 block mb-1">
+              Billing Mode
+            </label>
+            <select value={mode} onChange={(e) => setMode(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <option value="monthly">Monthly</option>
+              <option value="per_order">Per Order</option>
+              <option value="both">Both</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+
+          {/* Monthly flat fee */}
+          {(mode === "monthly" || mode === "both") && (
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">
+                Monthly Flat Fee ($)
+              </label>
+              <input type="number" min="0" value={monthly}
+                onChange={(e) => setMonthly(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" />
+            </div>
+          )}
+
+          {/* Per-order fee */}
+          {(mode === "per_order" || mode === "both") && (
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">
+                Per-Order Fee ($)
+              </label>
+              <input type="number" min="0" value={perOrder}
+                onChange={(e) => setPerOrder(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" />
+            </div>
+          )}
+
+          {/* Tiered billing — only for monthly / both */}
+          {(mode === "monthly" || mode === "both") && (
+            <div className="border-t pt-3">
+              <h4 className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                Tiered Monthly Billing
+                <span className="font-normal text-gray-400 ml-1">
+                  (overrides flat fee when set)
+                </span>
+              </h4>
+              <p className="text-xs text-gray-400 mb-3">
+                Define order-count ranges with a monthly fee per range.
+                e.g. 0–100 orders = $0, 101–500 = $2, 501+ = $5
+              </p>
+              <TiersBuilder tiers={tiers} onChange={setTiers} />
+            </div>
+          )}
+
+          {/* Billing Interval */}
+          <div className="border-t pt-3">
+            <label className="text-xs font-semibold text-gray-600 block mb-2">
+              Billing Interval
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {INTERVAL_PRESETS.map((d) => (
+                <button key={d}
+                  onClick={() => handleIntervalSelect(d)}
+                  className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition ${
+                    !customDays && Number(intervalDays) === d
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-600 hover:border-blue-400"
+                  }`}>
+                  {d === 1 ? "1 day" : `${d} days`}
+                </button>
+              ))}
+              <button
+                onClick={() => { setCustomDays(true); setIntervalDays(""); }}
+                className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition ${
+                  customDays
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 hover:border-blue-400"
+                }`}>
+                Custom
+              </button>
+            </div>
+            {customDays && (
+              <input
+                type="number" min="1" placeholder="Enter days e.g. 20"
+                value={intervalDays}
+                onChange={(e) => setIntervalDays(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            )}
+            <p className="text-xs text-gray-400 mt-1">
+              Next billing date will be recalculated from today using this interval.
+            </p>
+          </div>
+
+          {/* Save / Cancel */}
+          <div className="flex gap-2">
+            <button onClick={() => setOpen(false)}
+              className="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+              Cancel
+            </button>
+            <button onClick={save} disabled={loading}
+              className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-60">
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
+
+          {/* Reset to global default */}
+          {isCustomFee && (
+            <button onClick={reset} disabled={resetting}
+              className="w-full flex items-center justify-center gap-1.5 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-60 transition">
+              <FiRotateCcw size={11} />
+              {resetting ? "Resetting..." : "Reset to Global Default"}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Platform reseller activation fee editor ───────────────────────────
+// Anti-abuse fee charged to THIS CP owner's wallet whenever one of their
+// end-users activates a reseller panel. null = inherit the global default
+// set in Admin → Child Panels → Fees & Billing. Completely separate from
+// the billing fee above — admin-only, the CP owner never sees this field.
+function PlatformResellerFeeEdit({ cp, onSaved }) {
+  const [open,    setOpen]    = useState(false);
+  const [fee,     setFee]     = useState(cp?.platformResellerFeeOverride ?? "");
+  const [loading, setLoading] = useState(false);
+
+  const isCustom = cp?.platformResellerFeeOverride != null;
+
+  const save = async () => {
+    setLoading(true);
+    try {
+      const value = fee === "" ? null : Number(fee);
+      await API.patch(`/admin/child-panels/${cp._id}/platform-reseller-fee`, { fee: value });
+      toast.success("Platform fee updated");
+      onSaved({ platformResellerFeeOverride: value });
+      setOpen(false);
+    } catch {
+      toast.error("Failed to update fee");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const reset = async () => {
+    setLoading(true);
+    try {
+      await API.patch(`/admin/child-panels/${cp._id}/platform-reseller-fee`, { fee: null });
+      toast.success("Reset to global default");
+      setFee("");
+      onSaved({ platformResellerFeeOverride: null });
+      setOpen(false);
+    } catch {
+      toast.error("Failed to reset fee");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mt-1">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+        >
+          <FiEdit2 size={11} /> Edit Platform Reseller Fee
+        </button>
+
+        {isCustom ? (
+          <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">
+            Custom (${cp.platformResellerFeeOverride})
+          </span>
+        ) : (
+          <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">
+            Global Default
+          </span>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-3 bg-gray-50 border rounded-xl p-4 space-y-3">
+          <p className="text-xs text-gray-400">
+            Silently charged to this CP owner's wallet whenever one of their
+            end-users activates a reseller panel. Separate from the billing
+            fee above — the reseller never sees this charge.
+          </p>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-600 block mb-1">
+              Override Fee ($) — blank uses global default
+            </label>
+            <input
+              type="number" min="0" step="0.01"
+              value={fee}
+              onChange={(e) => setFee(e.target.value)}
+              placeholder="Use global default"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={() => setOpen(false)}
+              className="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+              Cancel
+            </button>
+            <button onClick={save} disabled={loading}
+              className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-60">
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
+
+          {isCustom && (
+            <button onClick={reset} disabled={loading}
+              className="w-full flex items-center justify-center gap-1.5 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-60 transition">
+              <FiRotateCcw size={11} />
+              {loading ? "Resetting..." : "Reset to Global Default"}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Next billing countdown ────────────────────────────────────────────
+function NextBillingBadge({ nextBilledAt }) {
+  if (!nextBilledAt) return null;
+
+  const now  = new Date();
+  const due  = new Date(nextBilledAt);
+  const days = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+
+  const label = due.toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+  });
+
+  const color =
+    days < 0  ? "text-red-600 bg-red-50"   :
+    days <= 3 ? "text-amber-600 bg-amber-50" :
+                "text-green-700 bg-green-50";
+
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded font-medium ${color}`}>
+      {days < 0
+        ? `Expired ${Math.abs(days)}d ago`
+        : days === 0
+        ? "Due today"
+        : `Due ${label} (${days}d)`}
+    </span>
+  );
+}
+
+// ── Main controls card ────────────────────────────────────────────────
+export default function CPDetailControls({ cp, onCommissionSaved, onBillingSaved, onDeactivate }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
+      <h3 className="font-semibold text-gray-800 text-sm border-b pb-2">Controls</h3>
+
+      {/* Commission */}
+      <InlineEdit
+        label="Commission Rate"
+        value={cp.childPanelCommissionRate || 0}
+        suffix="%"
+        onSave={onCommissionSaved}
+      />
+
+      {/* Billing */}
+      <div className="border-t pt-3 space-y-1">
+        <p className="text-xs text-gray-500">
+          Billing:{" "}
+          <span className="font-semibold text-gray-800 capitalize">
+            {cp.childPanelBillingMode || "—"}
+          </span>
+          {cp.childPanelMonthlyFee  > 0 && <> · ${cp.childPanelMonthlyFee}/cycle</>}
+          {cp.childPanelPerOrderFee > 0 && <> · ${cp.childPanelPerOrderFee}/order</>}
+          {cp.childPanelBillingIntervalDays && (
+            <> · every {cp.childPanelBillingIntervalDays}d</>
+          )}
+          {cp.childPanelMonthlyTiers?.length > 0 && (
+            <span className="ml-1 text-xs px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded font-medium">
+              {cp.childPanelMonthlyTiers.length} tier{cp.childPanelMonthlyTiers.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </p>
+        <NextBillingBadge nextBilledAt={cp.childPanelNextBilledAt} />
+        <BillingEdit cp={cp} onSaved={onBillingSaved} />
+      </div>
+
+      {/* Reseller Activation — Platform Fee */}
+      <div className="border-t pt-3 space-y-1">
+        <p className="text-xs text-gray-500">
+          Platform Reseller Fee:{" "}
+          <span className="font-semibold text-gray-800">
+            ${cp.platformResellerFeeOverride ?? "Global default"}
+          </span>
+        </p>
+        <PlatformResellerFeeEdit cp={cp} onSaved={onBillingSaved} />
+      </div>
+
+      {/* Danger zone */}
+      <div className="border-t pt-3">
+        <p className="text-xs font-semibold text-red-500 mb-2 uppercase tracking-wide">
+          Danger Zone
+        </p>
+        <button
+          onClick={onDeactivate}
+          className="text-sm px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-semibold transition"
+        >
+          Deactivate Panel
+        </button>
+      </div>
+    </div>
+  );
+                }
