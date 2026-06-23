@@ -14,7 +14,10 @@ import {
   FiEdit2,
   FiX,
   FiCheck,
+  FiClock,
+  FiBell,
 } from "react-icons/fi";
+import { useResellerActivationFeed } from "../../context/ResellerActivationFeedContext";
 
 // ======================= HELPERS =======================
 
@@ -27,6 +30,12 @@ const Badge = ({ active }) => (
     }`}
   >
     {active ? "Active" : "Suspended"}
+  </span>
+);
+
+const PendingBadge = () => (
+  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700 flex items-center gap-1">
+    <FiClock size={10} /> Pending
   </span>
 );
 
@@ -112,6 +121,62 @@ function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
   );
 }
 
+// ======================= ACTIVATION FEED =======================
+
+function ActivationFeed() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchFeed = useCallback(async () => {
+    try {
+      const res = await API.get("/cp/resellers/activation-feed?limit=10");
+      setEvents(res.data.data || []);
+    } catch {
+      // silent — this is a secondary panel, not worth a toast on failure
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchFeed(); }, [fetchFeed]);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <FiBell size={14} className="text-gray-400" />
+        <h2 className="text-sm font-bold text-gray-800">Recent Activations</h2>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-6">
+          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : events.length === 0 ? (
+        <p className="text-xs text-gray-400">No activation activity yet</p>
+      ) : (
+        <div className="space-y-2">
+          {events.map((ev) => (
+            <div
+              key={ev._id}
+              className={`flex items-start gap-2 text-xs p-2.5 rounded-lg ${
+                ev.type === "pending"
+                  ? "bg-amber-50 text-amber-800"
+                  : "bg-green-50 text-green-800"
+              }`}
+            >
+              <span className="font-semibold shrink-0">{ev.resellerEmail}</span>
+              <span className="flex-1">{ev.message}</span>
+              <span className="text-gray-400 whitespace-nowrap shrink-0">
+                {new Date(ev.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ======================= RESELLER ROW =======================
 
 function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate, onResellerUserBalanceUpdate }) {
@@ -154,6 +219,7 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate, 
             <p className="text-sm font-semibold text-gray-800 truncate">{reseller.email}</p>
             <div className="flex items-center gap-3 flex-wrap mt-0.5">
               <Badge active={!reseller.isSuspended} />
+              {reseller.resellerActivationPending && <PendingBadge />}
               <span className="text-xs text-gray-400">
                 {reseller.usersCount || 0} users · {reseller.ordersCount || 0} orders
               </span>
@@ -195,6 +261,17 @@ function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate, 
             </div>
           ) : details ? (
             <>
+              {/* Pending notice */}
+              {reseller.resellerActivationPending && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+                  <FiClock size={14} className="text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-amber-800">
+                    This reseller's activation is on hold pending a wallet top-up on your end.
+                    It will resume automatically — no action needed from the reseller.
+                  </p>
+                </div>
+              )}
+
               {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatCard title="Wallet" value={`$${fmt(details.stats?.wallet)}`} icon={<FiDollarSign size={14} />} />
@@ -315,6 +392,11 @@ export default function ChildPanelResellers() {
   const [search, setSearch]             = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const { markSeen } = useResellerActivationFeed();
+
+  // Visiting this page is what clears the red badge in the sidebar
+  useEffect(() => { markSeen(); }, [markSeen]);
+
   const fetchResellers = useCallback(async () => {
     try {
       setLoading(true);
@@ -396,6 +478,9 @@ export default function ChildPanelResellers() {
           </button>
         </div>
 
+        {/* Activation feed */}
+        <ActivationFeed />
+
         {/* Search + Filter bar */}
         <div className="flex gap-2 flex-wrap">
           <input
@@ -472,4 +557,4 @@ export default function ChildPanelResellers() {
       </div>
     </ChildPanelLayout>
   );
-}
+            }
