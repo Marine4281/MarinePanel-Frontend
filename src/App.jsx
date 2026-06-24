@@ -11,6 +11,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import { useEffect, useState } from "react";
 import { SupportProvider } from "./context/SupportContext";
 import { useSEO } from "./hooks/useSEO"; 
+import { ResellerActivationFeedProvider } from "./context/ResellerActivationFeedContext";
 
 // Public pages
 import LandingPage from "./pages/LandingPage";
@@ -420,9 +421,11 @@ export default function App() {
           <ChildPanelProvider>
             <CachedServicesProvider>
               <SupportProvider>
-                <ServicesProvider>
-                  <AppRoutes />
-                </ServicesProvider>
+                <ResellerActivationFeedProvider>
+                  <ServicesProvider>
+                    <AppRoutes />
+                  </ServicesProvider>
+                </ResellerActivationFeedProvider>
               </SupportProvider>
             </CachedServicesProvider>
           </ChildPanelProvider>
