@@ -15,13 +15,27 @@ import CPBillingEdit         from "../components/admin/childpanel/settings/CPBil
 import { fmt }               from "../components/admin/childpanel/settings/CPSettingsHelpers";
 
 // ─── helpers ─────────────────────────────────────────────────────────
-const Badge = ({ active }) => (
-  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-    active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
-  }`}>
-    {active ? "Active" : "Suspended"}
-  </span>
-);
+const Badge = ({ active, subscriptionSuspended }) => {
+  if (!active && subscriptionSuspended) {
+    return (
+      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 text-orange-700">
+        Billing Suspended
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+        active
+          ? "bg-green-100 text-green-700"
+          : "bg-red-100 text-red-600"
+      }`}
+    >
+      {active ? "Active" : "Suspended"}
+    </span>
+  );
+};
 
 // ─── Inline number edit ───────────────────────────────────────────────
 function InlineEdit({ label, value, onSave, suffix = "" }) {
@@ -65,6 +79,77 @@ function InlineEdit({ label, value, onSave, suffix = "" }) {
           </button>
         </>
       )}
+    </div>
+  );
+}
+
+// ─── Credit wallet inline ─────────────────────────────────────────────
+function CreditWalletInline({ cpId, onCredited }) {
+  const [open,    setOpen]    = useState(false);
+  const [amount,  setAmount]  = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleCredit = async () => {
+    const num = Number(amount);
+
+    if (!num || num <= 0) {
+      return toast.error("Enter a valid amount");
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await API.post(
+        `/admin/child-panels/${cpId}/credit-wallet`,
+        { amount: num }
+      );
+
+      toast.success(res.data.message || "Wallet credited");
+      onCredited(res.data);
+      setAmount("");
+      setOpen(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to credit wallet");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium"
+      >
+        + Credit Wallet
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1 mt-1">
+      <input
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="Amount"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        className="border rounded-lg px-2 py-1 text-xs w-20 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+      <button
+        onClick={handleCredit}
+        disabled={loading}
+        className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
+      >
+        <FiCheck size={11} />
+      </button>
+      <button
+        onClick={() => { setOpen(false); setAmount(""); }}
+        className="p-1 bg-gray-200 rounded hover:bg-gray-300"
+      >
+        <FiX size={11} />
+      </button>
     </div>
   );
 }
@@ -141,7 +226,10 @@ function ChildPanelRow({ cp, onToggle, onCommission, onDeactivate }) {
               <span className="text-gray-400 font-normal text-xs">({data.email})</span>
             </p>
             <div className="flex items-center gap-3 flex-wrap mt-0.5">
-              <Badge active={data.childPanelIsActive} />
+              <Badge
+                active={data.childPanelIsActive}
+                subscriptionSuspended={data.childPanelSubscriptionSuspended}
+              />
               <span className="text-xs text-gray-400">
                 {data.ordersCount || 0} orders · {data.resellersCount || 0} resellers
               </span>
@@ -186,7 +274,31 @@ function ChildPanelRow({ cp, onToggle, onCommission, onDeactivate }) {
             {/* Wallet */}
             <div className="bg-white rounded-xl border p-3">
               <p className="text-xs text-gray-400 mb-1">Panel Wallet</p>
-              <p className="font-bold text-green-600">${fmt(data.childPanelWallet)}</p>
+
+              <p className="font-bold text-green-600 mb-2">
+                ${fmt(data.childPanelWallet)}
+              </p>
+
+              {data.childPanelSubscriptionSuspended && (
+                <p className="text-xs text-orange-600 mb-2 font-medium">
+                  ⚠️ Billing suspended
+                </p>
+              )}
+
+              <CreditWalletInline
+                cpId={cp._id}
+                onCredited={(result) =>
+                  setData((prev) => ({
+                    ...prev,
+                    childPanelWallet: result.newBalance,
+                    childPanelIsActive: result.isActive,
+                    childPanelSubscriptionSuspended:
+                      !result.autoReactivated
+                        ? prev.childPanelSubscriptionSuspended
+                        : false,
+                  }))
+                }
+              />
             </div>
 
             {/* Commission */}
