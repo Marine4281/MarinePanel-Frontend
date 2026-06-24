@@ -49,6 +49,7 @@ export default function CPGlobalSettingsPanel() {
         minDeposit:          Number(settings.minDeposit),
         monthlyTiers:        tiers,
         billingIntervalDays: Number(settings.billingIntervalDays ?? 30),
+        platformResellerActivationFee: Number(settings.platformResellerActivationFee ?? 5),
         // ── new fields ──
         gracePeriodHours:    Number(settings.gracePeriodHours  ?? 0),
         reminderHours:       Number(settings.reminderHours     ?? 48),
