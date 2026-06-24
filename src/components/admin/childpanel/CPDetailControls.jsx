@@ -5,6 +5,7 @@ import { FiEdit2, FiCheck, FiX, FiRotateCcw, FiPlus, FiTrash2 } from "react-icon
 import API from "../../../api/axios";
 import toast from "react-hot-toast";
 import { fmt } from "./CPDetailHelpers";
+import CPPlatformResellerFeeEdit from "./settings/CPPlatformResellerFeeEdit";
 
 // ── Interval presets ──────────────────────────────────────────────────
 const INTERVAL_PRESETS = [1, 7, 14, 30, 45, 60, 90];
@@ -360,6 +361,19 @@ export default function CPDetailControls({ cp, onCommissionSaved, onBillingSaved
     <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
       <h3 className="font-semibold text-gray-800 text-sm border-b pb-2">Controls</h3>
 
+      {/* Reseller Activation — Platform Fee */}
+<div className="border-t pt-3 space-y-1">
+  <p className="text-xs text-gray-500">
+    Platform Reseller Fee:{" "}
+    <span className="font-semibold text-gray-800">
+      {cp.platformResellerFeeOverride != null
+        ? `$${cp.platformResellerFeeOverride}`
+        : "Global default"}
+    </span>
+  </p>
+  <CPPlatformResellerFeeEdit cp={cp} onSaved={onBillingSaved} />
+</div>
+      
       {/* Commission */}
       <InlineEdit
         label="Commission Rate"
