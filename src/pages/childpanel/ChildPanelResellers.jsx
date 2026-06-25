@@ -124,55 +124,105 @@ function InlineEdit({ label, value, onSave, prefix = "", suffix = "" }) {
 // ======================= ACTIVATION FEED =======================
 
 function ActivationFeed() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents]           = useState([]);
+  const [platformFee, setPlatformFee] = useState(null);
+  const [loading, setLoading]         = useState(true);
 
-  const fetchFeed = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     try {
-      const res = await API.get("/cp/resellers/activation-feed?limit=10");
-      setEvents(res.data.data || []);
+      const [feedRes, feeRes] = await Promise.all([
+        API.get("/cp/resellers/activation-feed?limit=15"),
+        API.get("/cp/resellers/platform-fee"),
+      ]);
+      setEvents(feedRes.data.data || []);
+      setPlatformFee(feeRes.data.fee ?? null);
     } catch {
-      // silent — this is a secondary panel, not worth a toast on failure
+      // silent
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchFeed(); }, [fetchFeed]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const hasPending = events.some((e) => e.type === "pending");
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <FiBell size={14} className="text-gray-400" />
-        <h2 className="text-sm font-bold text-gray-800">Recent Activations</h2>
-      </div>
+    <div className="space-y-3">
 
-      {loading ? (
-        <div className="flex items-center justify-center py-6">
-          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : events.length === 0 ? (
-        <p className="text-xs text-gray-400">No activation activity yet</p>
-      ) : (
-        <div className="space-y-2">
-          {events.map((ev) => (
-            <div
-              key={ev._id}
-              className={`flex items-start gap-2 text-xs p-2.5 rounded-lg ${
-                ev.type === "pending"
-                  ? "bg-amber-50 text-amber-800"
-                  : "bg-green-50 text-green-800"
-              }`}
-            >
-              <span className="font-semibold shrink-0">{ev.resellerEmail}</span>
-              <span className="flex-1">{ev.message}</span>
-              <span className="text-gray-400 whitespace-nowrap shrink-0">
-                {new Date(ev.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-          ))}
+      {/* Platform fee info banner — always visible once loaded */}
+      {platformFee != null && (
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+          <FiDollarSign size={15} className="text-blue-500 mt-0.5 shrink-0" />
+          <p className="text-xs text-blue-800 leading-relaxed">
+            <span className="font-semibold">Platform fee notice: </span>
+            For every reseller that activates on your panel, the platform charges a{" "}
+            <span className="font-bold">${Number(platformFee).toFixed(2)}</span> activation fee
+            from your wallet. Make sure your wallet is funded to avoid activations being placed
+            on hold.
+          </p>
         </div>
       )}
+
+      {/* Pending hold warning — only shown when at least one is pending */}
+      {hasPending && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3">
+          <FiClock size={15} className="text-amber-600 mt-0.5 shrink-0" />
+          <p className="text-xs text-amber-800 leading-relaxed">
+            <span className="font-semibold">Action needed: </span>
+            One or more resellers are on hold because your wallet had insufficient funds to
+            cover the platform activation fee. Top up your wallet and they will be activated
+            automatically.
+          </p>
+        </div>
+      )}
+
+      {/* Feed card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <FiBell size={14} className="text-gray-400" />
+          <h2 className="text-sm font-bold text-gray-800">Activation Activity</h2>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-6">
+            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : events.length === 0 ? (
+          <p className="text-xs text-gray-400">No activation activity yet</p>
+        ) : (
+          <div className="space-y-2">
+            {events.map((ev) => (
+              <div
+                key={ev._id}
+                className={`flex items-start gap-2 text-xs p-2.5 rounded-lg ${
+                  ev.type === "pending"
+                    ? "bg-amber-50 border border-amber-200 text-amber-800"
+                    : ev.type === "resumed"
+                    ? "bg-blue-50 border border-blue-200 text-blue-800"
+                    : "bg-green-50 border border-green-200 text-green-800"
+                }`}
+              >
+                <span className="mt-0.5 shrink-0">
+                  {ev.type === "pending" ? <FiClock size={12} /> : <FiCheck size={12} />}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold">{ev.resellerEmail} </span>
+                  <span>{ev.message}</span>
+                  {ev.type !== "pending" && ev.platformFeeCharged > 0 && (
+                    <span className="ml-1 opacity-60">
+                      (${Number(ev.platformFeeCharged).toFixed(2)} fee deducted)
+                    </span>
+                  )}
+                </div>
+                <span className="text-gray-400 whitespace-nowrap shrink-0">
+                  {new Date(ev.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -180,10 +230,10 @@ function ActivationFeed() {
 // ======================= RESELLER ROW =======================
 
 function ResellerRow({ reseller, onToggle, onCommissionUpdate, onBalanceUpdate, onResellerUserBalanceUpdate }) {
-  const [expanded, setExpanded] = useState(false);
-  const [details, setDetails] = useState(null);
+  const [expanded, setExpanded]           = useState(false);
+  const [details, setDetails]             = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [toggling, setToggling] = useState(false);
+  const [toggling, setToggling]           = useState(false);
 
   const fetchDetails = async () => {
     if (details) { setExpanded((e) => !e); return; }
@@ -394,7 +444,6 @@ export default function ChildPanelResellers() {
 
   const { markSeen } = useResellerActivationFeed();
 
-  // Visiting this page is what clears the red badge in the sidebar
   useEffect(() => { markSeen(); }, [markSeen]);
 
   const fetchResellers = useCallback(async () => {
@@ -478,119 +527,29 @@ export default function ChildPanelResellers() {
           </button>
         </div>
 
-        {/* Activation feed */}
-        // ======================= ACTIVATION FEED =======================
+        {/* Activation feed + platform fee banner */}
+        <ActivationFeed />
 
-function ActivationFeed() {
-  const [events, setEvents]         = useState([]);
-  const [platformFee, setPlatformFee] = useState(null);
-  const [loading, setLoading]       = useState(true);
-
-  const fetchAll = useCallback(async () => {
-    try {
-      const [feedRes, feeRes] = await Promise.all([
-        API.get("/cp/resellers/activation-feed?limit=15"),
-        API.get("/cp/resellers/platform-fee"),
-      ]);
-      setEvents(feedRes.data.data || []);
-      setPlatformFee(feeRes.data.fee ?? null);
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
-
-  const hasPending = events.some((e) => e.type === "pending");
-
-  return (
-    <div className="space-y-3">
-
-      {/* ── Platform fee info banner ── */}
-      {platformFee != null && (
-        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-          <FiDollarSign size={15} className="text-blue-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-blue-800 leading-relaxed">
-            <span className="font-semibold">Platform fee notice: </span>
-            For every reseller that activates on your panel, the platform charges a{" "}
-            <span className="font-bold">${Number(platformFee).toFixed(2)}</span> activation fee
-            from your wallet. Make sure your wallet is funded to avoid activations being placed
-            on hold.
-          </p>
-        </div>
-      )}
-
-      {/* ── Pending hold warning ── */}
-      {hasPending && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3">
-          <FiClock size={15} className="text-amber-600 mt-0.5 shrink-0" />
-          <p className="text-xs text-amber-800 leading-relaxed">
-            <span className="font-semibold">Action needed: </span>
-            One or more resellers are on hold because your wallet had insufficient funds to
-            cover the platform activation fee. Top up your wallet and they will be activated
-            automatically.
-          </p>
-        </div>
-      )}
-
-      {/* ── Feed card ── */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <FiBell size={14} className="text-gray-400" />
-          <h2 className="text-sm font-bold text-gray-800">Activation Activity</h2>
+        {/* Search + Filter bar */}
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Search by email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 min-w-[180px] border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-6">
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : events.length === 0 ? (
-          <p className="text-xs text-gray-400">No activation activity yet</p>
-        ) : (
-          <div className="space-y-2">
-            {events.map((ev) => (
-              <div
-                key={ev._id}
-                className={`flex items-start gap-2 text-xs p-2.5 rounded-lg ${
-                  ev.type === "pending"
-                    ? "bg-amber-50 border border-amber-200 text-amber-800"
-                    : ev.type === "resumed"
-                    ? "bg-blue-50 border border-blue-200 text-blue-800"
-                    : "bg-green-50 border border-green-200 text-green-800"
-                }`}
-              >
-                <span className="mt-0.5 shrink-0">
-                  {ev.type === "pending" ? (
-                    <FiClock size={12} />
-                  ) : ev.type === "resumed" ? (
-                    <FiCheck size={12} />
-                  ) : (
-                    <FiCheck size={12} />
-                  )}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold">{ev.resellerEmail} </span>
-                  <span>{ev.message}</span>
-                  {ev.type !== "pending" && ev.platformFeeCharged > 0 && (
-                    <span className="ml-1 opacity-60">
-                      (${Number(ev.platformFeeCharged).toFixed(2)} fee deducted)
-                    </span>
-                  )}
-                </div>
-                <span className="text-gray-400 whitespace-nowrap shrink-0">
-                  {new Date(ev.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-        }
-        
         {/* List */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
