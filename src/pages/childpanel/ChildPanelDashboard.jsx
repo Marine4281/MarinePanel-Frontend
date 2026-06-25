@@ -23,12 +23,12 @@ const fmt = (val, decimals = 2) =>
 
 const getStatusStyle = (status) => {
   switch (status?.toLowerCase()) {
-    case "completed": return "bg-green-100 text-green-700";
+    case "completed":  return "bg-green-100 text-green-700";
     case "processing": return "bg-blue-100 text-blue-700";
-    case "pending": return "bg-yellow-100 text-yellow-700";
-    case "failed": return "bg-red-100 text-red-700";
-    case "refunded": return "bg-purple-100 text-purple-700";
-    default: return "bg-gray-100 text-gray-600";
+    case "pending":    return "bg-yellow-100 text-yellow-700";
+    case "failed":     return "bg-red-100 text-red-700";
+    case "refunded":   return "bg-purple-100 text-purple-700";
+    default:           return "bg-gray-100 text-gray-600";
   }
 };
 
@@ -36,11 +36,11 @@ const getStatusStyle = (status) => {
 
 function StatCard({ title, value, icon, sub, color = "blue" }) {
   const colors = {
-    blue: "text-blue-500 bg-blue-50",
-    green: "text-green-500 bg-green-50",
+    blue:   "text-blue-500 bg-blue-50",
+    green:  "text-green-500 bg-green-50",
     orange: "text-orange-500 bg-orange-50",
     purple: "text-purple-500 bg-purple-50",
-    pink: "text-pink-500 bg-pink-50",
+    pink:   "text-pink-500 bg-pink-50",
   };
 
   return (
@@ -112,14 +112,103 @@ function MiniTable({ title, rows, columns, emptyMsg }) {
   );
 }
 
+// ======================= BILLING BANNER =======================
+
+function BillingBanner({ billing }) {
+  if (!billing) return null;
+
+  const { mode, monthlyFee, perOrderFee, ordersThisCycle, nextBilledAt, intervalDays } = billing;
+
+  const hasMonthly  = (mode === "monthly"   || mode === "both") && monthlyFee  > 0;
+  const hasPerOrder = (mode === "per_order" || mode === "both") && perOrderFee > 0;
+
+  if (!hasMonthly && !hasPerOrder) return null;
+
+  // Days until due
+  let daysLeft   = null;
+  let dueDateStr = null;
+  if (nextBilledAt) {
+    const now  = new Date();
+    const due  = new Date(nextBilledAt);
+    daysLeft   = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+    dueDateStr = due.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  const isOverdue  = daysLeft !== null && daysLeft <  0;
+  const isCritical = daysLeft !== null && daysLeft >= 0 && daysLeft <= 1;
+  const isWarning  = daysLeft !== null && daysLeft >  1 && daysLeft <= 3;
+  const isNotice   = daysLeft !== null && daysLeft >  3 && daysLeft <= 7;
+
+  const style = isOverdue || isCritical
+    ? { wrap: "bg-red-50 border-red-300",       icon: "text-red-500",    text: "text-red-800"    }
+    : isWarning
+    ? { wrap: "bg-amber-50 border-amber-300",   icon: "text-amber-500",  text: "text-amber-800"  }
+    : isNotice
+    ? { wrap: "bg-yellow-50 border-yellow-200", icon: "text-yellow-500", text: "text-yellow-800" }
+    : { wrap: "bg-blue-50 border-blue-200",     icon: "text-blue-500",   text: "text-blue-800"   };
+
+  const urgencyLabel = isOverdue
+    ? "Overdue — panel at risk of suspension"
+    : isCritical
+    ? `Due ${daysLeft === 0 ? "today" : "tomorrow"} — top up your wallet now`
+    : isWarning
+    ? `Due in ${daysLeft} days — make sure your wallet is funded`
+    : isNotice
+    ? `Due in ${daysLeft} days`
+    : dueDateStr
+    ? `Next billing date: ${dueDateStr}`
+    : "Billing active";
+
+  const perOrderTotal = perOrderFee * (ordersThisCycle || 0);
+  const totalDue      = (hasMonthly ? monthlyFee : 0) + (hasPerOrder ? perOrderTotal : 0);
+
+  return (
+    <div className={`flex items-start gap-3 border rounded-xl p-4 ${style.wrap}`}>
+      <FiAlertCircle size={16} className={`mt-0.5 shrink-0 ${style.icon}`} />
+      <div className={`text-xs leading-relaxed w-full ${style.text}`}>
+        <p className="font-semibold text-sm mb-2">{urgencyLabel}</p>
+
+        <div className="space-y-1">
+          {hasMonthly && (
+            <div className="flex justify-between">
+              <span>Monthly fee</span>
+              <span className="font-bold">${Number(monthlyFee).toFixed(2)}</span>
+            </div>
+          )}
+          {hasPerOrder && (
+            <div className="flex justify-between">
+              <span>
+                Per-order fee (${Number(perOrderFee).toFixed(2)} × {ordersThisCycle || 0} orders)
+              </span>
+              <span className="font-bold">${perOrderTotal.toFixed(2)}</span>
+            </div>
+          )}
+          {hasMonthly && hasPerOrder && (
+            <div className="flex justify-between border-t border-current border-opacity-20 pt-1 mt-1 font-semibold">
+              <span>Total due</span>
+              <span>${totalDue.toFixed(2)}</span>
+            </div>
+          )}
+          {dueDateStr && (
+            <p className="opacity-60 pt-1">
+              Due date: {dueDateStr}
+              {intervalDays && <> · Cycle: every {intervalDays} day{intervalDays !== 1 ? "s" : ""}</>}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ======================= DASHBOARD =======================
 
 export default function ChildPanelDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [data, setData] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [data, setData]     = useState(null);
+  const [users, setUsers]   = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -167,11 +256,6 @@ export default function ChildPanelDashboard() {
       ? `${user.childPanelSlug}.marinepanel.online`
       : null);
 
-  // Billing warning — monthly fee info
-  const billingMode = user?.billingMode || data?.billingMode;
-  const monthlyFee = user?.monthlyFee || data?.monthlyFee;
-  const lastBilledAt = user?.lastBilledAt || data?.lastBilledAt;
-
   return (
     <ChildPanelLayout>
       <div className="space-y-6">
@@ -186,22 +270,8 @@ export default function ChildPanelDashboard() {
           </p>
         </div>
 
-        {/* Monthly fee notice */}
-        {(billingMode === "monthly" || billingMode === "both") &&
-          monthlyFee > 0 && (
-            <div className="flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-              <FiAlertCircle className="mt-0.5 shrink-0" />
-              <div>
-                <p className="font-semibold">Monthly Billing Active</p>
-                <p className="text-xs mt-0.5">
-                  Your panel is billed ${monthlyFee}/month.
-                  {lastBilledAt && (
-                    <> Last billed on {new Date(lastBilledAt).toLocaleDateString()}.</>
-                  )}
-                </p>
-              </div>
-            </div>
-          )}
+        {/* Billing banner */}
+        <BillingBanner billing={data?.billing} />
 
         {/* Panel link */}
         {panelDomain && (
@@ -269,10 +339,10 @@ export default function ChildPanelDashboard() {
         {/* Quick actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Manage Users", path: "/child-panel/users", color: "bg-blue-600" },
-            { label: "View Orders", path: "/child-panel/orders", color: "bg-orange-500" },
-            { label: "Resellers", path: "/child-panel/resellers", color: "bg-purple-600" },
-            { label: "Settings", path: "/child-panel/settings", color: "bg-gray-700" },
+            { label: "Manage Users", path: "/child-panel/users",     color: "bg-blue-600"   },
+            { label: "View Orders",  path: "/child-panel/orders",    color: "bg-orange-500" },
+            { label: "Resellers",    path: "/child-panel/resellers", color: "bg-purple-600" },
+            { label: "Settings",     path: "/child-panel/settings",  color: "bg-gray-700"   },
           ].map(({ label, path, color }) => (
             <button
               key={path}
@@ -294,9 +364,7 @@ export default function ChildPanelDashboard() {
             .slice(0, 20)
             .map((u) => [
               <span className="truncate max-w-[160px] block">{u.email}</span>,
-              <span className="text-green-600 font-medium">
-                ${fmt(u.balance)}
-              </span>,
+              <span className="text-green-600 font-medium">${fmt(u.balance)}</span>,
               new Date(u.createdAt).toLocaleDateString(),
             ])}
         />
@@ -313,9 +381,7 @@ export default function ChildPanelDashboard() {
               `#${o.customOrderId || o._id?.slice(-6)}`,
               <span className="truncate max-w-[120px] block">{o.service}</span>,
               `$${fmt(o.charge)}`,
-              <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(o.status)}`}
-              >
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(o.status)}`}>
                 {o.status}
               </span>,
               new Date(o.createdAt).toLocaleDateString(),
@@ -325,4 +391,4 @@ export default function ChildPanelDashboard() {
       </div>
     </ChildPanelLayout>
   );
-}
+                }
