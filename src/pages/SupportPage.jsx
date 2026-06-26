@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext } from "react";
+// src/pages/SupportPage.jsx
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import Header from "../components/Header";
@@ -6,6 +7,7 @@ import Footer from "../components/Footer";
 import { useSupport } from "../context/SupportContext";
 import { useCachedServices } from "../context/CachedServicesContext";
 import { useChildPanel } from "../context/ChildPanelContext";
+import { useReseller } from "../context/ResellerContext";
 
 const STATUS = {
   open:        { label: "Open",        cls: "bg-blue-100 text-blue-600" },
@@ -18,6 +20,9 @@ export default function SupportPage() {
   const { userScope, refreshUser } = useSupport();
   const { domainType } = useCachedServices();
   const { childPanel } = useChildPanel();
+  const { reseller } = useReseller();
+
+  const isResellerEndUser = domainType === "reseller";
 
   const [tickets,    setTickets]    = useState([]);
   const [categories, setCategories] = useState([]);
@@ -37,6 +42,7 @@ export default function SupportPage() {
   const panelOwnerId = domainType === "childPanel" ? childPanel?.ownerId || null : null;
 
   const load = () => {
+    if (isResellerEndUser) { setLoading(false); return; }
     setLoading(true);
     Promise.all([
       API.get(`/support/my-tickets?scope=${userScope}`),
@@ -47,7 +53,7 @@ export default function SupportPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [userScope]);
+  useEffect(() => { load(); }, [userScope, isResellerEndUser]);
 
   const handleFile = (e) => {
     const f = e.target.files[0];
@@ -72,7 +78,6 @@ export default function SupportPage() {
       const res = await API.post("/support/tickets", {
         title: finalTitle,
         description: desc.trim(),
-        
         ...(file ? { file } : {}),
       });
       setShowForm(false);
@@ -86,6 +91,75 @@ export default function SupportPage() {
 
   const unread = (t) => t.messages?.filter(m => m.sender === "admin" && !m.seenByUser).length || 0;
 
+  // ── Reseller end-user: show contact links only, no ticket system ──
+  if (isResellerEndUser) {
+    const wa = reseller?.support?.whatsapp;
+    const tg = reseller?.support?.telegram;
+    const waChannel = reseller?.support?.whatsappChannel;
+    const brandName = reseller?.brandName || "Support";
+
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <main className="flex-1 max-w-md mx-auto w-full px-4 py-16 flex flex-col items-center text-center">
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-5">
+            <i className="fas fa-headset text-orange-500 text-3xl" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Need Help?</h1>
+          <p className="text-gray-500 text-sm mb-8">
+            Contact {brandName} support directly through one of the channels below.
+          </p>
+
+          <div className="w-full space-y-3">
+            {wa && (
+              <a
+                href={`https://wa.me/${wa.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-3.5 rounded-2xl transition w-full justify-center shadow"
+              >
+                <i className="fab fa-whatsapp text-xl" />
+                Chat on WhatsApp
+              </a>
+            )}
+
+            {waChannel && (
+              <a
+                href={waChannel}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-green-400 hover:bg-green-500 text-white font-semibold px-5 py-3.5 rounded-2xl transition w-full justify-center shadow"
+              >
+                <i className="fab fa-whatsapp text-xl" />
+                WhatsApp Channel
+              </a>
+            )}
+
+            {tg && (
+              <a
+                href={`https://t.me/${tg.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3.5 rounded-2xl transition w-full justify-center shadow"
+              >
+                <i className="fab fa-telegram text-xl" />
+                Message on Telegram
+              </a>
+            )}
+
+            {!wa && !tg && !waChannel && (
+              <p className="text-gray-400 text-sm mt-4">
+                No contact channels configured yet. Please check back later.
+              </p>
+            )}
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // ── Normal ticket UI (main platform & child panel users) ──
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -124,7 +198,7 @@ export default function SupportPage() {
         ) : (
           <div className="space-y-3">
             {tickets.map(ticket => {
-              const u   = unread(ticket);
+              const u    = unread(ticket);
               const meta = STATUS[ticket.status] || STATUS.open;
               const last = ticket.messages?.[ticket.messages.length - 1];
               return (
@@ -244,4 +318,4 @@ export default function SupportPage() {
       )}
     </div>
   );
-        }
+      }
