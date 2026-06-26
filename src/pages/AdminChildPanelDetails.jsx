@@ -235,15 +235,24 @@ export default function AdminChildPanelDetails() {
         <CPDetailStatCards stats={stats} />
 
         {/* ── Info + Controls ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <CPDetailInfoCard cp={cp} />
-          <CPDetailControls
-            cp={cp}
-            onCommissionSaved={handleCommissionSaved}
-            onBillingSaved={handleBillingSaved}
-            onDeactivate={handleDeactivate}
-          />
-        </div>
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <CPDetailInfoCard
+    cp={cp}
+    onUpdate={(patch) =>
+      setCp((prev) => ({
+        ...prev,
+        ...patch,
+      }))
+    }
+  />
+
+  <CPDetailControls
+    cp={cp}
+    onCommissionSaved={handleCommissionSaved}
+    onBillingSaved={handleBillingSaved}
+    onDeactivate={handleDeactivate}
+  />
+</div>
 
         {/* ── Tabbed data: Resellers | Users | Orders ── */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
