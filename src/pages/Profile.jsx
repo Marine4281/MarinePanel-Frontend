@@ -6,9 +6,13 @@ import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import { Copy, Check, Eye, EyeOff, RefreshCw, Trash2, Lock } from "lucide-react";
+import { useCachedServices } from "../context/CachedServicesContext";
 
 const Profile = () => {
   const { user, logout } = useAuth();
+  const { domainType } = useCachedServices();
+
+  const isResellerEndUser = domainType === "reseller";
 
   const [profile, setProfile] = useState({
     email: "",
@@ -25,7 +29,6 @@ const Profile = () => {
   const [copied, setCopied] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
 
-  // Password change state
   const [pwSection, setPwSection] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -47,24 +50,6 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  const handleChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
-
-  const handleUpdate = async () => {
-    try {
-      const res = await API.put("/users/profile", {
-        phone: profile.phone,
-        country: profile.country,
-      });
-      setProfile((prev) => ({ ...prev, ...res.data }));
-      toast.success("Profile updated successfully");
-      setEditMode(false);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Update failed");
-    }
-  };
-
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error("All password fields are required");
@@ -78,7 +63,6 @@ const Profile = () => {
       toast.error("New password must be at least 6 characters");
       return;
     }
-
     setPwLoading(true);
     try {
       await API.put("/users/profile", {
@@ -121,11 +105,7 @@ const Profile = () => {
     setApiLoading(true);
     try {
       await API.post("/users/revoke-api-key");
-      setProfile((prev) => ({
-        ...prev,
-        apiKey: null,
-        apiAccessEnabled: false,
-      }));
+      setProfile((prev) => ({ ...prev, apiKey: null, apiAccessEnabled: false }));
       setShowKey(false);
       toast.success("API key revoked");
     } catch (error) {
@@ -178,17 +158,14 @@ const Profile = () => {
 
             <div>
               <label className="text-sm text-gray-500">Phone</label>
-              {editMode ? (
-                <input
-                  type="text"
-                  name="phone"
-                  value={profile.phone}
-                  onChange={handleChange}
-                  className="p-2 w-full border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
-              ) : (
-                <p className="font-medium">{profile.phone}</p>
-              )}
+              <div className="flex items-center gap-2">
+                <p className="font-medium">{profile.phone || "—"}</p>
+                {editMode && (
+                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                    <Lock size={11} /> readonly
+                  </span>
+                )}
+              </div>
             </div>
 
             <div>
@@ -198,43 +175,32 @@ const Profile = () => {
 
             <div>
               <label className="text-sm text-gray-500">Country</label>
-              {editMode ? (
-                <input
-                  type="text"
-                  name="country"
-                  value={profile.country}
-                  onChange={handleChange}
-                  className="p-2 w-full border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
-              ) : (
-                <p className="font-medium">{profile.country}</p>
-              )}
+              <div className="flex items-center gap-2">
+                <p className="font-medium">{profile.country || "—"}</p>
+                {editMode && (
+                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                    <Lock size={11} /> readonly
+                  </span>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="text-sm text-gray-500">Joined</label>
               <p className="font-medium">
-                {profile.createdAt
-                  ? new Date(profile.createdAt).toLocaleDateString()
-                  : "-"}
+                {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "-"}
               </p>
             </div>
           </div>
 
-          {/* ── Edit Profile Actions ── */}
+          {/* ── Edit Profile Actions — only Cancel since fields are readonly ── */}
           {editMode && (
             <div className="flex flex-col md:flex-row gap-3">
-              <button
-                onClick={handleUpdate}
-                className="flex-1 bg-green-600 text-white py-2.5 rounded-xl hover:bg-green-700 transition font-medium"
-              >
-                Save Changes
-              </button>
               <button
                 onClick={() => setEditMode(false)}
                 className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl hover:bg-gray-200 transition font-medium"
               >
-                Cancel
+                Close
               </button>
             </div>
           )}
@@ -253,7 +219,6 @@ const Profile = () => {
 
             {pwSection && (
               <div className="mt-4 space-y-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
-                {/* Current Password */}
                 <div>
                   <label className="text-sm text-gray-500 block mb-1">Current Password</label>
                   <div className="relative">
@@ -274,7 +239,6 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* New Password */}
                 <div>
                   <label className="text-sm text-gray-500 block mb-1">New Password</label>
                   <div className="relative">
@@ -295,7 +259,6 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Confirm Password */}
                 <div>
                   <label className="text-sm text-gray-500 block mb-1">Confirm New Password</label>
                   <div className="relative">
@@ -327,86 +290,90 @@ const Profile = () => {
             )}
           </div>
 
-          <hr />
+          {/* ── API Access Section — hidden for reseller end users ── */}
+          {!isResellerEndUser && (
+            <>
+              <hr />
 
-          {/* ── API Access Section ── */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="font-semibold text-gray-800">API Access</h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Use your API key to integrate with Marine Panel.{" "}
-                  <a href="/api-docs" className="text-orange-500 hover:underline">
-                    View docs →
-                  </a>
-                </p>
-              </div>
-              <span
-                className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                  profile.apiAccessEnabled
-                    ? "bg-green-100 text-green-600"
-                    : "bg-gray-100 text-gray-400"
-                }`}
-              >
-                {profile.apiAccessEnabled ? "Active" : "Inactive"}
-              </span>
-            </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">API Access</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Use your API key to integrate with Marine Panel.{" "}
+                      <a href="/api-docs" className="text-orange-500 hover:underline">
+                        View docs →
+                      </a>
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      profile.apiAccessEnabled
+                        ? "bg-green-100 text-green-600"
+                        : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {profile.apiAccessEnabled ? "Active" : "Inactive"}
+                  </span>
+                </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
-              <p className="text-xs text-gray-400 mb-0.5">API Endpoint</p>
-              <code className="text-sm text-orange-500 break-all">
-                https://marinepanel.online/api/v2
-              </code>
-            </div>
-
-            {profile.apiKey ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
-                <p className="text-xs text-gray-400 mb-1">Your API Key</p>
-                <div className="flex items-center gap-2">
-                  <code className="text-sm text-gray-800 flex-1 break-all font-mono">
-                    {showKey ? profile.apiKey : maskedKey}
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
+                  <p className="text-xs text-gray-400 mb-0.5">API Endpoint</p>
+                  <code className="text-sm text-orange-500 break-all">
+                    https://marinepanel.online/api/v2
                   </code>
+                </div>
+
+                {profile.apiKey ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
+                    <p className="text-xs text-gray-400 mb-1">Your API Key</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm text-gray-800 flex-1 break-all font-mono">
+                        {showKey ? profile.apiKey : maskedKey}
+                      </code>
+                      <button
+                        onClick={() => setShowKey((p) => !p)}
+                        className="text-gray-400 hover:text-gray-600 shrink-0"
+                      >
+                        {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                      <button
+                        onClick={handleCopyKey}
+                        className="text-gray-400 hover:text-orange-500 shrink-0 transition"
+                      >
+                        {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-4 mb-3 text-center text-gray-400 text-sm">
+                    No API key generated yet.
+                  </div>
+                )}
+
+                <div className="flex gap-3">
                   <button
-                    onClick={() => setShowKey((p) => !p)}
-                    className="text-gray-400 hover:text-gray-600 shrink-0"
+                    onClick={handleGenerateKey}
+                    disabled={apiLoading}
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition disabled:opacity-60"
                   >
-                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    <RefreshCw size={15} className={apiLoading ? "animate-spin" : ""} />
+                    {profile.apiKey ? "Regenerate Key" : "Generate Key"}
                   </button>
-                  <button
-                    onClick={handleCopyKey}
-                    className="text-gray-400 hover:text-orange-500 shrink-0 transition"
-                  >
-                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                  </button>
+                  {profile.apiKey && (
+                    <button
+                      onClick={handleRevokeKey}
+                      disabled={apiLoading}
+                      className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-medium px-4 py-2.5 rounded-xl transition disabled:opacity-60"
+                    >
+                      <Trash2 size={15} />
+                      Revoke
+                    </button>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-4 mb-3 text-center text-gray-400 text-sm">
-                No API key generated yet.
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleGenerateKey}
-                disabled={apiLoading}
-                className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition disabled:opacity-60"
-              >
-                <RefreshCw size={15} className={apiLoading ? "animate-spin" : ""} />
-                {profile.apiKey ? "Regenerate Key" : "Generate Key"}
-              </button>
-              {profile.apiKey && (
-                <button
-                  onClick={handleRevokeKey}
-                  disabled={apiLoading}
-                  className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-500 text-sm font-medium px-4 py-2.5 rounded-xl transition disabled:opacity-60"
-                >
-                  <Trash2 size={15} />
-                  Revoke
-                </button>
-              )}
-            </div>
-          </div>
+            </>
+          )}
 
           <hr />
 
