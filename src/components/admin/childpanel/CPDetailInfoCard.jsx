@@ -23,14 +23,14 @@ export default function CPDetailInfoCard({ cp, onUpdate }) {
         </div>
       )}
 
-      {/* Reopen button — only when subscription-suspended */}
-      {cp.childPanelSubscriptionSuspended && (
+      {/* Reopen button — show when inactive OR subscription-suspended */}
+      {(!cp.childPanelIsActive || cp.childPanelSubscriptionSuspended) && (
         <button
           onClick={() => setShowReopen(true)}
           className="w-full flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition"
         >
           <FiUnlock size={14} />
-          Reopen Subscription
+          {cp.childPanelSubscriptionSuspended ? "Reopen Subscription" : "Reactivate Panel"}
         </button>
       )}
 
