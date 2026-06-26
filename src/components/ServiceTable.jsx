@@ -4,6 +4,32 @@ import formatNumber from "../utils/formatNumber";
 import ServiceDescriptionModal from "./ServiceDescriptionModal";
 import API from "../api/axios";
 
+const FEATURE_STYLES = {
+  orange: {
+    emoji:  "⭐",
+    filter: "drop-shadow(0 0 5px rgba(250,204,21,0.95)) drop-shadow(0 0 10px rgba(250,204,21,0.6))",
+    headerBg:     "bg-orange-50",
+    headerBorder: "border-orange-200",
+    headerText:   "text-orange-700",
+  },
+  blue: {
+    emoji:  "🔵",
+    filter: "drop-shadow(0 0 6px rgba(59,130,246,0.95)) drop-shadow(0 0 12px rgba(59,130,246,0.6))",
+    headerBg:     "bg-blue-50",
+    headerBorder: "border-blue-200",
+    headerText:   "text-blue-700",
+  },
+};
+
+// Split a service name on "~" or newlines into clean labelled lines
+const splitServiceName = (name = "") => {
+  const parts = name
+    .split(/~|\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts; // first element is the title, rest are detail lines
+};
+
 const ServiceTable = ({ services }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [categoryMeta, setCategoryMeta] = useState([]);
@@ -22,8 +48,11 @@ const ServiceTable = ({ services }) => {
     return m;
   }, [categoryMeta]);
 
-  const isFeatured = (platform, category) =>
-    metaMap[`${platform}::${category}`]?.isFeatured ?? false;
+  const getCategoryStyle = (platform, category) => {
+    const meta = metaMap[`${platform}::${category}`];
+    if (!meta?.isFeatured) return null;
+    return FEATURE_STYLES[meta.featuredColor ?? "orange"] ?? FEATURE_STYLES.orange;
+  };
 
   const calculateRate = (service) => {
     if (service?.resellerRate != null) return Number(service.resellerRate).toFixed(4);
@@ -40,7 +69,6 @@ const ServiceTable = ({ services }) => {
     );
   }
 
-  // Original logic — no sorting, just track category changes
   let lastCategory = null;
   let lastPlatform = null;
 
@@ -68,25 +96,36 @@ const ServiceTable = ({ services }) => {
               lastCategory = service.category;
               lastPlatform = service.platform;
 
-              const featured = isFeatured(service.platform || "General", service.category);
+              const fStyle = getCategoryStyle(service.platform || "General", service.category);
+              const nameParts = splitServiceName(service.name);
+              const nameTitle = nameParts[0] || "";
+              const nameDetails = nameParts.slice(1);
 
               return (
                 <React.Fragment key={service._id}>
 
                   {/* CATEGORY HEADER ROW */}
                   {showCategory && (
-                    <tr className="bg-orange-50 border-t border-orange-200">
-                      <td colSpan="6" className="px-3 py-2 font-semibold text-orange-700">
+                    <tr
+                      className={`border-t ${
+                        fStyle
+                          ? `${fStyle.headerBg} ${fStyle.headerBorder}`
+                          : "bg-orange-50 border-orange-200"
+                      }`}
+                    >
+                      <td
+                        colSpan="6"
+                        className={`px-3 py-2 font-semibold ${
+                          fStyle ? fStyle.headerText : "text-orange-700"
+                        }`}
+                      >
                         <span className="flex items-center gap-2">
-                          {featured && (
+                          {fStyle && (
                             <span
-                              className="text-yellow-400 text-sm animate-pulse"
-                              style={{
-                                filter:
-                                  "drop-shadow(0 0 5px rgba(250,204,21,0.95)) drop-shadow(0 0 10px rgba(250,204,21,0.6))",
-                              }}
+                              className="text-sm animate-pulse"
+                              style={{ filter: fStyle.filter }}
                             >
-                              ⭐
+                              {fStyle.emoji}
                             </span>
                           )}
                           {service.category}
@@ -106,13 +145,23 @@ const ServiceTable = ({ services }) => {
                     </td>
 
                     <td className="px-3 py-2 text-gray-800 leading-snug whitespace-normal break-words max-w-[320px] md:max-w-full">
+                      {/* Mobile: title bold, detail lines smaller */}
                       <div className="md:hidden">
-                        {service.name?.split("~").map((part, idx) => (
-                          <div key={idx}>{idx === 0 ? part.trim() : `~ ${part.trim()}`}</div>
+                        <div className="font-medium">{nameTitle}</div>
+                        {nameDetails.map((line, idx) => (
+                          <div key={idx} className="text-gray-500 text-[10px] mt-0.5">
+                            ~ {line}
+                          </div>
                         ))}
                       </div>
+                      {/* Desktop: single line, collapsed */}
                       <div className="hidden md:block">
-                        {service.name?.replace(/\n/g, " ").replace(/\s+/g, " ").trim()}
+                        {nameTitle}
+                        {nameDetails.length > 0 && (
+                          <span className="text-gray-400 ml-1">
+                            {nameDetails.map((l) => `~ ${l}`).join(" ")}
+                          </span>
+                        )}
                       </div>
                     </td>
 
