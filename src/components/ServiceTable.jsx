@@ -21,15 +21,6 @@ const FEATURE_STYLES = {
   },
 };
 
-// Split a service name on "~" or newlines into clean labelled lines
-const splitServiceName = (name = "") => {
-  const parts = name
-    .split(/~|\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-  return parts; // first element is the title, rest are detail lines
-};
-
 const ServiceTable = ({ services }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [categoryMeta, setCategoryMeta] = useState([]);
@@ -97,9 +88,6 @@ const ServiceTable = ({ services }) => {
               lastPlatform = service.platform;
 
               const fStyle = getCategoryStyle(service.platform || "General", service.category);
-              const nameParts = splitServiceName(service.name);
-              const nameTitle = nameParts[0] || "";
-              const nameDetails = nameParts.slice(1);
 
               return (
                 <React.Fragment key={service._id}>
@@ -145,24 +133,7 @@ const ServiceTable = ({ services }) => {
                     </td>
 
                     <td className="px-3 py-2 text-gray-800 leading-snug whitespace-normal break-words max-w-[320px] md:max-w-full">
-                      {/* Mobile: title bold, detail lines smaller */}
-                      <div className="md:hidden">
-                        <div className="font-medium">{nameTitle}</div>
-                        {nameDetails.map((line, idx) => (
-                          <div key={idx} className="text-gray-500 text-[10px] mt-0.5">
-                            ~ {line}
-                          </div>
-                        ))}
-                      </div>
-                      {/* Desktop: single line, collapsed */}
-                      <div className="hidden md:block">
-                        {nameTitle}
-                        {nameDetails.length > 0 && (
-                          <span className="text-gray-400 ml-1">
-                            {nameDetails.map((l) => `~ ${l}`).join(" ")}
-                          </span>
-                        )}
-                      </div>
+                      {service.name}
                     </td>
 
                     <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
