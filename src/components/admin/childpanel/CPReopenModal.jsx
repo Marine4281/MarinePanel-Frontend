@@ -15,13 +15,13 @@ const GRACE_PRESETS = [
 ];
 
 export default function CPReopenModal({ cp, onClose, onReopened }) {
-  const [mode, setMode]           = useState("next_cycle"); // "next_cycle" | "grace"
+  const [mode, setMode]               = useState("next_cycle");
   const [gracePreset, setGracePreset] = useState(24);
   const [customHours, setCustomHours] = useState("");
-  const [useCustom, setUseCustom] = useState(false);
-  const [loading, setLoading]     = useState(false);
+  const [useCustom, setUseCustom]     = useState(false);
+  const [loading, setLoading]         = useState(false);
 
-  const effectiveHours = useCustom ? Number(customHours) : gracePreset;
+  const effectiveHours = useCustom ? (Number(customHours) || 0) : gracePreset;
 
   const handle = async () => {
     setLoading(true);
@@ -138,9 +138,11 @@ export default function CPReopenModal({ cp, onClose, onReopened }) {
             <p className="text-xs text-gray-400">
               Panel will be active until{" "}
               <span className="font-medium text-gray-600">
-                {new Date(Date.now() + effectiveHours * 3600000).toLocaleString("en-US", {
-                  month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-                })}
+                {effectiveHours > 0
+                  ? new Date(Date.now() + effectiveHours * 3600000).toLocaleString("en-US", {
+                      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                    })
+                  : "—"}
               </span>
               , then cron will suspend again if unpaid.
             </p>
@@ -178,4 +180,4 @@ export default function CPReopenModal({ cp, onClose, onReopened }) {
       </div>
     </div>
   );
-                                 }
+}
