@@ -13,7 +13,7 @@ export default async function middleware(request) {
 
   try {
     const apiRes = await fetch(
-      `https://marinepanel-backend.onrender.com/seo/render?path=${encodeURIComponent(url.pathname)}`,
+      `https://marinepanel-backend.onrender.com/api/seo/render?path=${encodeURIComponent(url.pathname)}`,
       { headers: { "x-childpanel-domain": host, "x-reseller-domain": host } }
     );
     const html = await apiRes.text();
