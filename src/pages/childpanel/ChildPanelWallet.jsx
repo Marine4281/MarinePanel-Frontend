@@ -1,14 +1,7 @@
 // src/pages/childpanel/ChildPanelWallet.jsx
 //
-// Child panel owner's earnings wallet.
-// This is NOT the same as a regular user wallet.
-// It shows:
-//   - Commission earned from orders on their panel
-//   - Earnings from user deposits (when using platform gateway)
-//   - Withdrawal request to main admin
-//
-// Child panel owners do NOT deposit here.
-// They EARN into this wallet and WITHDRAW out.
+// Child panel owner's wallet — same wallet used for placing
+// orders. Subscription fees are billed from this balance too.
 
 import { useEffect, useState } from "react";
 import API from "../../api/axios";
