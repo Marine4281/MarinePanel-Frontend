@@ -26,7 +26,7 @@ export default function CPDetailStatCards({ stats }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
         title="Panel Wallet"
-        value={`$${fmt(stats.childPanelWallet)}`}
+        value={`$${fmt(stats.walletBalance)}`}
         icon={<FiDollarSign size={18} />}
         color="green"
       />
