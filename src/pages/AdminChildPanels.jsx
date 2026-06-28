@@ -276,7 +276,7 @@ function ChildPanelRow({ cp, onToggle, onCommission, onDeactivate }) {
               <p className="text-xs text-gray-400 mb-1">Panel Wallet</p>
 
               <p className="font-bold text-green-600 mb-2">
-                ${fmt(data.childPanelWallet)}
+                ${fmt(data.walletBalance)}
               </p>
 
               {data.childPanelSubscriptionSuspended && (
@@ -290,7 +290,7 @@ function ChildPanelRow({ cp, onToggle, onCommission, onDeactivate }) {
                 onCredited={(result) =>
                   setData((prev) => ({
                     ...prev,
-                    childPanelWallet: result.newBalance,
+                    walletBalance: result.newBalance,
                     childPanelIsActive: result.isActive,
                     childPanelSubscriptionSuspended:
                       !result.autoReactivated
