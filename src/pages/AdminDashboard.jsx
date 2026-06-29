@@ -39,7 +39,7 @@ const AdminDashboard = () => {
 
   // ------------------------------
   // Fetch paginated orders — admin user-orders route (excludes CP
-  // end-user-only orders, same logic the rest of the admin orders UI uses)
+  // end-user-only orders, same endpoint AdminUserOrders.jsx uses)
   // ------------------------------
   const fetchOrders = useCallback(async () => {
     try {
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
           <StatsCard title="Total Orders" value={stats.totalOrders} color="blue" />
           <StatsCard
             title="Revenue"
-            value={`$${stats.totalRevenue}`}
+            value={`$${Number(stats.totalRevenue || 0).toFixed(4)}`}
             color="green"
           />
         </div>
