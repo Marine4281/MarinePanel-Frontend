@@ -65,7 +65,7 @@ const Table = ({ data = [], type }) => {
             </td>
 
             <td className="px-4 py-3">
-              {getShortEmail(item.user?.email)}
+              {getShortEmail(item.userId?.email)}
             </td>
 
             <td className="px-4 py-3 flex items-center gap-2">
