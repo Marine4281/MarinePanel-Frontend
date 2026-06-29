@@ -38,11 +38,12 @@ const AdminDashboard = () => {
   }, []);
 
   // ------------------------------
-  // Fetch paginated orders (admin-user-aware orders route, excludes CP orders)
+  // Fetch paginated orders — admin user-orders route (excludes CP
+  // end-user-only orders, same logic the rest of the admin orders UI uses)
   // ------------------------------
   const fetchOrders = useCallback(async () => {
     try {
-      const { data } = await API.get("/admin/orders", {
+      const { data } = await API.get("/admin/user-orders", {
         params: { country, page: ordersPage, limit: ORDERS_PER_PAGE },
       });
       setOrders(data.orders || []);
