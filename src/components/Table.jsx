@@ -50,16 +50,22 @@ const Table = ({ data = [], type }) => {
 
     if (type === "orders") {
       const isExpanded = expandedRow === item._id;
+      // customOrderId is the sequential, human-readable ID; fall back to
+      // orderId or a Mongo _id fragment only for legacy rows that predate it.
+      const displayOrderId =
+        item.customOrderId != null
+          ? `#${item.customOrderId}`
+          : item.orderId || `#${item._id?.slice(-6)}`;
 
       return (
         <>
           <tr key={item._id} className="border-b hover:bg-gray-50">
             <td className="px-4 py-3 font-medium">
-              #{item._id?.slice(-6)}
+              {displayOrderId}
             </td>
 
             <td className="px-4 py-3">
-              {getShortEmail(item.userId?.email)}
+              {getShortEmail(item.user?.email)}
             </td>
 
             <td className="px-4 py-3 flex items-center gap-2">
