@@ -1,7 +1,19 @@
 import { useState } from "react";
 
+const statusStyles = {
+  pending: "bg-yellow-100 text-yellow-600",
+  processing: "bg-blue-100 text-blue-600",
+  partial: "bg-orange-100 text-orange-600",
+  completed: "bg-green-100 text-green-600",
+  failed: "bg-red-100 text-red-600",
+  refunded: "bg-gray-200 text-gray-600",
+  cancelled: "bg-gray-200 text-gray-600",
+};
+
+const PAGE_SIZE = 10;
+
 const Table = ({ data = [], type }) => {
-  const [showAll, setShowAll] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedRow, setExpandedRow] = useState(null);
 
   // Sort newest first
@@ -11,7 +23,18 @@ const Table = ({ data = [], type }) => {
     return dateB - dateA;
   });
 
-  const displayedData = showAll ? sortedData : sortedData.slice(0, 3);
+  const displayedData = sortedData.slice(0, visibleCount);
+  const isFullyExpanded = visibleCount >= sortedData.length;
+
+  const handleToggle = () => {
+    if (isFullyExpanded) {
+      // Collapse back to default page size, not all the way to 3
+      setVisibleCount(PAGE_SIZE);
+    } else {
+      // Reveal another page; clamp so we never overshoot the data length
+      setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, sortedData.length));
+    }
+  };
 
   const getShortService = (service) => {
     if (!service) return "-";
@@ -57,6 +80,13 @@ const Table = ({ data = [], type }) => {
           ? `#${item.customOrderId}`
           : item.orderId || `#${item._id?.slice(-6)}`;
 
+      // Same status presentation as AdminUserOrdersList.jsx: color keyed off
+      // the internal status (includes "partial"), text shown via the
+      // backend's friendly displayStatus when available.
+      const statusClass =
+        statusStyles[item.status] || "bg-gray-100 text-gray-600";
+      const statusLabel = item.displayStatus || item.status;
+
       return (
         <>
           <tr key={item._id} className="border-b hover:bg-gray-50">
@@ -87,19 +117,9 @@ const Table = ({ data = [], type }) => {
 
             <td className="px-4 py-3">
               <span
-                className={`px-3 py-1 rounded-full text-sm capitalize ${
-                  item.status === "completed"
-                    ? "bg-green-100 text-green-600"
-                    : item.status === "processing"
-                    ? "bg-yellow-100 text-yellow-600"
-                    : item.status === "pending"
-                    ? "bg-blue-100 text-blue-600"
-                    : item.status === "refunded"
-                    ? "bg-gray-200 text-gray-600"
-                    : "bg-red-100 text-red-600"
-                }`}
+                className={`px-3 py-1 rounded-full text-sm capitalize ${statusClass}`}
               >
-                {item.status}
+                {statusLabel}
               </span>
             </td>
           </tr>
@@ -156,13 +176,13 @@ const Table = ({ data = [], type }) => {
         </tbody>
       </table>
 
-      {data.length > 3 && (
+      {sortedData.length > PAGE_SIZE && (
         <div className="text-center py-4">
           <button
-            onClick={() => setShowAll(!showAll)}
+            onClick={handleToggle}
             className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
           >
-            {showAll ? "Show Less" : "View All"}
+            {isFullyExpanded ? "Show Less" : "Show More"}
           </button>
         </div>
       )}
