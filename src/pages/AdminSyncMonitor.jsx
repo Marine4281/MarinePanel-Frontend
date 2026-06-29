@@ -108,7 +108,7 @@ export default function AdminSyncMonitor() {
     if (confirm_msg && !window.confirm(confirm_msg)) return;
     setBusyId(id + action);
     try {
-      await API.post(`/api/admin/sync/${mainTab}/${id}/${action}`);
+      await API.post(`/admin/sync/${mainTab}/${id}/${action}`);
       toast.success(`${action} done`);
       fetch();
     } catch (e) {
