@@ -10,10 +10,8 @@ const statusStyles = {
   cancelled: "bg-gray-200 text-gray-600",
 };
 
-const PAGE_SIZE = 10;
-
 const Table = ({ data = [], type }) => {
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [showAll, setShowAll] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
 
   // Sort newest first
@@ -23,18 +21,7 @@ const Table = ({ data = [], type }) => {
     return dateB - dateA;
   });
 
-  const displayedData = sortedData.slice(0, visibleCount);
-  const isFullyExpanded = visibleCount >= sortedData.length;
-
-  const handleToggle = () => {
-    if (isFullyExpanded) {
-      // Collapse back to default page size, not all the way to 3
-      setVisibleCount(PAGE_SIZE);
-    } else {
-      // Reveal another page; clamp so we never overshoot the data length
-      setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, sortedData.length));
-    }
-  };
+  const displayedData = showAll ? sortedData : sortedData.slice(0, 3);
 
   const getShortService = (service) => {
     if (!service) return "-";
@@ -176,13 +163,13 @@ const Table = ({ data = [], type }) => {
         </tbody>
       </table>
 
-      {sortedData.length > PAGE_SIZE && (
+      {data.length > 3 && (
         <div className="text-center py-4">
           <button
-            onClick={handleToggle}
+            onClick={() => setShowAll(!showAll)}
             className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
           >
-            {isFullyExpanded ? "Show Less" : "Show More"}
+            {showAll ? "Show Less" : "View All"}
           </button>
         </div>
       )}
