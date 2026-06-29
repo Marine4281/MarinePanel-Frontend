@@ -1,11 +1,13 @@
-import { allCountries } from "react-phone-input-2/lib/util";
+import countryList from "react-select-country-list";
 
 const AdminStatsFilters = ({ country, setCountry, dateRange, setDateRange, onApply }) => {
-  // Same dataset Register.jsx uses for PhoneInput, so the values we send
-  // here line up exactly with the countryCode stored on the User model.
-  const countries = allCountries
-    .map((c) => ({ code: c.iso2.toUpperCase(), name: c.name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // react-select-country-list maps ISO 3166-1 alpha-2 codes (value) to
+  // English country names (label). We use `value` (the ISO-2 code) so it
+  // matches the `countryCode` field stored on the User model, instead of
+  // the free-text country name.
+  const countries = countryList()
+    .getData()
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow mb-6 flex flex-col md:flex-row gap-4">
@@ -18,8 +20,8 @@ const AdminStatsFilters = ({ country, setCountry, dateRange, setDateRange, onApp
       >
         <option value="All">All Countries</option>
         {countries.map((c) => (
-          <option key={c.code} value={c.code}>
-            {c.name}
+          <option key={c.value} value={c.value}>
+            {c.label}
           </option>
         ))}
       </select>
