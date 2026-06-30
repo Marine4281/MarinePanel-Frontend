@@ -105,17 +105,17 @@ export default function AdminMaintenance() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-950">
+      <div className="flex min-h-screen bg-gray-100">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-950 text-gray-100">
+    <div className="flex min-h-screen bg-gray-100 text-gray-900">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Topbar />
@@ -123,7 +123,7 @@ export default function AdminMaintenance() {
         {/* Toast */}
         {toast && (
           <div
-            className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium transition-all
+            className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all
               ${toast.type === "error" ? "bg-red-600" : "bg-emerald-600"}`}
           >
             {toast.msg}
@@ -134,15 +134,15 @@ export default function AdminMaintenance() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">Maintenance Mode</h1>
-              <p className="text-gray-400 text-sm mt-1">
+              <h1 className="text-2xl font-bold text-gray-900">Maintenance Mode</h1>
+              <p className="text-gray-500 text-sm mt-1">
                 Control platform availability and order restrictions.
               </p>
             </div>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50
+              className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50
                          text-white font-semibold rounded-xl transition text-sm"
             >
               {saving ? (
@@ -178,7 +178,7 @@ export default function AdminMaintenance() {
             title="Total Shutdown"
             subtitle="Replaces login/landing page with a maintenance screen for affected users."
             icon="fa-solid fa-power-off"
-            iconColor="text-red-400"
+            iconColor="text-red-500"
             enabled={totalShutdown.enabled}
             onToggle={() =>
               setTotalShutdown((p) => ({ ...p, enabled: !p.enabled }))
@@ -255,7 +255,7 @@ export default function AdminMaintenance() {
                     onClick={() =>
                       addExemptEmail(totalShutdown, setTotalShutdown, tsExemptInput, setTsExemptInput)
                     }
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-sm transition"
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm transition"
                   >
                     Add
                   </button>
@@ -278,7 +278,7 @@ export default function AdminMaintenance() {
             title="No Orders Mode"
             subtitle="Users can still log in and browse, but cannot place new orders."
             icon="fa-solid fa-ban"
-            iconColor="text-amber-400"
+            iconColor="text-amber-500"
             enabled={noOrders.enabled}
             onToggle={() =>
               setNoOrders((p) => ({ ...p, enabled: !p.enabled }))
@@ -343,7 +343,7 @@ export default function AdminMaintenance() {
                     onClick={() =>
                       addExemptEmail(noOrders, setNoOrders, noExemptInput, setNoExemptInput)
                     }
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-sm transition"
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm transition"
                   >
                     Add
                   </button>
@@ -366,9 +366,9 @@ export default function AdminMaintenance() {
       <style>{`
         .input-field {
           width: 100%;
-          background: #1f2937;
-          border: 1px solid #374151;
-          color: #f9fafb;
+          background: #ffffff;
+          border: 1px solid #d1d5db;
+          color: #111827;
           border-radius: 0.5rem;
           padding: 0.5rem 0.75rem;
           font-size: 0.875rem;
@@ -376,10 +376,10 @@ export default function AdminMaintenance() {
           transition: border-color 0.15s;
         }
         .input-field:focus {
-          border-color: #3b82f6;
+          border-color: #f97316;
         }
         .input-field option {
-          background: #1f2937;
+          background: #ffffff;
         }
       `}</style>
     </div>
@@ -392,7 +392,7 @@ function StatusPill({ label, active, icon }) {
   return (
     <div
       className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold
-        ${active ? "bg-red-500/20 text-red-300 border border-red-500/40" : "bg-gray-800 text-gray-400 border border-gray-700"}`}
+        ${active ? "bg-red-100 text-red-700 border border-red-300" : "bg-gray-100 text-gray-500 border border-gray-200"}`}
     >
       <i className={icon} />
       {label}: {active ? "ACTIVE" : "OFF"}
@@ -403,8 +403,8 @@ function StatusPill({ label, active, icon }) {
 function ModeCard({ title, subtitle, icon, iconColor, enabled, onToggle, children }) {
   return (
     <div
-      className={`rounded-2xl border transition-all duration-200
-        ${enabled ? "border-blue-500/50 bg-gray-900" : "border-gray-800 bg-gray-900"}`}
+      className={`rounded-2xl border bg-white shadow-sm transition-all duration-200
+        ${enabled ? "border-orange-300" : "border-gray-200"}`}
     >
       <div className="p-5">
         <div className="flex items-start justify-between gap-4">
@@ -413,15 +413,15 @@ function ModeCard({ title, subtitle, icon, iconColor, enabled, onToggle, childre
               <i className={icon} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">{title}</h2>
-              <p className="text-gray-400 text-sm mt-0.5">{subtitle}</p>
+              <h2 className="text-base font-bold text-gray-900">{title}</h2>
+              <p className="text-gray-500 text-sm mt-0.5">{subtitle}</p>
             </div>
           </div>
           {/* Toggle */}
           <button
             onClick={onToggle}
             className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200
-              ${enabled ? "bg-blue-600" : "bg-gray-700"}`}
+              ${enabled ? "bg-orange-500" : "bg-gray-300"}`}
           >
             <span
               className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200
@@ -432,7 +432,7 @@ function ModeCard({ title, subtitle, icon, iconColor, enabled, onToggle, childre
 
         {/* Expanded config */}
         {enabled && (
-          <div className="mt-4 border-t border-gray-800 pt-4">
+          <div className="mt-4 border-t border-gray-200 pt-4">
             {children}
           </div>
         )}
@@ -444,7 +444,7 @@ function ModeCard({ title, subtitle, icon, iconColor, enabled, onToggle, childre
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">
+      <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
         {label}
       </label>
       {children}
@@ -458,11 +458,11 @@ function RoleChip({ label, active, onClick }) {
       onClick={onClick}
       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition
         ${active
-          ? "bg-blue-600/20 border-blue-500 text-blue-300"
-          : "bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600"
+          ? "bg-orange-50 border-orange-400 text-orange-700"
+          : "bg-white border-gray-300 text-gray-500 hover:border-gray-400"
         }`}
     >
-      {active && <i className="fa-solid fa-check mr-1.5 text-blue-400" />}
+      {active && <i className="fa-solid fa-check mr-1.5 text-orange-500" />}
       {label}
     </button>
   );
@@ -470,11 +470,11 @@ function RoleChip({ label, active, onClick }) {
 
 function EmailTag({ email, onRemove }) {
   return (
-    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-700 border border-gray-600 rounded-lg text-xs text-gray-200">
+    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-lg text-xs text-gray-700">
       {email}
-      <button onClick={onRemove} className="text-gray-400 hover:text-red-400 transition">
+      <button onClick={onRemove} className="text-gray-400 hover:text-red-500 transition">
         <i className="fa-solid fa-xmark" />
       </button>
     </span>
   );
-        }
+                  }
