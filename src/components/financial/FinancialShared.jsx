@@ -16,10 +16,10 @@ export const RANGES = [
 ];
 
 export const STATUS_COLORS = {
-  Completed:  "bg-green-900/50 text-green-400 border border-green-700",
-  Failed:     "bg-red-900/50 text-red-400 border border-red-700",
-  Pending:    "bg-yellow-900/50 text-yellow-400 border border-yellow-700",
-  Processing: "bg-blue-900/50 text-blue-400 border border-blue-700",
+  Completed:  "bg-green-100 text-green-700 border border-green-200",
+  Failed:     "bg-red-100 text-red-700 border border-red-200",
+  Pending:    "bg-yellow-100 text-yellow-700 border border-yellow-200",
+  Processing: "bg-blue-100 text-blue-700 border border-blue-200",
 };
 
 export const COUNTRIES = [
@@ -135,17 +135,17 @@ export const COUNTRIES = [
 // ─── StatCard ─────────────────────────────────────────────────────
 export function StatCard({ label, value, sub, accent = "orange" }) {
   const accents = {
-    orange: "border-orange-500/40 bg-gradient-to-br from-orange-500/10 to-transparent",
-    blue:   "border-blue-500/40 bg-gradient-to-br from-blue-500/10 to-transparent",
-    green:  "border-green-500/40 bg-gradient-to-br from-green-500/10 to-transparent",
-    purple: "border-purple-500/40 bg-gradient-to-br from-purple-500/10 to-transparent",
-    cyan:   "border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-transparent",
+    orange: "border-orange-200 bg-orange-50",
+    blue:   "border-blue-200 bg-blue-50",
+    green:  "border-green-200 bg-green-50",
+    purple: "border-purple-200 bg-purple-50",
+    cyan:   "border-cyan-200 bg-cyan-50",
   };
   return (
     <div className={`rounded-xl border p-5 ${accents[accent]}`}>
-      <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
+      <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -153,9 +153,9 @@ export function StatCard({ label, value, sub, accent = "orange" }) {
 // ─── Section ──────────────────────────────────────────────────────
 export function Section({ title, children }) {
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-800">
-        <h2 className="text-sm font-semibold text-white tracking-wide">{title}</h2>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h2 className="text-sm font-semibold text-gray-900 tracking-wide">{title}</h2>
       </div>
       <div className="p-6">{children}</div>
     </div>
@@ -164,7 +164,7 @@ export function Section({ title, children }) {
 
 // ─── MiniChart ────────────────────────────────────────────────────
 export function MiniChart({ data }) {
-  if (!data?.length) return <p className="text-gray-500 text-sm">No chart data</p>;
+  if (!data?.length) return <p className="text-gray-400 text-sm">No chart data</p>;
   const max = Math.max(...data.map((d) => d.profit), 1);
   return (
     <div className="flex items-end gap-1 h-24 mt-2">
@@ -174,7 +174,7 @@ export function MiniChart({ data }) {
             className="w-full bg-orange-500/70 hover:bg-orange-500 rounded-t transition-all"
             style={{ height: `${Math.max(4, (d.profit / max) * 80)}px` }}
           />
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-10">
+          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-10">
             ${fmt(d.profit)} · {d.date}
           </div>
         </div>
@@ -217,7 +217,7 @@ export function CountryDropdown({ value, onChange }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 hover:border-gray-500 transition"
+        className="w-full flex items-center justify-between bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 hover:border-orange-400 transition"
       >
         <span>{selected.name}</span>
         <svg className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -227,33 +227,33 @@ export function CountryDropdown({ value, onChange }) {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
           {/* Search */}
-          <div className="p-2 border-b border-gray-700">
+          <div className="p-2 border-b border-gray-200">
             <input
               autoFocus
               type="text"
               placeholder="Search country…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-gray-700 text-white text-sm rounded px-3 py-1.5 outline-none placeholder-gray-400"
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded px-3 py-1.5 outline-none placeholder-gray-400"
             />
           </div>
           {/* List */}
           <ul className="max-h-56 overflow-y-auto">
             {filtered.length === 0 && (
-              <li className="px-3 py-2 text-gray-500 text-sm">No results</li>
+              <li className="px-3 py-2 text-gray-400 text-sm">No results</li>
             )}
             {filtered.map((c) => (
               <li
                 key={c.code}
                 onClick={() => pick(c)}
-                className={`flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-gray-700 transition ${
-                  c.code === value ? "text-orange-400 font-semibold" : "text-gray-200"
+                className={`flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 transition ${
+                  c.code === value ? "text-orange-600 font-semibold" : "text-gray-700"
                 }`}
               >
                 <span>{c.name}</span>
-                <span className="text-xs text-gray-500">{c.code === "All" ? "" : c.code}</span>
+                <span className="text-xs text-gray-400">{c.code === "All" ? "" : c.code}</span>
               </li>
             ))}
           </ul>
@@ -261,4 +261,4 @@ export function CountryDropdown({ value, onChange }) {
       )}
     </div>
   );
-   }
+        }
