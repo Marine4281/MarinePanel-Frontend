@@ -53,21 +53,31 @@ export default function ChildPanelLogin() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const res = await API.post("/auth/login", { email, password });
-      login(res.data);
-      toast.success("Login successful!");
-      if (res.data.isAdmin)           navigate("/admin");
-      else if (res.data.isChildPanel) navigate("/child-panel/dashboard");
-      else                            navigate("/home");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
-    } finally {
+  e.preventDefault();
+  setSubmitting(true);
+  try {
+    const res = await API.post("/auth/login", { email, password });
+
+    if (res.data.isAdmin) {
+      // a main-platform admin account should never authenticate
+      // through a child panel domain
+      toast.error("Please log in through the main platform.");
       setSubmitting(false);
+      return;
     }
-  };
+
+    login(res.data);
+    toast.success("Login successful!");
+
+    if (res.data.isCpAdmin)         navigate("/child-panel/users-admin");
+    else if (res.data.isChildPanel) navigate("/child-panel/dashboard");
+    else                            navigate("/home");
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Login failed");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const handleForgotPassword = async () => {
     if (!email) return toast.error("Please enter your email first");
