@@ -1,6 +1,7 @@
 // src/pages/Financial.jsx
 import { useState, useEffect, useCallback } from "react";
 import api from "../api/axios";
+import Sidebar from "../components/Sidebar";
 import {
   OverviewTab,
   ProfitTab,
@@ -140,76 +141,80 @@ export default function Financial() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-200 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar />
 
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white">Financial Overview</h1>
-          <p className="text-sm text-gray-400 mt-1">Wallet balances, profit, withdrawals & earnings</p>
+      <div className="flex-1 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+
+          {/* Header */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Financial Overview</h1>
+            <p className="text-sm text-gray-500 mt-1">Wallet balances, profit, withdrawals & earnings</p>
+          </div>
+
+          {/* Tab nav */}
+          <div className="flex gap-1 bg-white border border-gray-200 shadow-sm rounded-xl p-1 w-fit">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  tab === t.key ? "bg-orange-500 text-white" : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          {tab === "overview" && (
+            <OverviewTab summary={summary} loading={loadingSummary} />
+          )}
+
+          {tab === "profit" && (
+            <ProfitTab
+              profitData={profitData}   loading={loadingProfit}
+              range={range}             setRange={setRange}
+              country={country}         setCountry={setCountry}
+              customStart={customStart} setCustomStart={setCustomStart}
+              customEnd={customEnd}     setCustomEnd={setCustomEnd}
+              onApply={fetchProfit}
+            />
+          )}
+
+          {tab === "users" && (
+            <UserBalancesTab
+              users={users}         loading={loadingUsers}
+              userPage={userPage}   setUserPage={setUserPage}
+              userTotal={userTotal}
+            />
+          )}
+
+          {tab === "withdrawals" && (
+            <WithdrawalsTab
+              withdrawals={withdrawals}       loading={loadingW}
+              wPage={wPage}                   setWPage={setWPage}
+              wTotal={wTotal}
+              wStatusFilter={wStatusFilter}   setWStatusFilter={setWStatusFilter}
+              actionLoading={actionLoading}
+              onApprove={handleApprove}
+              onDecline={handleDecline}
+              onSetStatus={handleSetStatus}
+            />
+          )}
+
+          {tab === "resellers" && (
+            <ResellerEarningsTab
+              resellerEarnings={resellerEarnings} loading={loadingRe}
+              rePage={rePage}                     setRePage={setRePage}
+              reTotal={reTotal}
+            />
+          )}
+
         </div>
-
-        {/* Tab nav */}
-        <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                tab === t.key ? "bg-orange-500 text-white" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab content */}
-        {tab === "overview" && (
-          <OverviewTab summary={summary} loading={loadingSummary} />
-        )}
-
-        {tab === "profit" && (
-          <ProfitTab
-            profitData={profitData}   loading={loadingProfit}
-            range={range}             setRange={setRange}
-            country={country}         setCountry={setCountry}
-            customStart={customStart} setCustomStart={setCustomStart}
-            customEnd={customEnd}     setCustomEnd={setCustomEnd}
-            onApply={fetchProfit}
-          />
-        )}
-
-        {tab === "users" && (
-          <UserBalancesTab
-            users={users}         loading={loadingUsers}
-            userPage={userPage}   setUserPage={setUserPage}
-            userTotal={userTotal}
-          />
-        )}
-
-        {tab === "withdrawals" && (
-          <WithdrawalsTab
-            withdrawals={withdrawals}       loading={loadingW}
-            wPage={wPage}                   setWPage={setWPage}
-            wTotal={wTotal}
-            wStatusFilter={wStatusFilter}   setWStatusFilter={setWStatusFilter}
-            actionLoading={actionLoading}
-            onApprove={handleApprove}
-            onDecline={handleDecline}
-            onSetStatus={handleSetStatus}
-          />
-        )}
-
-        {tab === "resellers" && (
-          <ResellerEarningsTab
-            resellerEarnings={resellerEarnings} loading={loadingRe}
-            rePage={rePage}                     setRePage={setRePage}
-            reTotal={reTotal}
-          />
-        )}
-
       </div>
     </div>
   );
-      }
+}
