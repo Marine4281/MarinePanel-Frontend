@@ -4,10 +4,12 @@ import toast from "react-hot-toast";
 import { Field, Input, SaveBtn } from "./SettingsShared";
 
 export default function BrandingTab({ settings, onSaved }) {
-  const [brandName,   setBrandName]   = useState(settings.brandName   || "");
-  const [logo,        setLogo]        = useState(settings.logo        || "");
-  const [themeColor,  setThemeColor]  = useState(settings.themeColor  || "#1e40af");
-  const [loading,     setLoading]     = useState(false);
+  if (!settings) return null;
+
+  const [brandName,  setBrandName]  = useState(settings.brandName  || "");
+  const [logo,       setLogo]       = useState(settings.logo       || "");
+  const [themeColor, setThemeColor] = useState(settings.themeColor || "#1e40af");
+  const [loading,    setLoading]    = useState(false);
 
   const save = async () => {
     setLoading(true);
