@@ -64,20 +64,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // ======================= LOGIN =======================
-  // Admin → /admin
-  // Everyone else (including child panel owners) → /home
-
-  const login = (userData) => {
-    const normalized = normalizeUser(userData);
-    setUser(normalized);
-    localStorage.setItem("user", JSON.stringify(normalized));
-
-    if (normalized.isAdmin) {
-      navigate("/admin");
-    } else {
-      navigate("/home");
-    }
-  };
+  // Navigation is handled by each login page, not here
+const login = (userData) => {
+  const normalized = normalizeUser(userData);
+  setUser(normalized);
+  localStorage.setItem("user", JSON.stringify(normalized));
+};
 
   // ======================= LOGOUT =======================
 
