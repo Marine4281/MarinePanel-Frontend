@@ -18,11 +18,18 @@ export default function ChildPanelRoute({ children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!user.isChildPanel) return <Navigate to="/home" replace />;
 
-  // Panel suspended by admin
-  if (!user.childPanelIsActive) {
-    const reason = user.childPanelSuspendReason || "Your child panel has been suspended.";
+  // Allow both CP owners and CP-promoted admins
+  if (!user.isChildPanel && !user.isCpAdmin) return <Navigate to="/home" replace />;
+
+  // For CP admins, pull suspension state from their stored childPanel context.
+  // For CP owners, check their own flags directly.
+  const isActive      = user.isChildPanel ? user.childPanelIsActive    : true;
+  const suspendReason = user.isChildPanel ? user.childPanelSuspendReason : null;
+  const nextBilledAt  = user.isChildPanel ? user.childPanelNextBilledAt  : null;
+
+  if (!isActive) {
+    const reason = suspendReason || "Your child panel has been suspended.";
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
         <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-8 text-center">
@@ -41,12 +48,9 @@ export default function ChildPanelRoute({ children }) {
     );
   }
 
-  // Subscription expired
-  if (user.childPanelNextBilledAt && new Date() > new Date(user.childPanelNextBilledAt)) {
-    const expiredDate = new Date(user.childPanelNextBilledAt).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+  if (nextBilledAt && new Date() > new Date(nextBilledAt)) {
+    const expiredDate = new Date(nextBilledAt).toLocaleDateString("en-US", {
+      year: "numeric", month: "long", day: "numeric",
     });
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
