@@ -69,7 +69,7 @@ export default function ChildPanelLogin() {
     login(res.data);
     toast.success("Login successful!");
 
-    if (res.data.isCpAdmin)         navigate("/child-panel/users-admin");
+    if (res.data.isCpAdmin)         navigate("/child-panel/users");
     else if (res.data.isChildPanel) navigate("/child-panel/dashboard");
     else                            navigate("/home");
   } catch (err) {
