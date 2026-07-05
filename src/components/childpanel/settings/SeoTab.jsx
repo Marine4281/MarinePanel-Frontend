@@ -21,10 +21,30 @@ export default function SeoTab({ cpSeo, setCpSeo, cpOgImage, setCpOgImage, cpFav
   };
 
   const fields = [
-    { label: "Page Title",       key: "title" },
-    { label: "Meta Description", key: "description", area: true },
-    { label: "Keywords",         key: "keywords" },
-    { label: "Canonical URL",    key: "canonical" },
+    {
+      label: "Page Title",
+      key: "title",
+      placeholder: "My SMM Panel – Fast & Cheap",
+      hint: "Shown in browser tab & search results",
+    },
+    {
+      label: "Meta Description",
+      key: "description",
+      area: true,
+      placeholder: "Buy Instagram followers, TikTok views at the best prices...",
+      hint: "150–160 chars ideal for search previews",
+    },
+    {
+      label: "Keywords",
+      key: "keywords",
+      placeholder: "smm panel, cheap followers, instagram panel",
+      hint: "Comma separated",
+    },
+    {
+      label: "Canonical URL",
+      key: "canonical",
+      placeholder: "https://yourdomain.com/",
+    },
   ];
 
   return (
@@ -33,7 +53,7 @@ export default function SeoTab({ cpSeo, setCpSeo, cpOgImage, setCpOgImage, cpFav
         Control how your child panel appears in Google search results and social media previews.
       </p>
 
-      {fields.map(({ label, key, area }) => (
+      {fields.map(({ label, key, area, placeholder, hint }) => (
         <div key={key}>
           <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
           {area ? (
@@ -41,6 +61,7 @@ export default function SeoTab({ cpSeo, setCpSeo, cpOgImage, setCpOgImage, cpFav
               rows={3}
               value={cpSeo[key] || ""}
               onChange={(e) => setCpSeo((p) => ({ ...p, [key]: e.target.value }))}
+              placeholder={placeholder}
               className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
             />
           ) : (
@@ -48,9 +69,11 @@ export default function SeoTab({ cpSeo, setCpSeo, cpOgImage, setCpOgImage, cpFav
               type="text"
               value={cpSeo[key] || ""}
               onChange={(e) => setCpSeo((p) => ({ ...p, [key]: e.target.value }))}
+              placeholder={placeholder}
               className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           )}
+          {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
         </div>
       ))}
 
