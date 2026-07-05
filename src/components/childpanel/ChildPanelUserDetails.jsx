@@ -259,15 +259,9 @@ export default function ChildPanelUserDetails() {
 
   // NEW — promote / demote
   const handleToggleAdmin = async () => {
-    setPromoting(true);
-    try {
-      const action = user.isAdmin ? "demote" : "promote";
-      const res = await API.patch(`/cp/users/${id}/${action}`);
-      setUser(res.data);
-      toast.success(user.isAdmin ? "Demoted to regular user" : "Promoted to admin");
-    } catch { toast.error("Failed"); }
-    finally { setPromoting(false); }
-  };
+  toast.error("This feature is currently unavailable due to security reasons.");
+  return; 
+};
 
   const handleDelete = async () => {
     setDeleting(true);
