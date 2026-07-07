@@ -21,11 +21,30 @@ const PAYMENT_MODE_ICONS = {
   other:   FaMoneyBillWave,
 };
 
+// Approximate brand colors for each provider
+const PAYMENT_MODE_COLORS = {
+  hosted:  "#2563eb", // blue
+  mpesa:   "#4CAF50", // Safaricom green
+  momo:    "#FFCC00", // MTN yellow
+  airtel:  "#ED1C24", // Airtel red
+  card:    "#2563eb", // blue
+  bank:    "#1E3A8A", // navy
+  crypto:  "#7C3AED", // purple
+  binance: "#F0B90B", // Binance yellow
+  other:   "#6b7280", // gray
+};
+
+const getGatewayMode = (gw) =>
+  gw.paymentMode === "manual" ? (gw.manualType || "other") : gw.paymentMode;
+
 const getGatewayIcon = (gw) => {
-  if (gw.paymentMode === "manual") {
-    return PAYMENT_MODE_ICONS[gw.manualType] || FaCreditCard;
-  }
-  return PAYMENT_MODE_ICONS[gw.paymentMode] || FaMoneyBillWave;
+  const key = getGatewayMode(gw);
+  return PAYMENT_MODE_ICONS[key] || FaCreditCard;
+};
+
+const getGatewayColor = (gw) => {
+  const key = getGatewayMode(gw);
+  return PAYMENT_MODE_COLORS[key] || "#6b7280";
 };
 
 const GatewaySelector = ({ gateways, selected, onSelect }) => (
@@ -41,6 +60,7 @@ const GatewaySelector = ({ gateways, selected, onSelect }) => (
       )}
       {gateways.map((gw) => {
         const Icon = getGatewayIcon(gw);
+        const iconColor = getGatewayColor(gw);
         const isSelected = selected?._id === gw._id;
         return (
           <button key={gw._id} onClick={() => onSelect(gw)}
@@ -50,7 +70,7 @@ const GatewaySelector = ({ gateways, selected, onSelect }) => (
               background:  isSelected ? "#fff7ed" : "#fff",
               boxShadow:   isSelected ? `0 0 0 1px ${BRAND}` : "none",
             }}>
-            <Icon className="text-2xl" style={{ color: isSelected ? BRAND : "#6b7280" }} />
+            <Icon className="text-2xl" style={{ color: iconColor }} />
             <span className="text-xs font-bold text-gray-700 leading-tight">{gw.name}</span>
             {gw.description && (
               <span className="text-[10px] text-gray-400 leading-tight">{gw.description}</span>
