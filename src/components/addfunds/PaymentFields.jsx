@@ -91,7 +91,7 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
           </Field>
         </div>
         <Field label="Cardholder Name">
-          <input type="text" placeholder="John Doe"
+          <input type="text" placeholder="Full Name"
             value={userPayData.cardName || ""}
             onChange={(e) => setField("cardName", e.target.value)}
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
@@ -114,7 +114,7 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
         </Field>
         <Field label="Account Name">
-          <input type="text" placeholder="e.g. John Doe"
+          <input type="text" placeholder="Full Name"
             value={userPayData.accountName || ""}
             onChange={(e) => setField("accountName", e.target.value)}
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
@@ -154,7 +154,7 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400 font-mono" />
         </Field>
         <Field label="Your Name">
-          <input type="text" placeholder="e.g. John Doe"
+          <input type="text" placeholder="Full Name"
             value={userPayData.senderName || ""}
             onChange={(e) => setField("senderName", e.target.value)}
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
@@ -171,7 +171,7 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400 font-mono" />
         </Field>
         <Field label="Sender's Name">
-          <input type="text" placeholder="e.g. John Doe"
+          <input type="text" placeholder="Full Name"
             value={userPayData.senderName || ""}
             onChange={(e) => setField("senderName", e.target.value)}
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
@@ -181,7 +181,7 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
 
     {mode === "manual" && selected.manualType === "bank" && (
       <Field label="Sender's Name">
-        <input type="text" placeholder="e.g. John Doe"
+        <input type="text" placeholder="Full Name"
           value={userPayData.senderName || ""}
           onChange={(e) => setField("senderName", e.target.value)}
           className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
