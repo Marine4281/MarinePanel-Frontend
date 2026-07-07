@@ -3,7 +3,7 @@ const BRAND = "#f97316";
 const PAYMENT_MODE_ICONS = {
   hosted:  "💳", mpesa: "📱", momo: "📲",
   airtel:  "📡", card:  "💳", bank: "🏦",
-  crypto:  "🔐", binance: "🟡", manual: "📋",
+  crypto:  "🔐", binance: "🟡", manual: "💳",
 };
 
 const GatewaySelector = ({ gateways, selected, onSelect }) => (
