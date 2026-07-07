@@ -1,0 +1,53 @@
+const QRow = ({ label, value, bold, color }) => (
+  <div className="flex items-center justify-between px-4 py-3">
+    <span className="text-xs text-gray-400">{label}</span>
+    <span className={`text-sm ${bold ? "font-bold" : "font-medium"} ${color || "text-gray-700"}`}>{value}</span>
+  </div>
+);
+
+const QuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, setConfirmed }) => {
+  if (quoteLoading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-3 text-sm text-gray-400">
+        <div className="w-4 h-4 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+        Calculating...
+      </div>
+    );
+  }
+
+  if (!quote) return null;
+
+  return (
+    <>
+      <div className="rounded-xl overflow-hidden border border-gray-100">
+        <div className="px-4 py-2 bg-gray-50">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Payment Breakdown
+          </p>
+        </div>
+        <div className="divide-y divide-gray-50">
+          <QRow label="Deposit amount"   value={`${sym}${Number(quote.depositAmount).toFixed(2)} ${curr}`} />
+          {quote.fee > 0 && (
+            <QRow label="Processing fee" value={`${sym}${Number(quote.fee).toFixed(2)} ${curr}`} color="text-red-500" />
+          )}
+          <QRow label="Total charged"    value={`${sym}${Number(quote.total).toFixed(2)} ${curr}`} bold />
+          <QRow label="You will receive" value={`$${Number(quote.walletCredit).toFixed(4)} USD`} color="text-green-600" bold />
+        </div>
+      </div>
+
+      {curr !== "USD" && (
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+            className="mt-0.5 accent-orange-500" />
+          <span className="text-xs text-gray-500 leading-relaxed">
+            I understand I will be charged {sym}{Number(quote.total).toFixed(2)} {curr} and
+            will receive ${Number(quote.walletCredit).toFixed(4)} USD in my wallet.
+          </span>
+        </label>
+      )}
+    </>
+  );
+};
+
+export default QuoteBreakdown;
