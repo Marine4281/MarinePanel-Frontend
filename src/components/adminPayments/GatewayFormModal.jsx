@@ -155,7 +155,19 @@ export default function GatewayFormModal({ gatewayForm, setGatewayForm, editingG
           sublabel="CP owners can connect and use this gateway on their panels"
           checked={gatewayForm.visibleToCp}
           onChange={(v) => setGatewayForm({ ...gatewayForm, visibleToCp: v })} />
+
+        <Toggle label="Enable for withdrawals"
+          sublabel="Users can withdraw wallet funds through this gateway. Automatic payout requires a provider with payout support (M-Pesa, Flutterwave, Binance) — otherwise requests just queue for manual admin approval."
+          checked={gatewayForm.supportsWithdraw}
+          onChange={(v) => setGatewayForm({ ...gatewayForm, supportsWithdraw: v })} />
       </div>
+
+      {gatewayForm.supportsWithdraw && (
+        <Input label="Min Withdraw (USD)" type="number"
+          value={gatewayForm.minWithdraw}
+          onChange={(v) => setGatewayForm({ ...gatewayForm, minWithdraw: Number(v) })}
+          placeholder="5" />
+      )}
 
       <button onClick={onSave} disabled={loading}
         className="w-full py-3 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 disabled:opacity-50">
@@ -163,4 +175,4 @@ export default function GatewayFormModal({ gatewayForm, setGatewayForm, editingG
       </button>
     </Modal>
   );
-        }
+                                                 }
