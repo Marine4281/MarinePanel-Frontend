@@ -5,6 +5,7 @@ import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
 import OwnGatewaysTab from "../../components/cpPayments/OwnGatewaysTab";
 import PlatformGatewaysTab from "../../components/cpPayments/PlatformGatewaysTab";
 import PendingWithdrawalsTab from "../../components/cpPayments/PendingWithdrawalsTab";
+import PendingDepositsTab from "../../components/cpPayments/PendingDepositsTab";
 import GatewayFormModal from "../../components/cpPayments/GatewayFormModal";
 import { EMPTY_FORM } from "../../components/cpPayments/constants";
 
@@ -14,6 +15,7 @@ export default function CpPaymentGateways() {
   const [platformGateways,   setPlatformGateways]   = useState([]);
   const [availProviders,     setAvailProviders]     = useState([]);
   const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
+  const [pendingDeposits,    setPendingDeposits]    = useState([]);
   const [showForm,           setShowForm]           = useState(false);
   const [editing,            setEditing]            = useState(null);
   const [form,               setForm]               = useState(EMPTY_FORM);
@@ -21,17 +23,35 @@ export default function CpPaymentGateways() {
   const [connecting,         setConnecting]         = useState(null);
 
   const fetchAll = async () => {
-    try {
-      const [gwRes, provRes, wRes] = await Promise.all([
-        API.get("/cp/gateways"),
-        API.get("/cp/available-providers"),
-        API.get("/cp/withdrawals/pending"),
-      ]);
-      setOwnGateways(gwRes.data.ownGateways            || []);
-      setPlatformGateways(gwRes.data.platformGateways  || []);
-      setAvailProviders(provRes.data.providers         || []);
-      setPendingWithdrawals(wRes.data.withdrawals      || []);
-    } catch { toast.error("Failed to load gateways"); }
+    const [gwRes, provRes, wRes, dRes] = await Promise.allSettled([
+      API.get("/cp/gateways"),
+      API.get("/cp/available-providers"),
+      API.get("/cp/withdrawals/pending"),
+      API.get("/cp/deposits/pending"),
+    ]);
+
+    if (gwRes.status === "fulfilled") {
+      setOwnGateways(gwRes.value.data.ownGateways           || []);
+      setPlatformGateways(gwRes.value.data.platformGateways || []);
+    } else {
+      toast.error("Failed to load gateways");
+    }
+
+    if (provRes.status === "fulfilled") {
+      setAvailProviders(provRes.value.data.providers || []);
+    }
+
+    if (wRes.status === "fulfilled") {
+      setPendingWithdrawals(wRes.value.data.withdrawals || []);
+    } else {
+      toast.error("Failed to load pending withdrawals");
+    }
+
+    if (dRes.status === "fulfilled") {
+      setPendingDeposits(dRes.value.data.deposits || []);
+    } else {
+      toast.error("Failed to load pending deposits");
+    }
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -116,7 +136,6 @@ export default function CpPaymentGateways() {
     } finally { setConnecting(null); }
   };
 
-  // ── Withdrawal review handlers ────────────────────────────
   const handleApproveWithdrawal = async (id) => {
     try {
       await API.post(`/cp/withdrawals/${id}/approve`);
@@ -134,6 +153,25 @@ export default function CpPaymentGateways() {
       toast.success("Withdrawal rejected");
       fetchAll();
     } catch { toast.error("Failed to reject withdrawal"); }
+  };
+
+  const handleApproveDeposit = async (id) => {
+    try {
+      await API.post(`/cp/deposits/${id}/approve`);
+      toast.success("Deposit approved");
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to approve deposit");
+    }
+  };
+
+  const handleRejectDeposit = async (id) => {
+    if (!confirm("Reject this deposit?")) return;
+    try {
+      await API.post(`/cp/deposits/${id}/reject`);
+      toast.success("Deposit rejected");
+      fetchAll();
+    } catch { toast.error("Failed to reject deposit"); }
   };
 
   const getWebhookUrl = (gw) =>
@@ -161,10 +199,11 @@ export default function CpPaymentGateways() {
           )}
         </div>
 
-        <div className="flex gap-1 p-1 rounded-2xl w-fit bg-white border border-gray-200 shadow-sm">
+        <div className="flex gap-1 p-1 rounded-2xl w-fit bg-white border border-gray-200 shadow-sm flex-wrap">
           {[
-            { key: "own",                label: "My Gateways",        count: ownGateways.length },
-            { key: "platform",           label: "Platform Gateways",  count: platformGateways.length },
+            { key: "own",                label: "My Gateways",         count: ownGateways.length },
+            { key: "platform",           label: "Platform Gateways",   count: platformGateways.length },
+            { key: "pendingDeposits",    label: "Pending Deposits",    count: pendingDeposits.length },
             { key: "pendingWithdrawals", label: "Pending Withdrawals", count: pendingWithdrawals.length },
           ].map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
@@ -202,6 +241,14 @@ export default function CpPaymentGateways() {
           />
         )}
 
+        {tab === "pendingDeposits" && (
+          <PendingDepositsTab
+            deposits={pendingDeposits}
+            onApprove={handleApproveDeposit}
+            onReject={handleRejectDeposit}
+          />
+        )}
+
         {tab === "pendingWithdrawals" && (
           <PendingWithdrawalsTab
             withdrawals={pendingWithdrawals}
@@ -224,4 +271,4 @@ export default function CpPaymentGateways() {
       </div>
     </ChildPanelLayout>
   );
-}
+      }
