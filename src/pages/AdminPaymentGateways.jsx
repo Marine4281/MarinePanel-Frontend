@@ -5,33 +5,37 @@ import toast from "react-hot-toast";
 import GatewaysTab from "../components/adminPayments/GatewaysTab";
 import ProvidersTab from "../components/adminPayments/ProvidersTab";
 import PendingDepositsTab from "../components/adminPayments/PendingDepositsTab";
+import PendingWithdrawalsTab from "../components/adminPayments/PendingWithdrawalsTab";
 import ProviderFormModal from "../components/adminPayments/ProviderFormModal";
 import GatewayFormModal from "../components/adminPayments/GatewayFormModal";
 import { EMPTY_PROVIDER, EMPTY_GATEWAY } from "../components/adminPayments/constants";
 
 export default function AdminPaymentGateways() {
-  const [tab,              setTab]              = useState("gateways");
-  const [providers,        setProviders]        = useState([]);
-  const [gateways,         setGateways]         = useState([]);
-  const [pendingDeposits,  setPendingDeposits]  = useState([]);
-  const [showProviderForm, setShowProviderForm] = useState(false);
-  const [showGatewayForm,  setShowGatewayForm]  = useState(false);
-  const [editingProvider,  setEditingProvider]  = useState(null);
-  const [editingGateway,   setEditingGateway]   = useState(null);
-  const [providerForm,     setProviderForm]     = useState(EMPTY_PROVIDER);
-  const [gatewayForm,      setGatewayForm]      = useState(EMPTY_GATEWAY);
-  const [loading,          setLoading]          = useState(false);
+  const [tab,                 setTab]                 = useState("gateways");
+  const [providers,           setProviders]           = useState([]);
+  const [gateways,            setGateways]            = useState([]);
+  const [pendingDeposits,     setPendingDeposits]     = useState([]);
+  const [pendingWithdrawals,  setPendingWithdrawals]  = useState([]);
+  const [showProviderForm,    setShowProviderForm]    = useState(false);
+  const [showGatewayForm,     setShowGatewayForm]     = useState(false);
+  const [editingProvider,     setEditingProvider]     = useState(null);
+  const [editingGateway,      setEditingGateway]      = useState(null);
+  const [providerForm,        setProviderForm]        = useState(EMPTY_PROVIDER);
+  const [gatewayForm,         setGatewayForm]         = useState(EMPTY_GATEWAY);
+  const [loading,             setLoading]             = useState(false);
 
   const fetchAll = async () => {
     try {
-      const [p, g, d] = await Promise.all([
+      const [p, g, d, w] = await Promise.all([
         API.get("/admin/payment-providers"),
         API.get("/admin/gateways"),
         API.get("/admin/deposits/pending"),
+        API.get("/admin/withdrawals/pending"),
       ]);
       setProviders(p.data.providers || []);
       setGateways(g.data.gateways   || []);
       setPendingDeposits(d.data.deposits || []);
+      setPendingWithdrawals(w.data.withdrawals || []);
     } catch { toast.error("Failed to load data"); }
   };
 
@@ -123,6 +127,8 @@ export default function AdminPaymentGateways() {
       feePercentage:            gw.feePercentage            || 0,
       feeFixed:                 gw.feeFixed                 || 0,
       minDeposit:               gw.minDeposit               || 0,
+      supportsWithdraw:         gw.supportsWithdraw         || false,
+      minWithdraw:              gw.minWithdraw              || 0,
       adminNote:                gw.adminNote                || "",
       cpNote:                   gw.cpNote                   || "",
       isVisible:                gw.isVisible,
@@ -176,6 +182,26 @@ export default function AdminPaymentGateways() {
     } catch { toast.error("Failed to reject"); }
   };
 
+  // ── Withdrawal handlers ───────────────────────────────────
+  const handleApproveWithdrawal = async (id) => {
+    try {
+      await API.post(`/admin/withdrawals/${id}/approve`);
+      toast.success("Withdrawal approved");
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to approve withdrawal");
+    }
+  };
+
+  const handleRejectWithdrawal = async (id) => {
+    if (!confirm("Reject this withdrawal? Funds will be released back to the user.")) return;
+    try {
+      await API.post(`/admin/withdrawals/${id}/reject`);
+      toast.success("Withdrawal rejected");
+      fetchAll();
+    } catch { toast.error("Failed to reject withdrawal"); }
+  };
+
   const providerOptions = providers
     .filter((p) => p.isActive)
     .map((p) => ({ value: p._id, label: `${p.name} (${p.providerType})` }));
@@ -206,9 +232,10 @@ export default function AdminPaymentGateways() {
 
         <div className="flex gap-1 bg-white rounded-2xl shadow p-1 w-fit">
           {[
-            { key: "gateways",  label: "Gateways",        count: gateways.length },
-            { key: "providers", label: "Providers",        count: providers.length },
-            { key: "pending",   label: "Pending Deposits", count: pendingDeposits.length },
+            { key: "gateways",           label: "Gateways",            count: gateways.length },
+            { key: "providers",          label: "Providers",           count: providers.length },
+            { key: "pending",            label: "Pending Deposits",    count: pendingDeposits.length },
+            { key: "pendingWithdrawals", label: "Pending Withdrawals", count: pendingWithdrawals.length },
           ].map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${
@@ -249,6 +276,14 @@ export default function AdminPaymentGateways() {
             onReject={handleReject}
           />
         )}
+
+        {tab === "pendingWithdrawals" && (
+          <PendingWithdrawalsTab
+            withdrawals={pendingWithdrawals}
+            onApprove={handleApproveWithdrawal}
+            onReject={handleRejectWithdrawal}
+          />
+        )}
       </main>
 
       {showProviderForm && (
@@ -275,4 +310,4 @@ export default function AdminPaymentGateways() {
       )}
     </div>
   );
-}
+      }
