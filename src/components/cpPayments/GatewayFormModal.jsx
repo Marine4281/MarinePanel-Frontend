@@ -1,4 +1,4 @@
-import { F, I } from "./FormControls";
+import { F, I, Toggle } from "./FormControls";
 import { PAYMENT_MODES, MANUAL_TYPES } from "./constants";
 
 export default function GatewayFormModal({ form, setForm, editing, loading, availProviders, onSave, onClose }) {
@@ -189,16 +189,24 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
             className="w-full px-4 py-3 rounded-xl text-sm outline-none resize-none bg-white border border-gray-300 text-gray-900 focus:border-orange-400" />
         </F>
 
-        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
-          <div>
-            <p className="text-sm font-semibold text-gray-900">Visible to users</p>
-            <p className="text-xs mt-0.5 text-gray-500">Users can see and use this gateway</p>
-          </div>
-          <button onClick={() => setForm({ ...form, isVisible: !form.isVisible })}
-            className={`w-11 h-6 rounded-full transition-colors relative ${form.isVisible ? "bg-orange-500" : "bg-gray-300"}`}>
-            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${form.isVisible ? "left-5" : "left-0.5"}`} />
-          </button>
+        <div className="space-y-2 pt-1">
+          <Toggle label="Visible to users"
+            sublabel="Users can see and use this gateway"
+            checked={form.isVisible}
+            onChange={(v) => setForm({ ...form, isVisible: v })} />
+
+          <Toggle label="Enable for withdrawals"
+            sublabel="Your users can withdraw wallet funds through this gateway. Requests queue here for you to approve."
+            checked={form.supportsWithdraw}
+            onChange={(v) => setForm({ ...form, supportsWithdraw: v })} />
         </div>
+
+        {form.supportsWithdraw && (
+          <F label="Min Withdraw (USD)">
+            <I type="number" value={form.minWithdraw}
+              onChange={(v) => setForm({ ...form, minWithdraw: Number(v) })} placeholder="5" />
+          </F>
+        )}
 
         <button onClick={onSave} disabled={loading}
           className="w-full py-3 rounded-xl text-sm font-black text-white disabled:opacity-50 transition hover:bg-orange-600 bg-orange-500">
@@ -207,4 +215,4 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
       </div>
     </div>
   );
-                }
+}
