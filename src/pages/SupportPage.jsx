@@ -1,13 +1,15 @@
+// src/pages/SupportPage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useSupport } from "../context/SupportContext";
-import { useChildPanel } from "../context/ChildPanelContext";
 import { useCachedServices } from "../context/CachedServicesContext";
+import { useChildPanel } from "../context/ChildPanelContext";
+import { useReseller } from "../context/ResellerContext";
 
-const STATUS_META = {
+const STATUS = {
   open:        { label: "Open",        cls: "bg-blue-100 text-blue-600" },
   in_progress: { label: "In Progress", cls: "bg-orange-100 text-orange-600" },
   closed:      { label: "Closed",      cls: "bg-gray-100 text-gray-500" },
@@ -15,43 +17,48 @@ const STATUS_META = {
 
 export default function SupportPage() {
   const navigate = useNavigate();
-  const { userUnread, fmt, refreshUser, userScope } = useSupport();
-  const { childPanel } = useChildPanel();
+  const { userScope, refreshUser } = useSupport();
   const { domainType } = useCachedServices();
+  const { childPanel } = useChildPanel();
+  const { reseller } = useReseller();
 
-  const [tickets, setTickets]       = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const isResellerEndUser = domainType === "reseller";
+
+  const [tickets,    setTickets]    = useState([]);
   const [categories, setCategories] = useState([]);
-  const [showForm, setShowForm]     = useState(false);
-  const [title, setTitle]           = useState("");
-  const [description, setDesc]      = useState("");
-  const [file, setFile]             = useState(null);
-  const [filePrev, setFilePrev]     = useState(null);
+  const [loading,    setLoading]    = useState(true);
+  const [showForm,   setShowForm]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError]           = useState("");
+  const [msg,        setMsg]        = useState({ text: "", ok: true });
 
-  const panelOwner = domainType === "childPanel" ? childPanel?._id : undefined;
+  const [selCat,    setSelCat]    = useState("");
+  const [custTitle, setCustTitle] = useState("");
+  const [desc,      setDesc]      = useState("");
+  const [file,      setFile]      = useState(null);
+  const [filePrev,  setFilePrev]  = useState(null);
 
-  const loadTickets = () => {
+  const flash = (t, ok = true) => { setMsg({ text: t, ok }); setTimeout(() => setMsg({ text: "", ok: true }), 3500); };
+
+  const panelOwnerId = domainType === "childPanel" ? childPanel?.ownerId || null : null;
+
+  const load = () => {
+    if (isResellerEndUser) { setLoading(false); return; }
     setLoading(true);
-    API.get("/support/my-tickets", { params: { scope: userScope } })
-      .then(r => setTickets(r.data))
-      .catch(() => setTickets([]))
+    Promise.all([
+      API.get(`/support/my-tickets?scope=${userScope}`),
+      API.get(`/support/categories?scope=${userScope}${panelOwnerId ? `&panelOwner=${panelOwnerId}` : ""}`),
+    ])
+      .then(([t, c]) => { setTickets(t.data); setCategories(c.data); })
+      .catch(() => flash("Failed to load tickets", false))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadTickets(); refreshUser(); }, [userScope]);
-
-  useEffect(() => {
-    API.get("/support/categories", { params: { scope: userScope, ...(panelOwner ? { panelOwner } : {}) } })
-      .then(r => setCategories(r.data))
-      .catch(() => setCategories([]));
-  }, [userScope, panelOwner]);
+  useEffect(() => { load(); }, [userScope, isResellerEndUser]);
 
   const handleFile = (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    if (f.size > 5 * 1024 * 1024) return setError("File must be under 5MB");
+    if (f.size > 5 * 1024 * 1024) { flash("File must be under 5MB", false); return; }
     const reader = new FileReader();
     reader.onload = (ev) => {
       setFile({ data: ev.target.result.split(",")[1], mimeType: f.type, fileName: f.name });
@@ -60,140 +67,255 @@ export default function SupportPage() {
     reader.readAsDataURL(f);
   };
 
-  const submitTicket = async () => {
-    setError("");
-    if (!title.trim() || !description.trim()) {
-      setError("Please fill in both a subject and a description.");
-      return;
-    }
+  const isOther    = selCat === "__other__";
+  const finalTitle = isOther ? custTitle.trim() : (categories.find(c => c._id === selCat)?.label || "");
+
+  const handleSubmit = async () => {
+    if (!finalTitle) return flash("Please select or enter a title", false);
+    if (!desc.trim()) return flash("Description is required", false);
     setSubmitting(true);
     try {
       const res = await API.post("/support/tickets", {
-        title: title.trim(),
-        description: description.trim(),
+        title: finalTitle,
+        description: desc.trim(),
         ...(file ? { file } : {}),
       });
       setShowForm(false);
-      setTitle(""); setDesc(""); setFile(null); setFilePrev(null);
-      loadTickets();
+      setSelCat(""); setCustTitle(""); setDesc(""); setFile(null); setFilePrev(null);
+      flash("Ticket submitted!");
+      load(); refreshUser();
       navigate(`/support/${res.data._id}`);
-    } catch (e) {
-      setError(e.response?.data?.message || "Failed to create ticket");
-    } finally {
-      setSubmitting(false);
-    }
+    } catch (e) { flash(e.response?.data?.message || "Failed", false); }
+    setSubmitting(false);
   };
 
-  const fmtDate = (d) => new Date(d).toLocaleDateString([], { month: "short", day: "numeric" });
-  const lastMessage = (t) => t.messages?.[t.messages.length - 1]?.text || "No messages yet";
-  const unreadFor = (t) => t.messages?.filter(m => m.sender === "admin" && !m.seenByUser).length || 0;
+  const unread = (t) => t.messages?.filter(m => m.sender === "admin" && !m.seenByUser).length || 0;
 
+  // ── Reseller end-user: show contact links only, no ticket system ──
+  if (isResellerEndUser) {
+    const wa = reseller?.support?.whatsapp;
+    const tg = reseller?.support?.telegram;
+    const waChannel = reseller?.support?.whatsappChannel;
+    const brandName = reseller?.brandName || "Support";
+
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <main className="flex-1 max-w-md mx-auto w-full px-4 py-16 flex flex-col items-center text-center">
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-5">
+            <i className="fas fa-headset text-orange-500 text-3xl" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Need Help?</h1>
+          <p className="text-gray-500 text-sm mb-8">
+            Contact {brandName} support directly through one of the channels below.
+          </p>
+
+          <div className="w-full space-y-3">
+            {wa && (
+              <a
+                href={`https://wa.me/${wa.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-semibold px-5 py-3.5 rounded-2xl transition w-full justify-center shadow"
+              >
+                <i className="fab fa-whatsapp text-xl" />
+                Chat on WhatsApp
+              </a>
+            )}
+
+            {waChannel && (
+              <a
+                href={waChannel}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-green-400 hover:bg-green-500 text-white font-semibold px-5 py-3.5 rounded-2xl transition w-full justify-center shadow"
+              >
+                <i className="fab fa-whatsapp text-xl" />
+                WhatsApp Channel
+              </a>
+            )}
+
+            {tg && (
+              <a
+                href={`https://t.me/${tg.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-sky-500 hover:bg-sky-600 text-white font-semibold px-5 py-3.5 rounded-2xl transition w-full justify-center shadow"
+              >
+                <i className="fab fa-telegram text-xl" />
+                Message on Telegram
+              </a>
+            )}
+
+            {!wa && !tg && !waChannel && (
+              <p className="text-gray-400 text-sm mt-4">
+                No contact channels configured yet. Please check back later.
+              </p>
+            )}
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // ── Normal ticket UI (main platform & child panel users) ──
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      <div className="flex-1 max-w-2xl w-full mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-5">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
+
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <i className="fas fa-headset text-orange-500" /> Support Tickets
-              {userUnread > 0 && (
-                <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded-full">
-                  {fmt(userUnread)} new
-                </span>
-              )}
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">Get help from our support team</p>
+            <h1 className="text-2xl font-bold text-gray-800">Support</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Submit and track your support tickets</p>
           </div>
-          <button onClick={() => setShowForm(true)}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl text-sm shadow transition">
-            <i className="fas fa-plus mr-1.5" /> New Ticket
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition shadow"
+          >
+            <i className="fas fa-plus" /> New Ticket
           </button>
         </div>
 
-        {showForm && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
-            <p className="font-bold text-gray-800 mb-3">New Support Ticket</p>
-            {error && <div className="bg-red-50 text-red-600 border border-red-200 rounded-xl px-3 py-2 text-sm mb-3">{error}</div>}
-
-            {categories.length > 0 && (
-              <select onChange={(e) => e.target.value && setTitle(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-300">
-                <option value="">Select a category (optional)</option>
-                {categories.map(c => <option key={c._id} value={c.label}>{c.label}</option>)}
-              </select>
-            )}
-
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Subject"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-300" />
-
-            <textarea value={description} onChange={e => setDesc(e.target.value)} placeholder="Describe your issue..."
-              rows={4}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm mb-3 resize-none focus:outline-none focus:ring-2 focus:ring-orange-300" />
-
-            {filePrev && (
-              <div className="flex items-center gap-3 mb-3 bg-gray-50 rounded-xl p-2">
-                {filePrev.type.startsWith("image/")
-                  ? <img src={filePrev.url} alt="preview" className="h-12 w-12 rounded-lg object-cover" />
-                  : <div className="h-12 w-12 bg-orange-50 rounded-lg flex items-center justify-center"><i className="fas fa-file text-orange-400" /></div>}
-                <p className="flex-1 text-xs text-gray-600 truncate">{filePrev.name}</p>
-                <button onClick={() => { setFile(null); setFilePrev(null); }} className="w-7 h-7 bg-red-100 text-red-500 rounded-full flex items-center justify-center"><i className="fas fa-times text-xs" /></button>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
-                <i className="fas fa-paperclip" /> Attach file
-                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFile} />
-              </label>
-              <div className="flex gap-2">
-                <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100">Cancel</button>
-                <button onClick={submitTicket} disabled={submitting}
-                  className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl text-sm transition">
-                  {submitting ? <i className="fas fa-spinner fa-spin" /> : "Submit"}
-                </button>
-              </div>
-            </div>
+        {msg.text && (
+          <div className={`mb-4 p-3 rounded-xl text-sm font-semibold text-center ${msg.ok ? "bg-green-50 text-green-600 border border-green-200" : "bg-red-50 text-red-600 border border-red-200"}`}>
+            {msg.text}
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-12 text-orange-400"><i className="fas fa-spinner fa-spin text-2xl" /></div>
+          <div className="flex justify-center py-20 text-orange-400">
+            <i className="fas fa-spinner fa-spin text-3xl" />
+          </div>
         ) : tickets.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <i className="fas fa-inbox text-3xl mb-3" />
-            <p className="text-sm">No support tickets yet</p>
+          <div className="flex flex-col items-center py-20 text-gray-400">
+            <i className="fas fa-headset text-5xl mb-3" />
+            <p className="font-bold text-gray-600 text-lg">No tickets yet</p>
+            <p className="text-sm mt-1 mb-4">Open a ticket to reach our support team</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {tickets.map(t => {
-              const meta = STATUS_META[t.status] || STATUS_META.open;
-              const unread = unreadFor(t);
+          <div className="space-y-3">
+            {tickets.map(ticket => {
+              const u    = unread(ticket);
+              const meta = STATUS[ticket.status] || STATUS.open;
+              const last = ticket.messages?.[ticket.messages.length - 1];
               return (
-                <button key={t._id} onClick={() => navigate(`/support/${t._id}`)}
-                  className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 hover:border-orange-200 transition">
-                  <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
-                    <i className="fas fa-comment-dots text-orange-400" />
+                <div
+                  key={ticket._id}
+                  onClick={() => navigate(`/support/${ticket._id}`)}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 cursor-pointer hover:shadow-md transition active:scale-[0.99]"
+                >
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+                    <i className="fas fa-headset text-orange-500 text-lg" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-sm text-gray-800 truncate">{t.title}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-bold text-gray-800 text-sm truncate">{ticket.title}</p>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${meta.cls}`}>{meta.label}</span>
                     </div>
-                    <p className="text-xs text-gray-400 truncate mt-0.5">{lastMessage(t)}</p>
+                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                      {last?.text || (last?.file ? "📎 Attachment" : "No messages")}
+                    </p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] text-gray-400">{fmtDate(t.updatedAt)}</p>
-                    {unread > 0 && (
-                      <span className="inline-block mt-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{fmt(unread)}</span>
-                    )}
-                  </div>
-                </button>
+                  {u > 0 && (
+                    <span className="min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center px-1 animate-bounce shadow shrink-0">
+                      {u > 99 ? "99+" : u}
+                    </span>
+                  )}
+                </div>
               );
             })}
           </div>
         )}
-      </div>
+      </main>
       <Footer />
+
+      {/* New Ticket Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-gray-800 text-base">New Support Ticket</h3>
+              <button onClick={() => setShowForm(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200">
+                <i className="fas fa-times text-sm" />
+              </button>
+            </div>
+
+            {msg.text && (
+              <div className={`p-3 rounded-xl text-sm font-semibold ${msg.ok ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"}`}>
+                {msg.text}
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">Topic</label>
+              <select
+                value={selCat}
+                onChange={e => setSelCat(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
+              >
+                <option value="">— Select a topic —</option>
+                {categories.map(c => <option key={c._id} value={c._id}>{c.label}</option>)}
+                <option value="__other__">Other (enter manually)</option>
+              </select>
+            </div>
+
+            {isOther && (
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Your Title</label>
+                <input
+                  type="text"
+                  value={custTitle}
+                  onChange={e => setCustTitle(e.target.value)}
+                  placeholder="Briefly describe your issue..."
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">Description</label>
+              <textarea
+                value={desc}
+                onChange={e => setDesc(e.target.value)}
+                placeholder="Explain your issue in detail..."
+                rows={4}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                Attachment <span className="text-gray-400 font-normal">(optional, max 5MB)</span>
+              </label>
+              <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 hover:border-orange-300 rounded-xl px-4 py-3 cursor-pointer transition">
+                <i className="fas fa-paperclip text-orange-400" />
+                <span className="text-sm text-gray-500">{filePrev ? filePrev.name : "Choose image or PDF"}</span>
+                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFile} />
+              </label>
+              {filePrev?.type?.startsWith("image/") && (
+                <div className="mt-2 relative inline-block">
+                  <img src={filePrev.url} alt="preview" className="h-20 rounded-xl object-cover border border-gray-200" />
+                  <button onClick={() => { setFile(null); setFilePrev(null); }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow">
+                    <i className="fas fa-times" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-bold rounded-xl py-3 text-sm transition flex items-center justify-center gap-2"
+            >
+              {submitting ? <><i className="fas fa-spinner fa-spin" /> Submitting...</> : <><i className="fas fa-paper-plane" /> Submit Ticket</>}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+                                                                      }
