@@ -4,29 +4,33 @@ import toast from "react-hot-toast";
 import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
 import OwnGatewaysTab from "../../components/cpPayments/OwnGatewaysTab";
 import PlatformGatewaysTab from "../../components/cpPayments/PlatformGatewaysTab";
+import PendingWithdrawalsTab from "../../components/cpPayments/PendingWithdrawalsTab";
 import GatewayFormModal from "../../components/cpPayments/GatewayFormModal";
 import { EMPTY_FORM } from "../../components/cpPayments/constants";
 
 export default function CpPaymentGateways() {
-  const [tab,              setTab]              = useState("own");
-  const [ownGateways,      setOwnGateways]      = useState([]);
-  const [platformGateways, setPlatformGateways] = useState([]);
-  const [availProviders,   setAvailProviders]   = useState([]);
-  const [showForm,         setShowForm]         = useState(false);
-  const [editing,          setEditing]          = useState(null);
-  const [form,             setForm]             = useState(EMPTY_FORM);
-  const [loading,          setLoading]          = useState(false);
-  const [connecting,       setConnecting]       = useState(null);
+  const [tab,                setTab]                = useState("own");
+  const [ownGateways,        setOwnGateways]        = useState([]);
+  const [platformGateways,   setPlatformGateways]   = useState([]);
+  const [availProviders,     setAvailProviders]     = useState([]);
+  const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
+  const [showForm,           setShowForm]           = useState(false);
+  const [editing,            setEditing]            = useState(null);
+  const [form,               setForm]               = useState(EMPTY_FORM);
+  const [loading,            setLoading]            = useState(false);
+  const [connecting,         setConnecting]         = useState(null);
 
   const fetchAll = async () => {
     try {
-      const [gwRes, provRes] = await Promise.all([
+      const [gwRes, provRes, wRes] = await Promise.all([
         API.get("/cp/gateways"),
         API.get("/cp/available-providers"),
+        API.get("/cp/withdrawals/pending"),
       ]);
       setOwnGateways(gwRes.data.ownGateways            || []);
       setPlatformGateways(gwRes.data.platformGateways  || []);
       setAvailProviders(provRes.data.providers         || []);
+      setPendingWithdrawals(wRes.data.withdrawals      || []);
     } catch { toast.error("Failed to load gateways"); }
   };
 
@@ -71,6 +75,8 @@ export default function CpPaymentGateways() {
       feePercentage:            gw.feePercentage            || 0,
       feeFixed:                 gw.feeFixed                 || 0,
       minDeposit:               gw.minDeposit               || 0,
+      supportsWithdraw:         gw.supportsWithdraw         || false,
+      minWithdraw:              gw.minWithdraw              || 0,
       cpNote:                   gw.cpNote                   || "",
       isVisible:                gw.isVisible,
     });
@@ -110,6 +116,26 @@ export default function CpPaymentGateways() {
     } finally { setConnecting(null); }
   };
 
+  // ── Withdrawal review handlers ────────────────────────────
+  const handleApproveWithdrawal = async (id) => {
+    try {
+      await API.post(`/cp/withdrawals/${id}/approve`);
+      toast.success("Withdrawal approved");
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to approve withdrawal");
+    }
+  };
+
+  const handleRejectWithdrawal = async (id) => {
+    if (!confirm("Reject this withdrawal? Funds will be released back to the user.")) return;
+    try {
+      await API.post(`/cp/withdrawals/${id}/reject`);
+      toast.success("Withdrawal rejected");
+      fetchAll();
+    } catch { toast.error("Failed to reject withdrawal"); }
+  };
+
   const getWebhookUrl = (gw) =>
     `${import.meta.env.VITE_API_URL}/api/webhooks/${gw.paymentMode}/${gw.webhookToken}`;
 
@@ -123,7 +149,7 @@ export default function CpPaymentGateways() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-black text-gray-900">Payment Gateways</h1>
-            <p className="text-xs mt-0.5 text-gray-500">Manage how your users deposit funds.</p>
+            <p className="text-xs mt-0.5 text-gray-500">Manage how your users deposit and withdraw funds.</p>
           </div>
           {tab === "own" && (
             <button
@@ -137,8 +163,9 @@ export default function CpPaymentGateways() {
 
         <div className="flex gap-1 p-1 rounded-2xl w-fit bg-white border border-gray-200 shadow-sm">
           {[
-            { key: "own",      label: "My Gateways",      count: ownGateways.length },
-            { key: "platform", label: "Platform Gateways", count: platformGateways.length },
+            { key: "own",                label: "My Gateways",        count: ownGateways.length },
+            { key: "platform",           label: "Platform Gateways",  count: platformGateways.length },
+            { key: "pendingWithdrawals", label: "Pending Withdrawals", count: pendingWithdrawals.length },
           ].map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${
@@ -172,6 +199,14 @@ export default function CpPaymentGateways() {
             isConnected={isConnected}
             connecting={connecting}
             onConnect={handleConnect}
+          />
+        )}
+
+        {tab === "pendingWithdrawals" && (
+          <PendingWithdrawalsTab
+            withdrawals={pendingWithdrawals}
+            onApprove={handleApproveWithdrawal}
+            onReject={handleRejectWithdrawal}
           />
         )}
 
