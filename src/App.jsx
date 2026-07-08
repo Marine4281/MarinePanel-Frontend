@@ -34,6 +34,7 @@ import Reseller from "./pages/Reseller";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import SupportPage from "./pages/SupportPage";
 import SupportChatPage from "./pages/SupportChatPage";
+import Withdraw from "./pages/Withdraw";
 
 // Admin pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -266,7 +267,8 @@ function AppRoutes() {
 
         <Route path="/add-funds"      element={<ProtectedRoute><AddFunds /></ProtectedRoute>} />
         <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
-
+        <Route path="/withdraw" element={<Withdraw />} />
+         
         {/* ================================================
             USER ROUTES
             Each route is wrapped with TemplateRouter so that
