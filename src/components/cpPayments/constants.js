@@ -30,5 +30,6 @@ export const EMPTY_FORM = {
   paymentInstructions: "",
   processingCurrency: "USD", processingCurrencySymbol: "$",
   exchangeRate: 1, feeType: "none", feePercentage: 0,
-  feeFixed: 0, minDeposit: 0, cpNote: "", isVisible: true,
+  feeFixed: 0, minDeposit: 0, supportsWithdraw: false, minWithdraw: 0,
+  cpNote: "", isVisible: true,
 };
