@@ -1,5 +1,5 @@
 import { Modal, Input, Select, Toggle } from "./FormControls";
-import { PAYMENT_MODES, MANUAL_TYPES } from "./constants";
+import { PAYMENT_MODES, MANUAL_TYPES, FEE_TYPE_OPTIONS } from "./constants";
 
 export default function GatewayFormModal({ gatewayForm, setGatewayForm, editingGateway, loading, providerOptions, onSave, onClose }) {
   return (
@@ -116,24 +116,43 @@ export default function GatewayFormModal({ gatewayForm, setGatewayForm, editingG
           placeholder="1" />
       </div>
 
-      <Select label="Fee Type" value={gatewayForm.feeType}
-        onChange={(v) => setGatewayForm({ ...gatewayForm, feeType: v })}
-        options={[
-          { value: "none",       label: "No Fee" },
-          { value: "fixed",      label: "Fixed Fee" },
-          { value: "percentage", label: "Percentage Fee" },
-          { value: "both",       label: "Fixed + Percentage" },
-        ]} />
+      {/* ─── DEPOSIT FEE ─── */}
+      <div className="space-y-3 p-3 bg-orange-50 rounded-xl border border-orange-100">
+        <p className="text-xs font-bold text-orange-700 uppercase tracking-wider">Deposit Fee</p>
 
-      {(gatewayForm.feeType === "percentage" || gatewayForm.feeType === "both") && (
-        <Input label="Fee %" type="number" value={gatewayForm.feePercentage}
-          onChange={(v) => setGatewayForm({ ...gatewayForm, feePercentage: Number(v) })} placeholder="2.5" />
-      )}
-      {(gatewayForm.feeType === "fixed" || gatewayForm.feeType === "both") && (
-        <Input label={`Fixed Fee (${gatewayForm.processingCurrency})`} type="number"
-          value={gatewayForm.feeFixed}
-          onChange={(v) => setGatewayForm({ ...gatewayForm, feeFixed: Number(v) })} placeholder="50" />
-      )}
+        <Select label="Deposit Fee Type" value={gatewayForm.depositFeeType}
+          onChange={(v) => setGatewayForm({ ...gatewayForm, depositFeeType: v })}
+          options={FEE_TYPE_OPTIONS} />
+
+        {(gatewayForm.depositFeeType === "percentage" || gatewayForm.depositFeeType === "both") && (
+          <Input label="Deposit Fee %" type="number" value={gatewayForm.depositFeePercentage}
+            onChange={(v) => setGatewayForm({ ...gatewayForm, depositFeePercentage: Number(v) })} placeholder="2.5" />
+        )}
+        {(gatewayForm.depositFeeType === "fixed" || gatewayForm.depositFeeType === "both") && (
+          <Input label={`Deposit Fixed Fee (${gatewayForm.processingCurrency})`} type="number"
+            value={gatewayForm.depositFeeFixed}
+            onChange={(v) => setGatewayForm({ ...gatewayForm, depositFeeFixed: Number(v) })} placeholder="50" />
+        )}
+      </div>
+
+      {/* ─── WITHDRAWAL FEE ─── */}
+      <div className="space-y-3 p-3 bg-purple-50 rounded-xl border border-purple-100">
+        <p className="text-xs font-bold text-purple-700 uppercase tracking-wider">Withdrawal Fee</p>
+
+        <Select label="Withdrawal Fee Type" value={gatewayForm.withdrawalFeeType}
+          onChange={(v) => setGatewayForm({ ...gatewayForm, withdrawalFeeType: v })}
+          options={FEE_TYPE_OPTIONS} />
+
+        {(gatewayForm.withdrawalFeeType === "percentage" || gatewayForm.withdrawalFeeType === "both") && (
+          <Input label="Withdrawal Fee %" type="number" value={gatewayForm.withdrawalFeePercentage}
+            onChange={(v) => setGatewayForm({ ...gatewayForm, withdrawalFeePercentage: Number(v) })} placeholder="2.5" />
+        )}
+        {(gatewayForm.withdrawalFeeType === "fixed" || gatewayForm.withdrawalFeeType === "both") && (
+          <Input label={`Withdrawal Fixed Fee (${gatewayForm.processingCurrency})`} type="number"
+            value={gatewayForm.withdrawalFeeFixed}
+            onChange={(v) => setGatewayForm({ ...gatewayForm, withdrawalFeeFixed: Number(v) })} placeholder="50" />
+        )}
+      </div>
 
       <div className="space-y-1.5">
         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -175,4 +194,4 @@ export default function GatewayFormModal({ gatewayForm, setGatewayForm, editingG
       </button>
     </Modal>
   );
-                                                 }
+      }
