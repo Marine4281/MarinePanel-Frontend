@@ -19,7 +19,7 @@ export default function OwnGatewaysTab({ ownGateways, onEdit, onRotateToken, onD
             <div className="flex items-start gap-3">
               <span className="text-2xl mt-0.5">{MODE_ICONS[gw.paymentMode] || "💰"}</span>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-gray-900">{gw.name}</p>
                   {gw.isPlatformConnected && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-700">
@@ -31,10 +31,16 @@ export default function OwnGatewaysTab({ ownGateways, onEdit, onRotateToken, onD
                   }`}>
                     {gw.isVisible ? "Visible" : "Hidden"}
                   </span>
+                  {gw.supportsWithdraw && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700">
+                      Withdraw
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs mt-0.5 text-gray-500">
                   {gw.paymentMode} · {gw.processingCurrency} · Rate: {gw.exchangeRate}
                   {gw.feeType !== "none" && ` · Fee: ${gw.feeType}`}
+                  {gw.supportsWithdraw && ` · Min withdraw: $${gw.minWithdraw}`}
                 </p>
                 {gw.adminNote && (
                   <p className="text-xs mt-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700">
