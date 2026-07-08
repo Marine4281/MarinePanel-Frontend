@@ -54,7 +54,7 @@ const Wallet = () => {
           setBalance={setBalance}
           setTransactions={setTransactions}
           onAddFunds={() => navigate("/add-funds")}
-          onWithdraw={() => toast("Withdrawal coming soon", { icon: "⏳" })}
+          onWithdraw={() => navigate("/withdraw)}
         />
 
         <TransactionHistory transactions={transactions} />
