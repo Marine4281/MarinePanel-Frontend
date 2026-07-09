@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { useCurrency } from "../../context/CurrencyContext";
 
 const Field = ({ label, children }) => (
   <div className="space-y-1.5">
@@ -8,21 +10,54 @@ const Field = ({ label, children }) => (
   </div>
 );
 
-const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, setField }) => (
+const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, setField }) => {
+  const { selected: currency } = useCurrency();
+  const rate   = currency?.rate || 1;
+  const symbol = currency?.symbol || "$";
+  const code   = currency?.code || "USD";
+  const isUSD  = !currency?._id || code === "USD";
+
+  // What the user actually types/sees — in their selected display currency.
+  // usdAmount (the real value sent to the backend) is derived from this.
+  const [displayAmount, setDisplayAmount] = useState("");
+
+  // Reset local display when the amount is cleared externally (e.g. switching gateway)
+  useEffect(() => {
+    if (usdAmount === "" && displayAmount !== "") setDisplayAmount("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usdAmount]);
+
+  const handleDisplayChange = (val) => {
+    setDisplayAmount(val);
+    if (val === "" || isNaN(Number(val))) { setUsdAmount(""); return; }
+    const usd = isUSD ? Number(val) : Number(val) / rate;
+    setUsdAmount(usd.toFixed(6));
+  };
+
+  const minDepositDisplay = selected.minDeposit
+    ? (isUSD ? selected.minDeposit.toFixed(2) : (selected.minDeposit * rate).toFixed(2))
+    : null;
+
+  return (
   <div className="space-y-4">
     <div>
       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-        Amount (USD)
+        Amount ({code})
       </label>
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{symbol}</span>
         <input type="number" min="0" step="0.01" placeholder="0.00"
-          value={usdAmount} onChange={(e) => setUsdAmount(e.target.value)}
+          value={displayAmount} onChange={(e) => handleDisplayChange(e.target.value)}
           className="w-full pl-8 pr-4 py-3 border-2 rounded-xl text-gray-800 text-sm outline-none focus:border-orange-400 transition" />
       </div>
-      {selected.minDeposit > 0 && (
-        <p className="text-xs text-gray-400 mt-1">Min: ${selected.minDeposit} USD</p>
-      )}
+      <div className="flex items-center justify-between mt-1">
+        {minDepositDisplay && (
+          <p className="text-xs text-gray-400">Min: {symbol}{minDepositDisplay} {code}</p>
+        )}
+        {!isUSD && usdAmount && Number(usdAmount) > 0 && (
+          <p className="text-xs text-gray-400">≈ ${Number(usdAmount).toFixed(4)} USD</p>
+        )}
+      </div>
     </div>
 
     {(mode === "mpesa" || mode === "airtel") && (
@@ -188,6 +223,7 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
       </Field>
     )}
   </div>
-);
+  );
+};
 
 export default PaymentFields;
