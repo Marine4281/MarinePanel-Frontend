@@ -5,14 +5,14 @@ export default function GatewaysTab({ gateways, onEdit, onToggleHidden, onRotate
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {["Name","Mode","Provider","Currency","Fee","Min","Visible","CP","Hidden","Actions"].map((h) => (
+              {["Name","Mode","Provider","Currency","Deposit Fee","Withdraw Fee","Min","Visible","CP","Hidden","Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {gateways.length === 0 && (
-              <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">No gateways yet</td></tr>
+              <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-400">No gateways yet</td></tr>
             )}
             {gateways.map((gw) => (
               <tr key={gw._id} className="hover:bg-gray-50 transition">
@@ -26,7 +26,12 @@ export default function GatewaysTab({ gateways, onEdit, onToggleHidden, onRotate
                   {gw.providerProfile?.name || "—"}
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500">{gw.processingCurrency}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{gw.feeType}</td>
+                <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                  {gw.depositFeeType === "none" ? "—" : gw.depositFeeType}
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                  {gw.withdrawalFeeType === "none" ? "—" : gw.withdrawalFeeType}
+                </td>
                 <td className="px-4 py-3 text-xs text-gray-500">${gw.minDeposit}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${gw.isVisible ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
