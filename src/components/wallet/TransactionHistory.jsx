@@ -1,5 +1,6 @@
 // src/components/wallet/TransactionHistory.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useCurrency } from "../../context/CurrencyContext";
 
 const PAGE_SIZE = 10;
 
@@ -7,29 +8,6 @@ const statusClass = (s) =>
   s === "Completed" ? "text-green-600"
   : s === "Pending"  ? "text-yellow-500"
   : "text-red-500";
-
-// Icons per transaction type
-const typeIcon = (type) => {
-  switch (type) {
-    case "Deposit":                  return "⬇️";
-    case "Withdrawal":               return "⬆️";
-    case "Order":                    return "🛒";
-    case "Refund":                   return "↩️";
-    case "Admin Adjustment":         return "⚙️";
-    case "CP Admin Adjustment":      return "⚙️";
-    case "Commission":               return "💰";
-    case "Commission Reversal":      return "↩️";
-    case "CP Commission":            return "💰";
-    case "CP Commission Reversal":   return "↩️";
-    case "RPA Fee":                  return "🔁";
-    case "CP Activation Fee":        return "✅";
-    case "Reseller Activation Fee":  return "✅";
-    case "Platform Reseller Fee":    return "🏷️";
-    case "CP Deposit Earning":       return "💵";
-    case "Free Order Cost":          return "🎁";
-    default:                         return "💳";
-  }
-};
 
 // Human-readable description built from type + note
 const getDescription = (tx) => {
@@ -102,6 +80,7 @@ const getDescription = (tx) => {
 };
 
 const TransactionHistory = ({ transactions }) => {
+  const { formatMoney } = useCurrency();
   const [page,      setPage]      = useState(1);
   const [displayed, setDisplayed] = useState([]);
   const [hasMore,   setHasMore]   = useState(false);
@@ -170,14 +149,13 @@ const TransactionHistory = ({ transactions }) => {
                   {new Date(tx.createdAt).toLocaleDateString()}
                 </td>
                 <td className="p-3 text-sm text-gray-700 font-medium whitespace-nowrap">
-                  <span className="mr-1">{typeIcon(tx.type)}</span>
                   {tx.type}
                 </td>
                 <td className="p-3 text-sm text-gray-500 max-w-xs truncate">
                   {getDescription(tx)}
                 </td>
                 <td className={`p-3 text-sm font-semibold whitespace-nowrap ${tx.amount > 0 ? "text-green-600" : "text-red-500"}`}>
-                  {tx.amount > 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(4)}
+                  {tx.amount > 0 ? "+" : "-"}{formatMoney(Math.abs(tx.amount), 4)}
                 </td>
                 <td className={`p-3 text-sm font-semibold ${statusClass(tx.status)}`}>
                   {tx.status}
@@ -195,10 +173,7 @@ const TransactionHistory = ({ transactions }) => {
           {displayed.map((tx) => (
             <div key={tx._id} className="flex items-start justify-between border rounded-xl p-3 bg-gray-50 gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-700">
-                  <span className="mr-1">{typeIcon(tx.type)}</span>
-                  {tx.type}
-                </p>
+                <p className="text-sm font-semibold text-gray-700">{tx.type}</p>
                 <p className="text-xs text-gray-500 mt-0.5 truncate">{getDescription(tx)}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {new Date(tx.createdAt).toLocaleDateString()}
@@ -206,7 +181,7 @@ const TransactionHistory = ({ transactions }) => {
               </div>
               <div className="text-right shrink-0">
                 <p className={`text-sm font-bold ${tx.amount > 0 ? "text-green-600" : "text-red-500"}`}>
-                  {tx.amount > 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(4)}
+                  {tx.amount > 0 ? "+" : "-"}{formatMoney(Math.abs(tx.amount), 4)}
                 </p>
                 <p className={`text-xs mt-0.5 font-semibold ${statusClass(tx.status)}`}>
                   {tx.status}
