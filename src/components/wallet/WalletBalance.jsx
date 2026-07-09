@@ -2,10 +2,12 @@
 import { useEffect } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "../../context/AuthContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import toast from "react-hot-toast";
 
 const WalletBalance = ({ balance, setBalance, setTransactions, onAddFunds, onWithdraw }) => {
   const { user } = useAuth();
+  const { formatMoney, selected } = useCurrency();
 
   useEffect(() => {
     if (!user) return;
@@ -44,9 +46,13 @@ const WalletBalance = ({ balance, setBalance, setTransactions, onAddFunds, onWit
           Wallet Balance
         </h2>
         <p className="text-4xl font-bold text-green-600">
-          ${Number(balance).toFixed(4)}
+          {formatMoney(balance, 4)}
         </p>
-        <p className="text-xs text-gray-400 mt-1">USD · Updates in real-time</p>
+        <p className="text-xs text-gray-400 mt-1">
+          {selected?.code === "USD" || !selected?._id
+            ? "USD · Updates in real-time"
+            : `Shown in ${selected.code} · Balance stored in USD · Updates in real-time`}
+        </p>
       </div>
 
       {/* Actions */}
