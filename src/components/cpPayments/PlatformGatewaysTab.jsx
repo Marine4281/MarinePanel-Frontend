@@ -25,7 +25,8 @@ export default function PlatformGatewaysTab({ platformGateways, isConnected, con
                   <p className="font-bold text-gray-900">{gw.name}</p>
                   <p className="text-xs mt-0.5 text-gray-500">
                     {gw.paymentMode} · {gw.processingCurrency}
-                    {gw.feeType !== "none" && ` · Fee: ${gw.feeType}`}
+                    {gw.depositFeeType !== "none" && ` · Deposit fee: ${gw.depositFeeType}`}
+                    {gw.withdrawalFeeType !== "none" && ` · Withdraw fee: ${gw.withdrawalFeeType}`}
                   </p>
                   {gw.description && (
                     <p className="text-xs mt-1 text-gray-400">{gw.description}</p>
