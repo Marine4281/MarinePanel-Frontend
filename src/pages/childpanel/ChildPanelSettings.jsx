@@ -15,6 +15,8 @@ import TemplatesTab from "../../components/childpanel/settings/TemplatesTab";
 import SeoTab       from "../../components/childpanel/settings/SeoTab";
 import LandingTab   from "../../components/childpanel/settings/LandingTab";
 import BillingTab   from "../../components/childpanel/settings/BillingTab";
+import CurrencyTab from "../../components/childpanel/settings/CurrencyTab";
+
 import {
   FiGlobe, FiDollarSign, FiCreditCard,
   FiMessageCircle, FiImage, FiLayout, FiSearch, FiCalendar,
@@ -27,6 +29,7 @@ const TABS = [
   { key: "fees",      label: "Fees",        icon: <FiDollarSign size={14} /> },
   { key: "billing",   label: "Billing",     icon: <FiCalendar size={14} /> },
   { key: "gateway",   label: "Gateway",     icon: <FiCreditCard size={14} /> },
+  { key: "currency", label: "Currency", icon: <FaCoins /> },
   { key: "templates", label: "Templates",   icon: <FiLayout size={14} /> },
   { key: "landing",   label: "Landing Page",icon: <FiGlobe size={14} /> },
   { key: "seo",       label: "SEO",         icon: <FiSearch size={14} /> },
@@ -134,6 +137,7 @@ export default function ChildPanelSettings() {
           {activeTab === "fees"      && <FeesTab      settings={settings} onSaved={handleSaved} />}
           {activeTab === "billing"   && <BillingTab   settings={settings} onSaved={handleSaved} />}
           {activeTab === "gateway"   && <GatewayTab   settings={settings} onSaved={handleSaved} />}
+          {activeTab === "currency" && <CurrencyTab />}
           {activeTab === "templates" && <TemplatesTab settings={settings} onSaved={handleSaved} />}
           {activeTab === "landing"   && (
             <LandingTab
