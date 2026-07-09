@@ -1,3 +1,5 @@
+import { useCurrency } from "../../context/CurrencyContext";
+
 const QRow = ({ label, value, bold, color }) => (
   <div className="flex items-center justify-between px-4 py-3">
     <span className="text-xs text-gray-400">{label}</span>
@@ -6,6 +8,9 @@ const QRow = ({ label, value, bold, color }) => (
 );
 
 const QuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, setConfirmed }) => {
+  const { formatMoney, selected } = useCurrency();
+  const showDisplayEquivalent = selected?._id && selected.code !== "USD";
+
   if (quoteLoading) {
     return (
       <div className="flex items-center justify-center gap-2 py-3 text-sm text-gray-400">
@@ -32,6 +37,13 @@ const QuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, setConfirme
           )}
           <QRow label="Total charged"    value={`${sym}${Number(quote.total).toFixed(2)} ${curr}`} bold />
           <QRow label="You will receive" value={`$${Number(quote.walletCredit).toFixed(4)} USD`} color="text-green-600" bold />
+          {showDisplayEquivalent && (
+            <QRow
+              label="≈ In your currency"
+              value={formatMoney(quote.walletCredit, 4)}
+              color="text-gray-400"
+            />
+          )}
         </div>
       </div>
 
