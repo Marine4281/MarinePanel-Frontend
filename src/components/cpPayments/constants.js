@@ -29,7 +29,9 @@ export const EMPTY_FORM = {
   manualType: "", manualConfig: { number: "", holderName: "", bankName: "", accountNumber: "", accountName: "" },
   paymentInstructions: "",
   processingCurrency: "USD", processingCurrencySymbol: "$",
-  exchangeRate: 1, feeType: "none", feePercentage: 0,
-  feeFixed: 0, minDeposit: 0, supportsWithdraw: false, minWithdraw: 0,
+  exchangeRate: 1,
+  depositFeeType: "none", depositFeePercentage: 0, depositFeeFixed: 0,
+  withdrawalFeeType: "none", withdrawalFeePercentage: 0, withdrawalFeeFixed: 0,
+  minDeposit: 0, supportsWithdraw: false, minWithdraw: 0,
   cpNote: "", isVisible: true,
 };
