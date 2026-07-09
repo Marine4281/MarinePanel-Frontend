@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import { useSupport } from "../context/SupportContext";
+import { useCurrency } from "../context/CurrencyContext";
 
 import GatewaySelector from "../components/addfunds/GatewaySelector";
 import SupportBanner from "../components/addfunds/SupportBanner";
@@ -14,6 +15,7 @@ import WithdrawQuoteBreakdown from "../components/withdraw/WithdrawQuoteBreakdow
 const Withdraw = () => {
   const navigate = useNavigate();
   const { userUnread, fmt } = useSupport();
+  const { formatMoney } = useCurrency();
 
   const [gateways,       setGateways]       = useState([]);
   const [selected,       setSelected]       = useState(null);
@@ -88,7 +90,7 @@ const Withdraw = () => {
       return toast.error("Select a method and enter an amount");
     }
     if (selected.minWithdraw && Number(usdAmount) < selected.minWithdraw) {
-      return toast.error(`Minimum withdrawal is $${selected.minWithdraw}`);
+      return toast.error(`Minimum withdrawal is ${formatMoney(selected.minWithdraw)}`);
     }
     if (!validatePayoutData()) return;
 
