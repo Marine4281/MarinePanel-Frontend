@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import { useSupport } from "../context/SupportContext";
+import { useCurrency } from "../context/CurrencyContext";
 
 import GatewaySelector from "../components/addfunds/GatewaySelector";
 import PaymentInstructions from "../components/addfunds/PaymentInstructions";
@@ -15,6 +16,7 @@ import SupportBanner from "../components/addfunds/SupportBanner";
 const AddFunds = () => {
   const navigate = useNavigate();
   const { userUnread, fmt } = useSupport();
+  const { formatMoney } = useCurrency();
 
   const [gateways,      setGateways]      = useState([]);
   const [selected,      setSelected]      = useState(null);
@@ -105,7 +107,7 @@ const AddFunds = () => {
       return toast.error("Select a gateway and enter an amount");
     }
     if (selected.minDeposit && Number(usdAmount) < selected.minDeposit) {
-      return toast.error(`Minimum deposit is $${selected.minDeposit}`);
+      return toast.error(`Minimum deposit is ${formatMoney(selected.minDeposit)}`);
     }
     if (!validatePayData()) return;
 
