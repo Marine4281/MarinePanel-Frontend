@@ -5,14 +5,17 @@ import { useAuth } from "../context/AuthContext";
 import { useReseller } from "../context/ResellerContext";
 import { useChildPanel } from "../context/ChildPanelContext";
 import { useCachedServices } from "../context/CachedServicesContext";
+import { useCurrency } from "../context/CurrencyContext";
 import API from "../api/axios";
 import { io } from "socket.io-client";
+import CurrencySelector from "./CurrencySelector";
 
 const Header = () => {
   const { user } = useAuth();
   const { reseller, loading: resellerLoading } = useReseller();
   const { childPanel, loading: cpLoading } = useChildPanel();
   const { domainType } = useCachedServices();
+  const { formatMoney } = useCurrency();
   const [balance, setBalance] = useState(0);
 
   // Fetch wallet balance
@@ -104,14 +107,19 @@ const Header = () => {
             {brand.brandName}
           </h1>
         </div>
-        <div
-          className="bg-gradient-to-r rounded-2xl p-2 shadow-lg text-white text-center"
-          style={{
-            background: `linear-gradient(to right, ${brand.themeColor}, #ff3b00)`,
-          }}
-        >
-          <p className="text-sm">Balance</p>
-          <h2 className="text-xl font-bold">${Number(balance).toFixed(4)}</h2>
+
+        <div className="flex items-center gap-2">
+          <CurrencySelector />
+
+          <div
+            className="bg-gradient-to-r rounded-2xl p-2 shadow-lg text-white text-center"
+            style={{
+              background: `linear-gradient(to right, ${brand.themeColor}, #ff3b00)`,
+            }}
+          >
+            <p className="text-sm">Balance</p>
+            <h2 className="text-xl font-bold">{formatMoney(balance, 4)}</h2>
+          </div>
         </div>
       </div>
     </nav>
