@@ -39,7 +39,8 @@ export default function OwnGatewaysTab({ ownGateways, onEdit, onRotateToken, onD
                 </div>
                 <p className="text-xs mt-0.5 text-gray-500">
                   {gw.paymentMode} · {gw.processingCurrency} · Rate: {gw.exchangeRate}
-                  {gw.feeType !== "none" && ` · Fee: ${gw.feeType}`}
+                  {gw.depositFeeType !== "none" && ` · Deposit fee: ${gw.depositFeeType}`}
+                  {gw.supportsWithdraw && gw.withdrawalFeeType !== "none" && ` · Withdraw fee: ${gw.withdrawalFeeType}`}
                   {gw.supportsWithdraw && ` · Min withdraw: $${gw.minWithdraw}`}
                 </p>
                 {gw.adminNote && (
