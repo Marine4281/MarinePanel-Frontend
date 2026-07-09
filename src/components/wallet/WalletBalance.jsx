@@ -50,8 +50,7 @@ const WalletBalance = ({ balance, setBalance, setTransactions, onAddFunds, onWit
         </p>
         <p className="text-xs text-gray-400 mt-1">
           {selected?.code === "USD" || !selected?._id
-            ? "USD · Updates in real-time"
-            : `Shown in ${selected.code} · Balance stored in USD · Updates in real-time`}
+            ? 
         </p>
       </div>
 
