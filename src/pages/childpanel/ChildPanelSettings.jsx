@@ -19,7 +19,7 @@ import CurrencyTab from "../../components/childpanel/settings/CurrencyTab";
 
 import {
   FiGlobe, FiDollarSign, FiCreditCard,
-  FiMessageCircle, FiImage, FiLayout, FiSearch, FiCalendar,FaCoins,
+  FiMessageCircle, FiImage, FiLayout, FiSearch, FiCalendar, FaCoins,
 } from "react-icons/fi";
 
 const TABS = [
