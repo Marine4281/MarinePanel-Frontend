@@ -158,29 +158,63 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
           </F>
         </div>
 
-        <F label="Fee Type">
-          <select value={form.feeType}
-            onChange={(e) => setForm({ ...form, feeType: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl text-gray-900 text-sm outline-none bg-white border border-gray-300 focus:border-orange-400">
-            <option value="none">No Fee</option>
-            <option value="fixed">Fixed Fee</option>
-            <option value="percentage">Percentage</option>
-            <option value="both">Fixed + Percentage</option>
-          </select>
-        </F>
+        {/* ─── DEPOSIT FEE ─── */}
+        <div className="space-y-3 p-3 rounded-xl bg-orange-50 border border-orange-100">
+          <p className="text-xs font-black text-orange-700 uppercase tracking-wider">Deposit Fee</p>
 
-        {(form.feeType === "percentage" || form.feeType === "both") && (
-          <F label="Fee %">
-            <I type="number" value={form.feePercentage}
-              onChange={(v) => setForm({ ...form, feePercentage: Number(v) })} placeholder="2.5" />
+          <F label="Deposit Fee Type">
+            <select value={form.depositFeeType}
+              onChange={(e) => setForm({ ...form, depositFeeType: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl text-gray-900 text-sm outline-none bg-white border border-gray-300 focus:border-orange-400">
+              <option value="none">No Fee</option>
+              <option value="fixed">Fixed Fee</option>
+              <option value="percentage">Percentage</option>
+              <option value="both">Fixed + Percentage</option>
+            </select>
           </F>
-        )}
-        {(form.feeType === "fixed" || form.feeType === "both") && (
-          <F label={`Fixed Fee (${form.processingCurrency})`}>
-            <I type="number" value={form.feeFixed}
-              onChange={(v) => setForm({ ...form, feeFixed: Number(v) })} placeholder="50" />
+
+          {(form.depositFeeType === "percentage" || form.depositFeeType === "both") && (
+            <F label="Deposit Fee %">
+              <I type="number" value={form.depositFeePercentage}
+                onChange={(v) => setForm({ ...form, depositFeePercentage: Number(v) })} placeholder="2.5" />
+            </F>
+          )}
+          {(form.depositFeeType === "fixed" || form.depositFeeType === "both") && (
+            <F label={`Deposit Fixed Fee (${form.processingCurrency})`}>
+              <I type="number" value={form.depositFeeFixed}
+                onChange={(v) => setForm({ ...form, depositFeeFixed: Number(v) })} placeholder="50" />
+            </F>
+          )}
+        </div>
+
+        {/* ─── WITHDRAWAL FEE ─── */}
+        <div className="space-y-3 p-3 rounded-xl bg-purple-50 border border-purple-100">
+          <p className="text-xs font-black text-purple-700 uppercase tracking-wider">Withdrawal Fee</p>
+
+          <F label="Withdrawal Fee Type">
+            <select value={form.withdrawalFeeType}
+              onChange={(e) => setForm({ ...form, withdrawalFeeType: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl text-gray-900 text-sm outline-none bg-white border border-gray-300 focus:border-orange-400">
+              <option value="none">No Fee</option>
+              <option value="fixed">Fixed Fee</option>
+              <option value="percentage">Percentage</option>
+              <option value="both">Fixed + Percentage</option>
+            </select>
           </F>
-        )}
+
+          {(form.withdrawalFeeType === "percentage" || form.withdrawalFeeType === "both") && (
+            <F label="Withdrawal Fee %">
+              <I type="number" value={form.withdrawalFeePercentage}
+                onChange={(v) => setForm({ ...form, withdrawalFeePercentage: Number(v) })} placeholder="2.5" />
+            </F>
+          )}
+          {(form.withdrawalFeeType === "fixed" || form.withdrawalFeeType === "both") && (
+            <F label={`Withdrawal Fixed Fee (${form.processingCurrency})`}>
+              <I type="number" value={form.withdrawalFeeFixed}
+                onChange={(v) => setForm({ ...form, withdrawalFeeFixed: Number(v) })} placeholder="50" />
+            </F>
+          )}
+        </div>
 
         <F label="Note for your users (optional)">
           <textarea value={form.cpNote} rows={2}
@@ -215,4 +249,4 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
       </div>
     </div>
   );
-}
+      }
