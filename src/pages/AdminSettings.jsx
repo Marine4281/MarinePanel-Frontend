@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import API from "../api/axios";
+import AdminCurrencySettings from "../components/admin/AdminCurrencySettings";
 
 const AdminSettings = () => {
   const [commission, setCommission] = useState(50);
@@ -282,6 +283,8 @@ const AdminSettings = () => {
             </button>
           </div>
         </div>
+
+        <AdminCurrencySettings />
 
         {/* RESET REVENUE */}
         <div className="bg-white rounded-2xl shadow p-6">
