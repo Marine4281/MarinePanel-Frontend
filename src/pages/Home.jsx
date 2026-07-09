@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useServices } from "../context/ServicesContext";
+import { useCurrency } from "../context/CurrencyContext";
 
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -22,6 +23,7 @@ const isCustomComments = (serviceData) =>
 const Home = () => {
   const { user, setUser } = useAuth();
   const { services, loading, getGlobalDefault, getPlatformDefault } = useServices();
+  const { formatMoney, selected } = useCurrency();
 
   const location = useLocation();
   const prefillApplied = useRef(false);
@@ -141,7 +143,7 @@ const Home = () => {
         service: serviceName,
         quantity: Number(qty),
       });
-      setCharge(res.data?.finalCharge ? Number(res.data.finalCharge).toFixed(4) : 0);
+      setCharge(res.data?.finalCharge ? Number(res.data.finalCharge) : 0);
     } catch {
       setCharge(0);
       toast.error("Failed to calculate charge");
@@ -345,11 +347,13 @@ const Home = () => {
 
           {/* CHARGE */}
           <div className="mb-4">
-            <label className="font-semibold block mb-1">Charge (USD)</label>
+            <label className="font-semibold block mb-1">
+              Charge ({selected?.code || "USD"})
+            </label>
             <input
               type="text"
               className="p-3 w-[90%] rounded-xl shadow bg-gray-100"
-              value={selectedServiceData?.isFree ? "FREE" : charge}
+              value={selectedServiceData?.isFree ? "FREE" : formatMoney(charge, 4)}
               readOnly
             />
           </div>
