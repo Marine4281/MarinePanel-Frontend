@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { SupportProvider } from "./context/SupportContext";
 import { useSEO } from "./hooks/useSEO"; 
 import { ResellerActivationFeedProvider } from "./context/ResellerActivationFeedContext";
+import { CurrencyProvider } from "./context/CurrencyContext";
 
 // Public pages
 import LandingPage from "./pages/LandingPage";
@@ -419,19 +420,21 @@ export default function App() {
   return (
     <QueryClientProvider client={client}>
       <AuthProvider>
-        <ResellerProvider>
-          <ChildPanelProvider>
-            <CachedServicesProvider>
-              <SupportProvider>
-                <ResellerActivationFeedProvider>
-                  <ServicesProvider>
-                    <AppRoutes />
-                  </ServicesProvider>
-                </ResellerActivationFeedProvider>
-              </SupportProvider>
-            </CachedServicesProvider>
-          </ChildPanelProvider>
-        </ResellerProvider>
+        <CurrencyProvider>
+          <ResellerProvider>
+            <ChildPanelProvider>
+              <CachedServicesProvider>
+                <SupportProvider>
+                  <ResellerActivationFeedProvider>
+                    <ServicesProvider>
+                      <AppRoutes />
+                    </ServicesProvider>
+                  </ResellerActivationFeedProvider>
+                </SupportProvider>
+              </CachedServicesProvider>
+            </ChildPanelProvider>
+          </ResellerProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
