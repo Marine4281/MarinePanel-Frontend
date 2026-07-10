@@ -8,8 +8,7 @@ const QRow = ({ label, value, bold, color }) => (
 );
 
 const QuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, setConfirmed }) => {
-  const { formatMoney, selected } = useCurrency();
-  const showDisplayEquivalent = selected?._id && selected.code !== "USD";
+  const { formatMoney } = useCurrency();
 
   if (quoteLoading) {
     return (
@@ -36,14 +35,7 @@ const QuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, setConfirme
             <QRow label="Processing fee" value={`${sym}${Number(quote.fee).toFixed(2)} ${curr}`} color="text-red-500" />
           )}
           <QRow label="Total charged"    value={`${sym}${Number(quote.total).toFixed(2)} ${curr}`} bold />
-          <QRow label="You will receive" value={`$${Number(quote.walletCredit).toFixed(4)} USD`} color="text-green-600" bold />
-          {showDisplayEquivalent && (
-            <QRow
-              label="≈ In your currency"
-              value={formatMoney(quote.walletCredit, 4)}
-              color="text-gray-400"
-            />
-          )}
+          <QRow label="You will receive" value={formatMoney(quote.walletCredit, 4)} color="text-green-600" bold />
         </div>
       </div>
 
@@ -54,7 +46,7 @@ const QuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, setConfirme
             className="mt-0.5 accent-orange-500" />
           <span className="text-xs text-gray-500 leading-relaxed">
             I understand I will be charged {sym}{Number(quote.total).toFixed(2)} {curr} and
-            will receive ${Number(quote.walletCredit).toFixed(4)} USD in my wallet.
+            will receive {formatMoney(quote.walletCredit, 4)} in my wallet.
           </span>
         </label>
       )}
