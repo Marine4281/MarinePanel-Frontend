@@ -44,18 +44,20 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
         Amount ({code})
       </label>
-      <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">{symbol}</span>
+      <div className="flex items-stretch border-2 rounded-xl overflow-hidden focus-within:border-orange-400 transition">
+        <span className="flex items-center justify-center px-3 bg-gray-50 text-gray-500 font-bold text-sm shrink-0 border-r border-gray-200">
+          {symbol}
+        </span>
         <input type="number" min="0" step="0.01" placeholder="0.00"
           value={displayAmount} onChange={(e) => handleDisplayChange(e.target.value)}
-          className="w-full pl-8 pr-4 py-3 border-2 rounded-xl text-gray-800 text-sm outline-none focus:border-orange-400 transition" />
+          className="flex-1 min-w-0 px-3 py-3 text-gray-800 text-sm outline-none" />
       </div>
       <div className="flex items-center justify-between mt-1">
         {minDepositDisplay && (
           <p className="text-xs text-gray-400">Min: {symbol}{minDepositDisplay} {code}</p>
         )}
         {!isUSD && usdAmount && Number(usdAmount) > 0 && (
-          <p className="text-xs text-gray-400">≈ ${Number(usdAmount).toFixed(4)} USD</p>
+          <p className="text-xs text-gray-300">${Number(usdAmount).toFixed(4)}</p>
         )}
       </div>
     </div>
