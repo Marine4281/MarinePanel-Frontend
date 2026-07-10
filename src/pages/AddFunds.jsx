@@ -18,19 +18,21 @@ const AddFunds = () => {
   const { userUnread, fmt } = useSupport();
   const { formatMoney } = useCurrency();
 
-  const [gateways,      setGateways]      = useState([]);
-  const [selected,      setSelected]      = useState(null);
-  const [usdAmount,     setUsdAmount]     = useState("");
-  const [quote,         setQuote]         = useState(null);
-  const [quoteLoading,  setQuoteLoading]  = useState(false);
-  const [submitting,    setSubmitting]    = useState(false);
-  const [confirmed,     setConfirmed]     = useState(false);
-  const [userPayData,   setUserPayData]   = useState({});
+  const [gateways,        setGateways]        = useState([]);
+  const [gatewaysLoading, setGatewaysLoading]  = useState(true);
+  const [selected,        setSelected]         = useState(null);
+  const [usdAmount,       setUsdAmount]        = useState("");
+  const [quote,           setQuote]            = useState(null);
+  const [quoteLoading,    setQuoteLoading]     = useState(false);
+  const [submitting,      setSubmitting]       = useState(false);
+  const [confirmed,       setConfirmed]        = useState(false);
+  const [userPayData,     setUserPayData]      = useState({});
 
   useEffect(() => {
     API.get("/gateways")
       .then((r) => setGateways(r.data.gateways || []))
-      .catch(() => toast.error("Failed to load payment methods"));
+      .catch(() => toast.error("Failed to load payment methods"))
+      .finally(() => setGatewaysLoading(false));
   }, []);
 
   useEffect(() => {
@@ -156,7 +158,7 @@ const AddFunds = () => {
             <p className="text-sm text-gray-400 mt-1">Select a payment method and deposit amount.</p>
           </div>
 
-          <GatewaySelector gateways={gateways} selected={selected} onSelect={handleSelect} />
+          <GatewaySelector gateways={gateways} selected={selected} onSelect={handleSelect} loading={gatewaysLoading} />
 
           <PaymentInstructions selected={selected} mode={mode} />
 
