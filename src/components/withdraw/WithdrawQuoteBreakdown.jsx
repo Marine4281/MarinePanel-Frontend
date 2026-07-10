@@ -8,8 +8,7 @@ const QRow = ({ label, value, bold, color }) => (
 );
 
 const WithdrawQuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, setConfirmed }) => {
-  const { formatMoney, selected } = useCurrency();
-  const showDisplayEquivalent = selected?._id && selected.code !== "USD";
+  const { formatMoney } = useCurrency();
 
   if (quoteLoading) {
     return (
@@ -31,14 +30,7 @@ const WithdrawQuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, set
           </p>
         </div>
         <div className="divide-y divide-gray-50">
-          <QRow label="Wallet debit"     value={`$${Number(quote.walletDebit).toFixed(2)} USD`} bold />
-          {showDisplayEquivalent && (
-            <QRow
-              label="≈ In your currency"
-              value={formatMoney(quote.walletDebit, 4)}
-              color="text-gray-400"
-            />
-          )}
+          <QRow label="Wallet debit"     value={formatMoney(quote.walletDebit, 4)} bold />
           {quote.fee > 0 && (
             <QRow label="Processing fee" value={`${sym}${Number(quote.fee).toFixed(2)} ${curr}`} color="text-red-500" />
           )}
@@ -51,7 +43,7 @@ const WithdrawQuoteBreakdown = ({ quote, quoteLoading, sym, curr, confirmed, set
           onChange={(e) => setConfirmed(e.target.checked)}
           className="mt-0.5 accent-orange-500" />
         <span className="text-xs text-gray-500 leading-relaxed">
-          I understand ${Number(quote.walletDebit).toFixed(2)} USD will be deducted from my wallet
+          I understand {formatMoney(quote.walletDebit, 4)} will be deducted from my wallet
           and I will receive {sym}{Number(quote.amountReceived).toFixed(2)} {curr}.
         </span>
       </label>
