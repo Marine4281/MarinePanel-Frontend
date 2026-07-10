@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import formatNumber from "../utils/formatNumber";
 import ServiceDescriptionModal from "./ServiceDescriptionModal";
 import API from "../api/axios";
+import { useCurrency } from "../context/CurrencyContext";
 
 const FEATURE_STYLES = {
   orange: {
@@ -24,6 +25,7 @@ const FEATURE_STYLES = {
 const ServiceTable = ({ services }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [categoryMeta, setCategoryMeta] = useState([]);
+  const { formatMoney } = useCurrency();
 
   useEffect(() => {
     API.get("/category-meta")
@@ -46,10 +48,10 @@ const ServiceTable = ({ services }) => {
   };
 
   const calculateRate = (service) => {
-    if (service?.resellerRate != null) return Number(service.resellerRate).toFixed(4);
-    if (service?.systemRate != null) return Number(service.systemRate).toFixed(4);
-    if (service?.rate != null) return Number(service.rate).toFixed(4);
-    return "0.0000";
+    if (service?.resellerRate != null) return Number(service.resellerRate);
+    if (service?.systemRate != null) return Number(service.systemRate);
+    if (service?.rate != null) return Number(service.rate);
+    return 0;
   };
 
   if (!services || services.length === 0) {
@@ -137,7 +139,7 @@ const ServiceTable = ({ services }) => {
                     </td>
 
                     <td className="px-3 py-2 whitespace-nowrap font-medium text-green-600">
-                      ${calculateRate(service)}
+                      {formatMoney(calculateRate(service), 4)}
                     </td>
 
                     <td className="px-3 py-2 whitespace-nowrap text-gray-700">
