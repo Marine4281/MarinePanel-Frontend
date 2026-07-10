@@ -9,6 +9,7 @@ import API from "../api/axios";
 import UserOrdersFilters from "../components/orders/UserOrdersFilters";
 import UserOrdersStats from "../components/orders/UserOrdersStats";
 import OrderActions from "../components/orders/OrderActions";
+import { useCurrency } from "../context/CurrencyContext";
 
 const baseURL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
@@ -17,6 +18,7 @@ const baseURL =
 const socket = io(baseURL, { transports: ["websocket"] });
 
 const Orders = () => {
+  const { formatMoney } = useCurrency();
   const [orders, setOrders] = useState([]);
 
   const [search, setSearch] = useState("");
@@ -273,7 +275,7 @@ const Orders = () => {
                       </td>
 
                       <td className="px-4 py-3">
-                        ${Number(order.charge).toFixed(4)}
+                        {formatMoney(order.charge, 4)}
                       </td>
 
                       {/* STATUS */}
