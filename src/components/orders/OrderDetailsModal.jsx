@@ -1,6 +1,9 @@
 // src/components/orders/OrderDetailsModal.jsx
+import { useCurrency } from "../../context/CurrencyContext";
 
 const OrderDetailsModal = ({ order, onClose }) => {
+  const { formatMoney } = useCurrency();
+
   if (!order) return null;
 
   return (
@@ -33,7 +36,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
           <p>
             <strong>Rate / 1K:</strong>{" "}
             {order.rate !== undefined && order.rate !== null
-              ? `$${Number(order.rate).toFixed(4)}`
+              ? formatMoney(order.rate, 4)
               : "—"}
           </p>
         </div>
