@@ -7,25 +7,30 @@ import { FiUpload, FiCheck, FiImage } from "react-icons/fi";
 
 /**
  * Props:
- *  currentLogo   — currently selected logo URL
- *  onSelect(url) — called when user picks a logo
- *  uploadEndpoint — e.g. "/seo/reseller/logo" or "/seo/cp/logo"
- *  label         — section title
+ *  currentLogo    — currently selected logo URL
+ *  onSelect(url)  — called when user picks a logo
+ *  uploadEndpoint — e.g. "/seo/reseller/logo" or "/cp/gateways/upload-qr"
+ *  label          — section title
+ *  showGalleryTab — set false to hide the shared platform gallery
+ *                   (e.g. for CP-owner-private uploads like a Binance QR)
  */
-export default function LogoGalleryPicker({ currentLogo, onSelect, uploadEndpoint, label = "Logo" }) {
+export default function LogoGalleryPicker({ currentLogo, onSelect, uploadEndpoint, label = "Logo", showGalleryTab = true }) {
   const [gallery, setGallery]         = useState([]);
-  const [loadingGallery, setLoadingGallery] = useState(true);
+  const [loadingGallery, setLoadingGallery] = useState(showGalleryTab);
   const [uploading, setUploading]     = useState(false);
-  const [tab, setTab]                 = useState("gallery"); // "gallery" | "upload" | "url"
+  const [tab, setTab]                 = useState(showGalleryTab ? "gallery" : "upload"); // "gallery" | "upload" | "url"
   const [urlInput, setUrlInput]       = useState(currentLogo || "");
   const fileRef                       = useRef();
 
+  const tabs = showGalleryTab ? ["gallery", "upload", "url"] : ["upload", "url"];
+
   useEffect(() => {
+    if (!showGalleryTab) return;
     API.get("/seo/gallery")
       .then((r) => setGallery(r.data.gallery || []))
       .catch(() => toast.error("Failed to load logo gallery"))
       .finally(() => setLoadingGallery(false));
-  }, []);
+  }, [showGalleryTab]);
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -68,7 +73,7 @@ export default function LogoGalleryPicker({ currentLogo, onSelect, uploadEndpoin
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
-        {["gallery", "upload", "url"].map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -84,7 +89,7 @@ export default function LogoGalleryPicker({ currentLogo, onSelect, uploadEndpoin
       </div>
 
       {/* Gallery tab */}
-      {tab === "gallery" && (
+      {tab === "gallery" && showGalleryTab && (
         <div>
           {loadingGallery ? (
             <p className="text-xs text-gray-400">Loading gallery...</p>
