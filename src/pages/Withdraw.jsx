@@ -78,9 +78,14 @@ const Withdraw = () => {
         toast.error("Bank/mobile money code and account number are required"); return false;
       }
     }
-    if (["crypto", "binance"].includes(channel) && !userPayoutData.walletAddress) {
-      toast.error("Wallet address is required"); return false;
-    }
+    if (channel === "binance") {
+    if (!userPayoutData.binanceId) { toast.error("Binance ID is required"); return false; }
+    if (!userPayoutData.fullName) { toast.error("Full name is required"); return false; }
+  }
+  if (channel === "crypto" && !userPayoutData.walletAddress) {
+    toast.error("Wallet address is required"); return false;
+  }
+    
     if (channel === "other" && !userPayoutData.notes) {
       toast.error("Enter your payout details"); return false;
     }
