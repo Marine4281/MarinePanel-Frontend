@@ -1,5 +1,6 @@
 import { Modal, Input, Select, Toggle } from "./FormControls";
 import { PAYMENT_MODES, MANUAL_TYPES, FEE_TYPE_OPTIONS } from "./constants";
+import LogoGalleryPicker from "../shared/LogoGalleryPicker";
 
 export default function GatewayFormModal({ gatewayForm, setGatewayForm, editingGateway, loading, providerOptions, onSave, onClose }) {
   return (
@@ -37,13 +38,12 @@ export default function GatewayFormModal({ gatewayForm, setGatewayForm, editingG
             value={gatewayForm.binanceName}
             onChange={(v) => setGatewayForm({ ...gatewayForm, binanceName: v })}
             placeholder="e.g. John Doe" />
-          <Input label="QR Code Image URL"
-            value={gatewayForm.qrImageUrl}
-            onChange={(v) => setGatewayForm({ ...gatewayForm, qrImageUrl: v })}
-            placeholder="https://..." />
-          {gatewayForm.qrImageUrl && (
-            <img src={gatewayForm.qrImageUrl} alt="QR preview" className="w-24 h-24 rounded-lg border object-contain" />
-          )}
+          <LogoGalleryPicker
+            currentLogo={gatewayForm.qrImageUrl}
+            onSelect={(url) => setGatewayForm({ ...gatewayForm, qrImageUrl: url })}
+            uploadEndpoint="/seo/admin/gallery"
+            label="Binance QR Code Image"
+          />
         </div>
       )}
 
