@@ -121,7 +121,27 @@ const PayoutFields = ({ selected, usdAmount, setUsdAmount, userPayoutData, setFi
         </div>
       )}
 
-      {["crypto", "binance"].includes(channel) && (
+      {/* ✅ Binance now has its own fields — Binance ID + Full Name, not a
+          wallet address. Binance Pay/internal transfers route by these,
+          not an on-chain address. */}
+      {channel === "binance" && (
+        <div className="space-y-3">
+          <Field label="Your Binance ID">
+            <input type="text" placeholder="e.g. 123456789"
+              value={userPayoutData.binanceId || ""}
+              onChange={(e) => setField("binanceId", e.target.value)}
+              className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400 font-mono" />
+          </Field>
+          <Field label="Full Name (as registered on Binance)">
+            <input type="text" placeholder="e.g. John Doe"
+              value={userPayoutData.fullName || ""}
+              onChange={(e) => setField("fullName", e.target.value)}
+              className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
+          </Field>
+        </div>
+      )}
+
+      {channel === "crypto" && (
         <div className="space-y-3">
           <Field label="Your Wallet Address">
             <input type="text" placeholder="e.g. TRx..."
