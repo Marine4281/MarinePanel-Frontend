@@ -48,7 +48,7 @@ const PaymentInstructions = ({ selected, mode }) => {
           )}
           {selected.binanceId && <CopyRow label="Binance ID" value={selected.binanceId} />}
           <p className="text-sm text-yellow-700">
-            After sending, fill in your Binance Order ID and your name below.
+            After sending, fill in your Binance Order ID below.
           </p>
         </div>
       )}
