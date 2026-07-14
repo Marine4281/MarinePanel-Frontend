@@ -1,6 +1,9 @@
+import { useState } from "react";
 import CopyRow from "./CopyRow";
 
 const PaymentInstructions = ({ selected, mode }) => {
+  const [zoomed, setZoomed] = useState(false);
+
   if (!selected) return null;
 
   return (
@@ -27,12 +30,23 @@ const PaymentInstructions = ({ selected, mode }) => {
             <p className="text-sm text-yellow-700 whitespace-pre-line">{selected.paymentInstructions}</p>
           )}
           {selected.qrImageUrl && (
-            <img src={selected.qrImageUrl} alt="Binance QR" className="w-32 h-32 rounded-lg border mx-auto" />
+            <>
+              <button
+                type="button"
+                onClick={() => setZoomed(true)}
+                className="block mx-auto"
+                title="Click to zoom"
+              >
+                <img
+                  src={selected.qrImageUrl}
+                  alt="Binance QR"
+                  className="w-48 h-48 rounded-lg border-2 border-yellow-300 mx-auto object-contain bg-white cursor-zoom-in hover:opacity-90 transition"
+                />
+              </button>
+              <p className="text-xs text-yellow-600 text-center">Tap the QR code to zoom in</p>
+            </>
           )}
           {selected.binanceId && <CopyRow label="Binance ID" value={selected.binanceId} />}
-          {selected.binanceName && (
-            <p className="text-xs text-yellow-700">Name on account: <b>{selected.binanceName}</b></p>
-          )}
           <p className="text-sm text-yellow-700">
             After sending, fill in your Binance Order ID and your name below.
           </p>
@@ -67,6 +81,20 @@ const PaymentInstructions = ({ selected, mode }) => {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Zoom lightbox — click anywhere to close */}
+      {zoomed && selected.qrImageUrl && (
+        <div
+          onClick={() => setZoomed(false)}
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-6 cursor-zoom-out"
+        >
+          <img
+            src={selected.qrImageUrl}
+            alt="Binance QR (zoomed)"
+            className="max-w-full max-h-full rounded-xl bg-white p-4"
+          />
         </div>
       )}
     </>
