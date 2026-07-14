@@ -4,12 +4,14 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { FiHeadphones } from "react-icons/fi";
 import { useSupport } from "../context/SupportContext";
+import { usePaymentAlerts } from "../context/PaymentAlertsContext";
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
 
   const { adminUnread, fmt } = useSupport();
+  const { adminPaymentUnread } = usePaymentAlerts();
 
   const links = [
     { name: "Dashboard",      icon: "fa-solid fa-chart-line",        path: "/admin",                exact: true },
@@ -23,7 +25,14 @@ const Sidebar = () => {
     { name: "User Orders",    icon: "fa-solid fa-clipboard-list",    path: "/admin/user-orders" },
     { name: "Resellers",      icon: "fa-solid fa-handshake",         path: "/admin/resellers" },
     { name: "Child Panels",   icon: "fa-solid fa-diagram-project",   path: "/admin/child-panels" },
-    { name: "Payments",       icon: "fa-solid fa-credit-card",       path: "/admin/payment-gateways" },
+
+    // 💳 Payments
+    {
+      name:  "Payments",
+      icon:  "fa-solid fa-credit-card",
+      path:  "/admin/payment-gateways",
+      badge: adminPaymentUnread,
+    },
 
     // 🎧 Support
     {
