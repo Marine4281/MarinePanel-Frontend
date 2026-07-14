@@ -1,6 +1,6 @@
 import { MODE_ICONS } from "./constants";
 
-export default function PlatformGatewaysTab({ platformGateways, isConnected, connecting, onConnect }) {
+export default function PlatformGatewaysTab({ platformGateways, isConnected, connecting, disconnecting, onConnect, onDisconnect }) {
   return (
     <div className="space-y-3">
       {platformGateways.length === 0 && (
@@ -40,9 +40,17 @@ export default function PlatformGatewaysTab({ platformGateways, isConnected, con
               </div>
 
               {connected ? (
-                <span className="px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 bg-green-100 text-green-700">
-                  ✓ Connected
-                </span>
+                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                  <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700">
+                    ✓ Connected
+                  </span>
+                  <button
+                    onClick={() => onDisconnect(gw._id)}
+                    disabled={disconnecting === gw._id}
+                    className="px-3 py-1 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50 transition">
+                    {disconnecting === gw._id ? "Disconnecting..." : "Disconnect"}
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => onConnect(gw._id)}
