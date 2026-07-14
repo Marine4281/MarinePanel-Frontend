@@ -137,7 +137,7 @@ const PayoutFields = ({ selected, usdAmount, setUsdAmount, userPayoutData, setFi
               className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400 font-mono" />
           </Field>
           <Field label="Full Name (as registered on Binance)">
-            <input type="text" placeholder="e.g. John Doe"
+            <input type="text" placeholder=" Full Name"
               value={userPayoutData.fullName || ""}
               onChange={(e) => setField("fullName", e.target.value)}
               className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
