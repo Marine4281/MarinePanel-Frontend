@@ -21,6 +21,7 @@ export default function CpPaymentGateways() {
   const [form,               setForm]               = useState(EMPTY_FORM);
   const [loading,            setLoading]            = useState(false);
   const [connecting,         setConnecting]         = useState(null);
+  const [disconnecting,      setDisconnecting]      = useState(null);
 
   const fetchAll = async () => {
     const [gwRes, provRes, wRes, dRes] = await Promise.allSettled([
@@ -136,6 +137,18 @@ export default function CpPaymentGateways() {
     } finally { setConnecting(null); }
   };
 
+  const handleDisconnect = async (platformGatewayId) => {
+    if (!confirm("Disconnect this gateway? Your users will no longer be able to use it.")) return;
+    try {
+      setDisconnecting(platformGatewayId);
+      await API.post("/cp/gateways/disconnect-platform", { platformGatewayId });
+      toast.success("Gateway disconnected");
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to disconnect");
+    } finally { setDisconnecting(null); }
+  };
+
   const handleApproveWithdrawal = async (id) => {
     try {
       await API.post(`/cp/withdrawals/${id}/approve`);
@@ -237,7 +250,9 @@ export default function CpPaymentGateways() {
             platformGateways={platformGateways}
             isConnected={isConnected}
             connecting={connecting}
+            disconnecting={disconnecting}
             onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
           />
         )}
 
@@ -271,4 +286,4 @@ export default function CpPaymentGateways() {
       </div>
     </ChildPanelLayout>
   );
-      }
+    }
