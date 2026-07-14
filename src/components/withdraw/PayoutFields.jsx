@@ -11,9 +11,13 @@ const Field = ({ label, children }) => (
 );
 
 // Which recipient fields to show — automatic gateways are driven by the
-// provider adapter (mpesa/flutterwave/binance), manual ones by manualType.
-const getPayoutChannel = (selected) =>
-  selected.paymentMode === "manual" ? (selected.manualType || "other") : selected.providerType;
+// provider adapter (mpesa/flutterwave), manual ones by manualType,
+// and binance is its own dedicated channel (no provider attached).
+const getPayoutChannel = (selected) => {
+  if (selected.paymentMode === "binance") return "binance";
+  if (selected.paymentMode === "manual") return selected.manualType || "other";
+  return selected.providerType;
+};
 
 const PayoutFields = ({ selected, usdAmount, setUsdAmount, userPayoutData, setField }) => {
   const channel = getPayoutChannel(selected);
