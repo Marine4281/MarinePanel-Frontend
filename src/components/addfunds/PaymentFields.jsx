@@ -190,12 +190,7 @@ const PaymentFields = ({ selected, mode, usdAmount, setUsdAmount, userPayData, s
             onChange={(e) => setField("binanceOrderId", e.target.value)}
             className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400 font-mono" />
         </Field>
-        <Field label="Your Name">
-          <input type="text" placeholder="Full Name"
-            value={userPayData.senderName || ""}
-            onChange={(e) => setField("senderName", e.target.value)}
-            className="w-full px-4 py-3 border-2 rounded-xl text-sm outline-none focus:border-orange-400" />
-        </Field>
+        
       </div>
     )}
 
