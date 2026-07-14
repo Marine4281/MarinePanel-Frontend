@@ -13,6 +13,7 @@ import { SupportProvider } from "./context/SupportContext";
 import { useSEO } from "./hooks/useSEO"; 
 import { ResellerActivationFeedProvider } from "./context/ResellerActivationFeedContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
+import { PaymentAlertsProvider } from "./context/PaymentAlertsContext";
 
 // Public pages
 import LandingPage from "./pages/LandingPage";
@@ -416,6 +417,7 @@ function AppRoutes() {
    CachedServicesProvider — detects domain type, exposes domainResolved
    ServicesProvider       — same but for the other services context
 ====================================================== */
+
 export default function App() {
   return (
     <QueryClientProvider client={client}>
@@ -425,11 +427,13 @@ export default function App() {
             <ChildPanelProvider>
               <CachedServicesProvider>
                 <SupportProvider>
-                  <ResellerActivationFeedProvider>
-                    <ServicesProvider>
-                      <AppRoutes />
-                    </ServicesProvider>
-                  </ResellerActivationFeedProvider>
+                  <PaymentAlertsProvider>
+                    <ResellerActivationFeedProvider>
+                      <ServicesProvider>
+                        <AppRoutes />
+                      </ServicesProvider>
+                    </ResellerActivationFeedProvider>
+                  </PaymentAlertsProvider>
                 </SupportProvider>
               </CachedServicesProvider>
             </ChildPanelProvider>
