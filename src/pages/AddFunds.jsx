@@ -97,8 +97,8 @@ const AddFunds = () => {
       }
     }
     if (mode === "binance") {
-      if (!userPayData.binanceOrderId || !userPayData.senderName) {
-        toast.error("Binance Order ID and your name are required"); return false;
+      if (!userPayData.binanceOrderId) {
+        toast.error("Binance Order ID is required"); return false;
       }
     }
     return true;
