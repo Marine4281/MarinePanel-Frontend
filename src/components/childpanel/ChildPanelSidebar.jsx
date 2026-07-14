@@ -23,6 +23,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useSupport } from "../../context/SupportContext";
+import { usePaymentAlerts } from "../../context/PaymentAlertsContext";
 import { useResellerActivationFeed } from "../../context/ResellerActivationFeedContext";
 
 export default function ChildPanelSidebar({ mobileOpen, onClose }) {
@@ -30,6 +31,7 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
   const navigate = useNavigate();
   const auth = useAuth();
   const { cpUnread, fmt } = useSupport();
+  const { cpPaymentUnread } = usePaymentAlerts();
   const { unread: resellerUnread, fmt: fmtResellerUnread } = useResellerActivationFeed();
 
   const logout = typeof auth?.logout === "function" ? auth.logout : () => {};
@@ -62,6 +64,7 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       to: "/child-panel/payment-gateways",
       icon: <FiCreditCard />,
       label: "Payments",
+      badge: cpPaymentUnread,
     },
 
     {
@@ -161,4 +164,4 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       )}
     </>
   );
-}
+            }
