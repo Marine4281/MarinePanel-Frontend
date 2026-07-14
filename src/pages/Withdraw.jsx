@@ -60,9 +60,12 @@ const Withdraw = () => {
   const setField = (key, val) =>
     setUserPayoutData((p) => ({ ...p, [key]: val }));
 
-  const getPayoutChannel = (gw) =>
-    gw.paymentMode === "manual" ? (gw.manualType || "other") : gw.providerType;
-
+  const getPayoutChannel = (gw) => {
+    if (gw.paymentMode === "binance") return "binance";
+    if (gw.paymentMode === "manual") return gw.manualType || "other";
+    return gw.providerType; // automatic gateways processed via a linked provider (mpesa/flutterwave/etc.)
+  };
+  
   const validatePayoutData = () => {
     if (!selected) return false;
     const channel = getPayoutChannel(selected);
