@@ -1,7 +1,7 @@
-// src/components/landing/PublicServicesTable.jsx
+// src/pages/PublicServicesTable.jsx
 import { useState, useMemo } from "react";
-import { useCachedServices } from "../../context/CachedServicesContext";
-import { useCurrency } from "../../context/CurrencyContext";
+import { useCachedServices } from "../context/CachedServicesContext";
+import { useCurrency } from "../context/CurrencyContext";
 import { FiSearch, FiChevronDown, FiCheck } from "react-icons/fi";
 
 export default function PublicServicesTable({ themeColor = "#f97316" }) {
@@ -141,4 +141,4 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
       </div>
     </div>
   );
-                    }
+}
