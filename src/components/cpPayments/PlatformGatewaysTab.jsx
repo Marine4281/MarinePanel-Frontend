@@ -1,4 +1,4 @@
-import { MODE_ICONS } from "./constants";
+import { MODE_ICONS, MODE_COLORS } from "./constants";
 
 export default function PlatformGatewaysTab({ platformGateways, isConnected, connecting, disconnecting, onConnect, onDisconnect }) {
   return (
@@ -14,13 +14,15 @@ export default function PlatformGatewaysTab({ platformGateways, isConnected, con
 
       {platformGateways.map((gw) => {
         const connected = isConnected(gw._id);
+        const Icon = MODE_ICONS[gw.paymentMode] || MODE_ICONS.hosted;
+        const iconColor = MODE_COLORS[gw.paymentMode] || "#6b7280";
         return (
           <div key={gw._id} className={`rounded-2xl p-5 border ${
             connected ? "bg-green-50 border-green-200" : "bg-white border-gray-200 shadow-sm"
           }`}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <span className="text-2xl mt-0.5">{MODE_ICONS[gw.paymentMode] || "💰"}</span>
+                <Icon className="text-2xl mt-0.5" style={{ color: iconColor }} />
                 <div>
                   <p className="font-bold text-gray-900">{gw.name}</p>
                   <p className="text-xs mt-0.5 text-gray-500">
