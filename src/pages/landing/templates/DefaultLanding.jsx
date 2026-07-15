@@ -1,4 +1,4 @@
-// src/pages/landing/templates/LoginFirstLanding.jsx
+// src/pages/landing/templates/DefaultLanding.jsx
 // Login-first landing page for child panel / reseller domains.
 // Leads with a real login form (like most SMM panels) but still sells the
 // panel with a hero pitch, stats, platform icons, and feature highlights.
