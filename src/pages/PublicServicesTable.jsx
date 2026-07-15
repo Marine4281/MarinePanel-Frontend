@@ -29,6 +29,19 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
     return list;
   }, [services, platform, search]);
 
+  // Group by category — same pattern as the admin service table,
+  // so the public list starts with a category, then its services.
+  const groupedServices = useMemo(() => {
+    return Object.entries(
+      filtered.reduce((acc, s) => {
+        const cat = s.category || "Uncategorized";
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(s);
+        return acc;
+      }, {})
+    );
+  }, [filtered]);
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* Controls */}
@@ -106,7 +119,7 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-14 text-center text-gray-400 text-sm">Loading services...</div>
-        ) : filtered.length === 0 ? (
+        ) : groupedServices.length === 0 ? (
           <div className="py-14 text-center text-gray-400 text-sm">No services found.</div>
         ) : (
           <div className="overflow-x-auto">
@@ -121,18 +134,27 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s) => (
-                  <tr key={s._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60">
-                    <td className="px-4 py-3 text-gray-400">{s.serviceId}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{s.name}</td>
-                    <td className="px-4 py-3 text-gray-500">{s.category}</td>
-                    <td className="px-4 py-3 text-right font-semibold" style={{ color: themeColor }}>
-                      {formatMoney(s.rate, 4)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-400 hidden sm:table-cell">
-                      {s.min} / {s.max}
-                    </td>
-                  </tr>
+                {groupedServices.map(([category, items]) => (
+                  <>
+                    <tr key={`cat-${category}`} className="bg-gray-100">
+                      <td colSpan="5" className="px-4 py-2 font-bold text-gray-700 text-xs uppercase tracking-wide">
+                        📦 {category} <span className="font-normal text-gray-400 normal-case">({items.length})</span>
+                      </td>
+                    </tr>
+                    {items.map((s) => (
+                      <tr key={s._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60">
+                        <td className="px-4 py-3 text-gray-400">{s.serviceId}</td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{s.name}</td>
+                        <td className="px-4 py-3 text-gray-500">{s.category}</td>
+                        <td className="px-4 py-3 text-right font-semibold" style={{ color: themeColor }}>
+                          {formatMoney(s.rate, 4)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-400 hidden sm:table-cell">
+                          {s.min} / {s.max}
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 ))}
               </tbody>
             </table>
