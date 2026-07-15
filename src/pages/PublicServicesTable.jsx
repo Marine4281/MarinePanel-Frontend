@@ -1,5 +1,5 @@
 // src/pages/PublicServicesTable.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useCachedServices } from "../context/CachedServicesContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { FiSearch, FiChevronDown, FiCheck } from "react-icons/fi";
@@ -128,16 +128,15 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
                 <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-400">
                   <th className="px-4 py-3">ID</th>
                   <th className="px-4 py-3">Service</th>
-                  <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3 text-right">Rate / 1K</th>
                   <th className="px-4 py-3 text-right hidden sm:table-cell">Min / Max</th>
                 </tr>
               </thead>
               <tbody>
                 {groupedServices.map(([category, items]) => (
-                  <>
-                    <tr key={`cat-${category}`} className="bg-gray-100">
-                      <td colSpan="5" className="px-4 py-2 font-bold text-gray-700 text-xs uppercase tracking-wide">
+                  <Fragment key={category}>
+                    <tr className="bg-gray-100">
+                      <td colSpan="4" className="px-4 py-2 font-bold text-gray-700 text-xs uppercase tracking-wide">
                         📦 {category} <span className="font-normal text-gray-400 normal-case">({items.length})</span>
                       </td>
                     </tr>
@@ -145,7 +144,6 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
                       <tr key={s._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60">
                         <td className="px-4 py-3 text-gray-400">{s.serviceId}</td>
                         <td className="px-4 py-3 font-medium text-gray-800">{s.name}</td>
-                        <td className="px-4 py-3 text-gray-500">{s.category}</td>
                         <td className="px-4 py-3 text-right font-semibold" style={{ color: themeColor }}>
                           {formatMoney(s.rate, 4)}
                         </td>
@@ -154,7 +152,7 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
                         </td>
                       </tr>
                     ))}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -163,4 +161,4 @@ export default function PublicServicesTable({ themeColor = "#f97316" }) {
       </div>
     </div>
   );
-}
+        }
