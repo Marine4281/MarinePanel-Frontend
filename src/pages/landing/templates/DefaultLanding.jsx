@@ -12,42 +12,34 @@ import { useReseller } from "../../../context/ResellerContext";
 import { useCachedServices } from "../../../context/CachedServicesContext";
 import API from "../../../api/axios";
 import toast from "react-hot-toast";
-
-const IconEye = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-);
-const IconEyeOff = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-    <line x1="2" y1="2" x2="22" y2="22"/>
-  </svg>
-);
-const IconDots = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="5" r="1.5"/>
-    <circle cx="12" cy="12" r="1.5"/>
-    <circle cx="12" cy="19" r="1.5"/>
-  </svg>
-);
+import {
+  Eye,
+  EyeOff,
+  MoreVertical,
+  Instagram,
+  Youtube,
+  Facebook,
+  Send,
+  Twitter,
+  Music2,
+  Zap,
+  Wallet,
+  ShieldCheck,
+} from "lucide-react";
 
 const PLATFORMS = [
-  { emoji: "📸", name: "Instagram" },
-  { emoji: "🎵", name: "TikTok" },
-  { emoji: "▶️", name: "YouTube" },
-  { emoji: "🐦", name: "Twitter/X" },
-  { emoji: "👍", name: "Facebook" },
-  { emoji: "✈️", name: "Telegram" },
+  { icon: Instagram, name: "Instagram" },
+  { icon: Music2, name: "TikTok" },
+  { icon: Youtube, name: "YouTube" },
+  { icon: Twitter, name: "Twitter/X" },
+  { icon: Facebook, name: "Facebook" },
+  { icon: Send, name: "Telegram" },
 ];
 
 const FEATURES = [
-  { icon: "⚡", title: "Instant Delivery", desc: "Orders start within seconds, fully automated." },
-  { icon: "💰", title: "Lowest Prices", desc: "Wholesale rates with room to resell for profit." },
-  { icon: "🔒", title: "100% Safe", desc: "No passwords needed. Your accounts stay secure." },
+  { icon: Zap, title: "Orders start fast", desc: "Most go out within a couple of minutes, no one has to approve them by hand." },
+  { icon: Wallet, title: "Fair pricing", desc: "We buy at wholesale and pass most of it on, so there's still room to resell for profit." },
+  { icon: ShieldCheck, title: "Nothing to hand over", desc: "We only ever need a username or a link — never a password." },
 ];
 
 export default function LoginFirstLanding({ brandName, themeColor, logo }) {
@@ -134,7 +126,7 @@ export default function LoginFirstLanding({ brandName, themeColor, logo }) {
             aria-label="More"
             className="h-8 w-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
           >
-            <IconDots />
+            <MoreVertical size={18} />
           </button>
 
           {menuOpen && (
@@ -163,14 +155,14 @@ export default function LoginFirstLanding({ brandName, themeColor, logo }) {
         <div className="text-white order-2 lg:order-1">
           <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-semibold px-4 py-2 rounded-full mb-6">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            Instant Delivery · Lowest Prices · 24/7 Support
+            Fast delivery · Fair prices · Real support
           </div>
 
           <h1 className="text-4xl md:text-5xl font-black mb-4 leading-tight tracking-tight">
             Grow your socials with {name}
           </h1>
           <p className="text-base md:text-lg mb-8 max-w-lg opacity-90 leading-relaxed">
-            Real followers, likes, and views for every major platform — delivered fast, priced fair, and backed by support that never sleeps.
+            Followers, likes, and views for Instagram, TikTok, YouTube, and the rest. Orders go out automatically, and if you ever need a hand, someone actually answers.
           </p>
 
           {/* Stats */}
@@ -194,7 +186,7 @@ export default function LoginFirstLanding({ brandName, themeColor, logo }) {
               {PLATFORMS.map((p) => (
                 <div key={p.name}
                   className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 transition-colors border border-white/15 rounded-full px-3 py-1.5 text-xs font-medium">
-                  <span>{p.emoji}</span>{p.name}
+                  <p.icon size={13} />{p.name}
                 </div>
               ))}
             </div>
@@ -245,7 +237,7 @@ export default function LoginFirstLanding({ brandName, themeColor, logo }) {
                     onClick={() => setShowPassword((s) => !s)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
                   >
-                    {showPassword ? <IconEyeOff /> : <IconEye />}
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
@@ -285,7 +277,9 @@ export default function LoginFirstLanding({ brandName, themeColor, logo }) {
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
           {FEATURES.map((f) => (
             <div key={f.title} className="text-center p-6 rounded-2xl border border-white/10 hover:border-white/25 transition-all">
-              <div className="text-4xl mb-4">{f.icon}</div>
+              <div className="flex justify-center mb-4">
+                <f.icon size={32} strokeWidth={1.75} />
+              </div>
               <h3 className="text-white font-bold mb-2">{f.title}</h3>
               <p className="text-white/60 text-sm leading-relaxed">{f.desc}</p>
             </div>
@@ -298,4 +292,4 @@ export default function LoginFirstLanding({ brandName, themeColor, logo }) {
       </footer>
     </div>
   );
-                    }
+}
