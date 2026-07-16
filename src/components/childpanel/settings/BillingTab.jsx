@@ -20,6 +20,13 @@ export default function BillingTab({ settings, onSaved }) {
     : null;
   const showReminder   = reminderThresh && now >= reminderThresh && !isDue && !isSuspended;
 
+  const billingMode      = settings?.billingMode || "monthly";
+  const showMonthlyBlock = billingMode === "monthly" || billingMode === "both";
+  const showPerOrderBlock = billingMode === "per_order" || billingMode === "both";
+  const tiers             = settings?.monthlyTiers ?? [];
+  const currentTierIndex  = settings?.currentTierIndex ?? -1;
+  const ordersThisCycle   = settings?.ordersThisCycle ?? 0;
+
   const handlePayNow = async () => {
     setLoading(true);
     try {
@@ -86,12 +93,25 @@ export default function BillingTab({ settings, onSaved }) {
       <div className="border rounded-xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Billing mode</span>
-          <span className="font-medium capitalize">{settings?.billingMode || "—"}</span>
+          <span className="font-medium capitalize">{billingMode.replace("_", " ")}</span>
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Monthly fee</span>
-          <span className="font-medium">${settings?.monthlyFee ?? "—"}</span>
-        </div>
+
+        {showMonthlyBlock && tiers.length === 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Monthly fee</span>
+            <span className="font-medium">${settings?.monthlyFee ?? "—"}</span>
+          </div>
+        )}
+
+        {showPerOrderBlock && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Per-order fee</span>
+            <span className="font-medium">
+              ${settings?.perOrderFee ?? "—"} × {ordersThisCycle} order{ordersThisCycle !== 1 ? "s" : ""} this cycle
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Next billing date</span>
           <span className="font-medium">
@@ -107,12 +127,51 @@ export default function BillingTab({ settings, onSaved }) {
           </span>
         </div>
         <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Current fee due</span>
+          <span className="font-medium">${(settings?.currentFee ?? 0).toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
           <span className="text-gray-500">Status</span>
           <span className={`font-medium ${isSuspended ? "text-red-600" : isDue ? "text-amber-600" : "text-green-600"}`}>
             {isSuspended ? "Suspended" : isDue ? "Overdue" : "Active"}
           </span>
         </div>
       </div>
+
+      {/* Tiered monthly pricing — show every tier, highlight the active one */}
+      {showMonthlyBlock && tiers.length > 0 && (
+        <div className="border rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-gray-800">Monthly tiers (by orders this cycle)</p>
+          <div className="space-y-2">
+            {tiers.map((tier, i) => {
+              const isCurrent = i === currentTierIndex;
+              const range = tier.maxOrders === null || tier.maxOrders === undefined
+                ? `${tier.minOrders}+ orders`
+                : `${tier.minOrders}–${tier.maxOrders} orders`;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
+                    isCurrent ? "bg-blue-50 border border-blue-200" : "bg-gray-50 border border-transparent"
+                  }`}
+                >
+                  <span className={isCurrent ? "font-semibold text-blue-700" : "text-gray-600"}>
+                    {range}
+                  </span>
+                  <span className={`flex items-center gap-1.5 ${isCurrent ? "font-semibold text-blue-700" : "font-medium text-gray-700"}`}>
+                    {isCurrent && <FiCheckCircle size={14} />}
+                    ${tier.fee}/mo
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-500">
+            You're at {ordersThisCycle} order{ordersThisCycle !== 1 ? "s" : ""} this cycle
+            {currentTierIndex === -1 ? " — no tier matches yet, using default fee." : "."}
+          </p>
+        </div>
+      )}
 
       {/* Pay now button — show when due or suspended */}
       {(isDue || isSuspended) && (
@@ -148,4 +207,4 @@ export default function BillingTab({ settings, onSaved }) {
       </div>
     </div>
   );
-          }
+}
