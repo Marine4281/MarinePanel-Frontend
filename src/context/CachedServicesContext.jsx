@@ -94,31 +94,31 @@ export const CachedServicesProvider = ({ children }) => {
 
   /* =====================================================
   FETCH DATA
-  All domain types go through the same public /services
-  route. The backend scopes it via hostname-detected
-  req.reseller / req.childPanel (set by domain middleware),
-  which works regardless of whether anyone is logged in.
-
-  IMPORTANT: do NOT special-case "reseller" to call the
-  protected /reseller/services route here. That route scopes
-  by req.user._id (whoever is currently logged in), not by
-  which domain is being visited — so on guest-facing pages
-  (ServicesPublic → PublicServicesTable) it either 401s for
-  guests or, worse, silently falls back to returning every
-  platform service unfiltered for anyone logged in whose
-  account isn't tied to that specific reseller. The reseller's
-  own authenticated dashboard (ResellerServices.jsx) still
-  calls /reseller/services directly and is unaffected by this.
+  Route depends on domain type:
+    reseller   → /reseller/services
+    main       → /services
+    childPanel → /services (backend scopes via middleware)
   ===================================================== */
   const fetchData = async (type) => {
     try {
       setLoading(true);
 
-      const res = await API.get("/services");
-      const servicesData = res.data || [];
+      let servicesData   = [];
+      let commissionData = 0;
+
+      if (type === "reseller") {
+        const res  = await API.get("/reseller/services");
+        servicesData   = res.data.services  || [];
+        commissionData = res.data.commission || 0;
+      } else {
+        // main or childPanel
+        const res  = await API.get("/services");
+        servicesData = res.data || [];
+        commissionData = 0;
+      }
 
       setServices(servicesData);
-      setCommission(0);
+      setCommission(commissionData);
     } catch (error) {
       console.error("Failed to fetch services", error);
       setServices([]);
