@@ -76,7 +76,16 @@ export default function CPDetailInfoCard({ cp, onUpdate }) {
         <InfoRow label="Billing">
           <span className="capitalize">
             {cp.childPanelBillingMode || "—"}
-            {cp.childPanelMonthlyFee  > 0 && <> · ${cp.childPanelMonthlyFee}/mo</>}
+            {(cp.childPanelBillingMode === "monthly" || cp.childPanelBillingMode === "both") && (
+              <>
+                {" "}· ${cp.currentFee != null ? Number(cp.currentFee).toFixed(2) : cp.childPanelMonthlyFee}/mo
+                {cp.monthlyTiers?.length > 0 && (
+                  <span className="text-gray-400 normal-case">
+                    {" "}({cp.currentTierIndex >= 0 ? `tier ${cp.currentTierIndex + 1}/${cp.monthlyTiers.length}` : "no tier matched"})
+                  </span>
+                )}
+              </>
+            )}
             {cp.childPanelPerOrderFee > 0 && <> · ${cp.childPanelPerOrderFee}/order</>}
           </span>
         </InfoRow>
