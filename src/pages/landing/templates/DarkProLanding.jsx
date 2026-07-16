@@ -1,5 +1,6 @@
 // src/pages/landing/templates/DarkProLanding.jsx
 import { Link } from "react-router-dom";
+import { Zap, KeyRound, Settings2, ArrowRight, Terminal } from "lucide-react";
 
 const PLATFORMS = [
   { name: "Instagram", handle: "@instagram" },
@@ -27,8 +28,8 @@ export default function DarkProLanding({ brandName, themeColor, logo }) {
         </div>
         <div className="flex gap-3">
           <Link to="/login" className="text-xs px-5 py-2.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all tracking-widest uppercase">Login</Link>
-          <Link to="/register" className="text-xs px-5 py-2.5 rounded-lg font-bold tracking-widest uppercase transition-all hover:opacity-80" style={{ backgroundColor: themeColor, color: "#000" }}>
-            Start →
+          <Link to="/register" className="text-xs px-5 py-2.5 rounded-lg font-bold tracking-widest uppercase transition-all hover:opacity-80 inline-flex items-center gap-1.5" style={{ backgroundColor: themeColor, color: "#000" }}>
+            Start <ArrowRight size={13} />
           </Link>
         </div>
       </nav>
@@ -45,29 +46,29 @@ export default function DarkProLanding({ brandName, themeColor, logo }) {
 
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div>
-            <div className="text-xs tracking-widest text-white/30 uppercase mb-4 font-sans">
-              <span style={{ color: themeColor }}>▶</span> System Online · All services operational
+            <div className="text-xs tracking-widest text-white/30 uppercase mb-4 font-sans flex items-center gap-2">
+              <Terminal size={12} style={{ color: themeColor }} /> System online, all services running
             </div>
 
             <h1 className="text-4xl md:text-6xl font-black leading-tight mb-6 font-sans">
-              Automate.<br />
-              Scale.<br />
-              <span style={{ color: themeColor }}>Dominate.</span>
+              Automate it.<br />
+              Scale it up.<br />
+              <span style={{ color: themeColor }}>Keep it running.</span>
             </h1>
 
             <p className="text-white/40 leading-relaxed mb-8 font-sans text-sm max-w-sm">
-              {brandName} is a professional-grade SMM panel engineered for speed and scale. Built for agencies, freelancers, and power resellers.
+              {brandName} is an SMM panel built for people who order in bulk — agencies, freelancers, and resellers who need it to just work.
             </p>
 
             <div className="flex gap-3">
               <Link to="/register"
                 className="px-7 py-3.5 rounded-xl font-bold text-black text-sm font-sans hover:opacity-90 transition-all"
                 style={{ backgroundColor: themeColor }}>
-                Initialize Account
+                Create an account
               </Link>
               <Link to="/login"
-                className="px-7 py-3.5 rounded-xl font-bold text-sm font-sans border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-all">
-                Login →
+                className="px-7 py-3.5 rounded-xl font-bold text-sm font-sans border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-all inline-flex items-center gap-1.5">
+                Login <ArrowRight size={14} />
               </Link>
             </div>
           </div>
@@ -114,12 +115,12 @@ export default function DarkProLanding({ brandName, themeColor, logo }) {
       <section className="border-t border-white/5 px-8 py-16">
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden">
           {[
-            { label: "Instant Start",    desc: "Orders begin processing in under a second",     icon: "⚡" },
-            { label: "No Password Needed", desc: "Only your profile URL — completely safe",      icon: "🔑" },
-            { label: "API Access",       desc: "Full REST API for developers and automation",   icon: "⚙️" },
+            { label: "Fast start",         desc: "Orders begin processing in under a second, most of the time",  icon: Zap },
+            { label: "No password needed", desc: "Just your profile URL — nothing you'd need to keep secret",   icon: KeyRound },
+            { label: "API access",         desc: "A full REST API if you want to automate or build on top of it", icon: Settings2 },
           ].map((f) => (
             <div key={f.label} className="bg-[#080b10] p-8 hover:bg-white/[0.02] transition-all">
-              <div className="text-3xl mb-4">{f.icon}</div>
+              <div className="mb-4" style={{ color: themeColor }}><f.icon size={26} strokeWidth={1.75} /></div>
               <div className="font-bold text-white/80 mb-2 font-sans text-sm">{f.label}</div>
               <div className="text-xs text-white/30 leading-relaxed font-sans">{f.desc}</div>
             </div>
@@ -130,13 +131,13 @@ export default function DarkProLanding({ brandName, themeColor, logo }) {
       {/* ── CTA ── */}
       <section className="border-t border-white/5 px-8 py-16 text-center">
         <div className="max-w-xl mx-auto">
-          <div className="text-xs text-white/20 tracking-widest uppercase mb-4 font-mono">// ready to deploy?</div>
-          <h2 className="text-3xl font-black mb-4 font-sans">Start in 60 seconds.</h2>
-          <p className="text-white/30 text-sm mb-8 font-sans">Free account. No credit card. Instant access to all services.</p>
+          <div className="text-xs text-white/20 tracking-widest uppercase mb-4 font-mono">// ready when you are</div>
+          <h2 className="text-3xl font-black mb-4 font-sans">Takes about a minute to set up.</h2>
+          <p className="text-white/30 text-sm mb-8 font-sans">Free account, no credit card, full access to every service.</p>
           <Link to="/register"
-            className="inline-block px-10 py-4 rounded-xl font-black text-black hover:opacity-90 transition-all font-sans"
+            className="inline-flex items-center gap-2 px-10 py-4 rounded-xl font-black text-black hover:opacity-90 transition-all font-sans"
             style={{ backgroundColor: themeColor }}>
-            Create Account →
+            Create Account <ArrowRight size={18} />
           </Link>
         </div>
       </section>
