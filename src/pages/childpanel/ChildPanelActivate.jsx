@@ -15,7 +15,6 @@ import {
   FiTag,
   FiClock,
   FiGlobe,
-  FiZap,
 } from "react-icons/fi";
 
 export default function ChildPanelActivate() {
@@ -23,10 +22,9 @@ export default function ChildPanelActivate() {
   const { user, login } = useAuth();
 
   const [brandName, setBrandName] = useState("");
-  const [domainType, setDomainType] = useState("subdomain");
   const [customDomain, setCustomDomain] = useState("");
 
-  const [info, setInfo] = useState(null); // activation fee, offer, billing info
+  const [info, setInfo] = useState(null); // activation fee, offer
   const [wallet, setWallet] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -60,16 +58,14 @@ export default function ChildPanelActivate() {
     fetchInfo();
   }, []);
 
-  const slug = brandName.toLowerCase().replace(/[^a-z0-9]/g, "");
-
   const handleActivate = async () => {
     if (!brandName.trim()) return toast.error("Brand name is required");
-    if (domainType === "custom" && !customDomain.trim())
-      return toast.error("Custom domain is required");
+    if (!customDomain.trim()) return toast.error("Domain is required");
 
-    if (wallet < (info?. fee || 0)) {
+    const fee = info?.fee || 0;
+    if (wallet < fee) {
       return toast.error(
-        `Insufficient balance. You need $${info?.activationFee} to activate.`
+        `Insufficient balance. You need $${fee} to activate.`
       );
     }
 
@@ -78,8 +74,8 @@ export default function ChildPanelActivate() {
     try {
       const res = await API.post("/child-panel/activate", {
         brandName: brandName.trim(),
-        domainType,
-        customDomain: domainType === "custom" ? customDomain.trim() : "",
+        domainType: "custom",
+        customDomain: customDomain.trim(),
       });
 
       toast.success(res.data.message || "Child panel activated!");
@@ -106,10 +102,7 @@ export default function ChildPanelActivate() {
     );
   }
 
-  const fee = info. fee || 0;
-  const monthlyFee = info?.monthlyFee || 0;
-  const billingMode = info?.billingMode || "monthly";
-  const perOrderFee = info?.perOrderFee || 0;
+  const fee = info?.fee || 0;
   const offerLabel = info?.offerLabel;
   const offerExpiresAt = info?.offerExpiresAt;
   const hasOffer = !!offerLabel;
@@ -200,81 +193,26 @@ export default function ChildPanelActivate() {
             />
           </div>
 
-          {/* Domain Type */}
+          {/* Domain Input */}
           <div className="mb-5">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Domain
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Domain <span className="text-red-500">*</span>
             </label>
-
-            <div className="space-y-3">
-              {/* Subdomain option */}
-              <label
-                className={`flex items-start gap-3 border rounded-lg p-3 cursor-pointer transition ${
-                  domainType === "subdomain"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-blue-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  value="subdomain"
-                  checked={domainType === "subdomain"}
-                  onChange={() => setDomainType("subdomain")}
-                  className="mt-0.5"
-                />
-                <div>
-                  <p className="text-sm font-medium text-gray-800 flex items-center gap-1">
-                    <FiZap className="text-blue-500" />
-                    Free Subdomain
-                  </p>
-                  {brandName ? (
-                    <p className="text-xs text-blue-500 mt-0.5">
-                      {slug}.marinepanel.online
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Enter a brand name to preview
-                    </p>
-                  )}
-                </div>
-              </label>
-
-              {/* Custom domain option */}
-              <label
-                className={`flex items-start gap-3 border rounded-lg p-3 cursor-pointer transition ${
-                  domainType === "custom"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-blue-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  value="custom"
-                  checked={domainType === "custom"}
-                  onChange={() => setDomainType("custom")}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800 flex items-center gap-1">
-                    <FiGlobe className="text-blue-500" />
-                    Custom Domain
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    e.g. panel.yourdomain.com
-                  </p>
-                  {domainType === "custom" && (
-                    <input
-                      type="text"
-                      placeholder="panel.yourdomain.com"
-                      value={customDomain}
-                      onChange={(e) => setCustomDomain(e.target.value)}
-                      onClick={(e) => e.preventDefault()}
-                      className="mt-2 w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                  )}
-                </div>
-              </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                <FiGlobe size={16} />
+              </span>
+              <input
+                type="text"
+                placeholder="e.g. panel.yourdomain.com"
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
             </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Point your domain's CNAME record to our system.
+            </p>
           </div>
 
           {/* Fee Summary */}
@@ -283,24 +221,6 @@ export default function ChildPanelActivate() {
               <span className="text-gray-600">Activation Fee</span>
               <span className="font-bold text-gray-800">${fee}</span>
             </div>
-
-            {billingMode === "monthly" || billingMode === "both" ? (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Monthly Fee</span>
-                <span className="font-medium text-gray-700">
-                  ${monthlyFee}/mo
-                </span>
-              </div>
-            ) : null}
-
-            {billingMode === "per_order" || billingMode === "both" ? (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Per-Order Fee</span>
-                <span className="font-medium text-gray-700">
-                  ${perOrderFee}/order
-                </span>
-              </div>
-            ) : null}
 
             <div className="border-t pt-2 flex justify-between text-sm">
               <span className="text-gray-600">Your Balance</span>
