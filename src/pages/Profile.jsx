@@ -7,12 +7,33 @@ import API from "../api/axios";
 import toast from "react-hot-toast";
 import { Copy, Check, Eye, EyeOff, RefreshCw, Trash2, Lock } from "lucide-react";
 import { useCachedServices } from "../context/CachedServicesContext";
+import { useChildPanel } from "../context/ChildPanelContext";
+import { useReseller } from "../context/ResellerContext";
+
+const MAIN_API_URL = "https://marinepanel.online/api/v2";
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const { domainType } = useCachedServices();
+  const { childPanel } = useChildPanel();
+  const { reseller } = useReseller();
 
   const isResellerEndUser = domainType === "reseller";
+
+  /* =====================================================
+  API ENDPOINT — resolved the same way ApiDocsPage.jsx
+  does it, so CP/reseller end users see their own panel's
+  domain instead of the platform's brand domain.
+  ===================================================== */
+  const brandDomain =
+    domainType === "childPanel" && childPanel
+      ? childPanel.domain || "marinepanel.online"
+      : domainType === "reseller" && reseller
+      ? reseller.domain || "marinepanel.online"
+      : "marinepanel.online";
+
+  const apiUrl =
+    domainType === "main" ? MAIN_API_URL : `https://${brandDomain}/api/v2`;
 
   const [profile, setProfile] = useState({
     email: "",
@@ -320,7 +341,7 @@ const Profile = () => {
                 <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-3">
                   <p className="text-xs text-gray-400 mb-0.5">API Endpoint</p>
                   <code className="text-sm text-orange-500 break-all">
-                    https://marinepanel.online/api/v2
+                    {apiUrl}
                   </code>
                 </div>
 
