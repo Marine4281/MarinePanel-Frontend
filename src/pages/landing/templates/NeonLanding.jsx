@@ -1,14 +1,18 @@
 import { Link } from "react-router-dom";
+import {
+  Instagram, Music2, Youtube, Twitter, Facebook, Send, Pin, Linkedin,
+  Zap, Wallet, ShieldCheck, Rocket, ArrowRight,
+} from "lucide-react";
 
 const SERVICES = [
-  { emoji: "📸", platform: "Instagram",  metrics: ["Followers", "Likes", "Views", "Story Views"] },
-  { emoji: "🎵", platform: "TikTok",     metrics: ["Views", "Followers", "Likes", "Shares"] },
-  { emoji: "▶️", platform: "YouTube",    metrics: ["Subscribers", "Views", "Watch Time"] },
-  { emoji: "🐦", platform: "Twitter/X",  metrics: ["Followers", "Likes", "Retweets"] },
-  { emoji: "👍", platform: "Facebook",   metrics: ["Page Likes", "Post Likes"] },
-  { emoji: "✈️", platform: "Telegram",   metrics: ["Members", "Views", "Reactions"] },
-  { emoji: "📌", platform: "Pinterest",  metrics: ["Followers", "Repins"] },
-  { emoji: "💼", platform: "LinkedIn",   metrics: ["Connections", "Followers"] },
+  { icon: Instagram, platform: "Instagram",  metrics: ["Followers", "Likes", "Views", "Story Views"] },
+  { icon: Music2,    platform: "TikTok",     metrics: ["Views", "Followers", "Likes", "Shares"] },
+  { icon: Youtube,   platform: "YouTube",    metrics: ["Subscribers", "Views", "Watch Time"] },
+  { icon: Twitter,   platform: "Twitter/X",  metrics: ["Followers", "Likes", "Retweets"] },
+  { icon: Facebook,  platform: "Facebook",   metrics: ["Page Likes", "Post Likes"] },
+  { icon: Send,      platform: "Telegram",   metrics: ["Members", "Views", "Reactions"] },
+  { icon: Pin,       platform: "Pinterest",  metrics: ["Followers", "Repins"] },
+  { icon: Linkedin,  platform: "LinkedIn",   metrics: ["Connections", "Followers"] },
 ];
 
 export default function NeonLanding({ brandName, themeColor, logo }) {
@@ -60,30 +64,29 @@ export default function NeonLanding({ brandName, themeColor, logo }) {
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold mb-10 border"
             style={{ borderColor: `${tc}30`, backgroundColor: `${tc}10`, color: tc }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: tc }} />
-            All systems operational · 99.9% uptime
+            All services running normally
           </div>
 
           <h1 className="text-6xl md:text-8xl font-black leading-none tracking-tight mb-8">
-            <span className="text-white">The</span>{" "}
+            <span className="text-white">A faster</span>
+            <br />
             <span style={{
               color: tc,
               textShadow: `0 0 40px ${tc}80, 0 0 80px ${tc}40`,
-            }}>Fastest</span>
+            }}>SMM panel</span>
             <br />
-            <span className="text-white">SMM Panel</span>
-            <br />
-            <span className="text-white/30">on Earth.</span>
+            <span className="text-white/30">that doesn't overpromise.</span>
           </h1>
 
           <p className="text-white/40 text-lg max-w-2xl mx-auto mb-12 leading-relaxed">
-            {brandName} powers social media growth for agencies, freelancers, and brands across 8+ platforms. Instant delivery, real results.
+            {brandName} runs social growth for agencies, freelancers, and brands across eight-plus platforms. Orders start on their own, and pricing stays honest.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 mb-20">
             <Link to="/register"
-              className="px-10 py-4 rounded-2xl font-black text-white text-lg transition-all hover:scale-105"
+              className="px-10 py-4 rounded-2xl font-black text-white text-lg transition-all hover:scale-105 inline-flex items-center gap-2"
               style={{ backgroundColor: tc, boxShadow: `0 0 40px ${tc}50, 0 8px 32px ${tc}40` }}>
-              Start for Free →
+              Start for Free <ArrowRight size={20} />
             </Link>
             <Link to="/login"
               className="px-10 py-4 rounded-2xl font-bold text-white/60 text-lg border transition-all hover:text-white"
@@ -121,7 +124,7 @@ export default function NeonLanding({ brandName, themeColor, logo }) {
             </h2>
             <div className="h-px flex-1" style={{ backgroundColor: `${tc}30` }} />
           </div>
-          <p className="text-white/30 text-center text-sm mb-12">Order services across every major platform from one dashboard.</p>
+          <p className="text-white/30 text-center text-sm mb-12">Order across every major platform from one dashboard.</p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {SERVICES.map((s) => (
@@ -130,7 +133,7 @@ export default function NeonLanding({ brandName, themeColor, logo }) {
                 style={{ borderColor: `${tc}15`, backgroundColor: `${tc}05` }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = `${tc}40`; e.currentTarget.style.backgroundColor = `${tc}10`; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = `${tc}15`; e.currentTarget.style.backgroundColor = `${tc}05`; }}>
-                <div className="text-3xl mb-3">{s.emoji}</div>
+                <div className="mb-3" style={{ color: tc }}><s.icon size={26} strokeWidth={1.75} /></div>
                 <div className="font-black text-white text-sm mb-2">{s.platform}</div>
                 <div className="flex flex-wrap gap-1">
                   {s.metrics.map((m) => (
@@ -150,20 +153,19 @@ export default function NeonLanding({ brandName, themeColor, logo }) {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
           {[
             {
-              icon: "⚡",
-              title: "Lightning Delivery",
-              desc: "Orders start processing in under half a second. Fully automated — no human bottlenecks, ever.",
-              big: true,
+              icon: Zap,
+              title: "Fast by default",
+              desc: "Most orders start processing in under a second — automated, so there's no one sitting on the queue.",
             },
             {
-              icon: "💰",
-              title: "Lowest Prices",
-              desc: "Direct provider rates with zero markup. More profit on every single order you place.",
+              icon: Wallet,
+              title: "Fair prices",
+              desc: "We work close to provider cost, which leaves you more room whether you're buying for yourself or reselling.",
             },
             {
-              icon: "🔒",
-              title: "Zero Risk",
-              desc: "No passwords required. Your accounts are always safe. We only need your public profile link.",
+              icon: ShieldCheck,
+              title: "Low risk",
+              desc: "No passwords required, ever. A public profile link is all we need.",
             },
           ].map((f) => (
             <div key={f.title}
@@ -171,7 +173,7 @@ export default function NeonLanding({ brandName, themeColor, logo }) {
               style={{ borderColor: `${tc}20`, backgroundColor: `${tc}06` }}>
               <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full blur-2xl opacity-20 pointer-events-none"
                 style={{ backgroundColor: tc }} />
-              <div className="text-4xl mb-6">{f.icon}</div>
+              <div className="mb-6" style={{ color: tc }}><f.icon size={32} strokeWidth={1.75} /></div>
               <h3 className="font-black text-white text-lg mb-3">{f.title}</h3>
               <p className="text-white/40 text-sm leading-relaxed">{f.desc}</p>
             </div>
@@ -188,20 +190,22 @@ export default function NeonLanding({ brandName, themeColor, logo }) {
             <div className="w-80 h-80 rounded-full blur-3xl opacity-15" style={{ backgroundColor: tc }} />
           </div>
           <div className="relative z-10">
-            <div className="text-4xl mb-6">🚀</div>
+            <div className="flex justify-center mb-6" style={{ color: tc }}>
+              <Rocket size={40} strokeWidth={1.75} />
+            </div>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
-              Ready to launch?
+              Ready when you are.
             </h2>
             <p className="text-white/40 text-lg mb-10">
-              Free account · No credit card · Instant access to all services.
+              Free account, no credit card, full access to every service right away.
             </p>
             <Link to="/register"
-              className="inline-block px-12 py-5 rounded-2xl font-black text-white text-xl transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 px-12 py-5 rounded-2xl font-black text-white text-xl transition-all hover:scale-105"
               style={{
                 backgroundColor: tc,
                 boxShadow: `0 0 50px ${tc}50, 0 8px 32px ${tc}40`,
               }}>
-              Create Free Account →
+              Create Free Account <ArrowRight size={22} />
             </Link>
           </div>
         </div>
