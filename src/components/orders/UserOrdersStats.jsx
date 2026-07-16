@@ -6,6 +6,7 @@ const UserOrdersStats = ({ status, fromDate, toDate }) => {
     total: 0,
     pending: 0,
     processing: 0,
+    inProgress: 0,
     completed: 0,
     partial: 0,
     failed: 0,
@@ -43,10 +44,11 @@ const UserOrdersStats = ({ status, fromDate, toDate }) => {
   );
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-6">
       <Card title="Total" value={stats.total || 0} />
       <Card title="Pending" value={stats.pending || 0} />
       <Card title="Processing" value={stats.processing || 0} />
+      <Card title="In Progress" value={stats.inProgress || 0} />
       <Card title="Completed" value={stats.completed || 0} />
       <Card title="Partial" value={stats.partial || 0} />
       <Card title="Failed" value={stats.failed || 0} />
