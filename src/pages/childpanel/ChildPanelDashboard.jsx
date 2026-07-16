@@ -117,7 +117,7 @@ function MiniTable({ title, rows, columns, emptyMsg }) {
 function BillingBanner({ billing }) {
   if (!billing) return null;
 
-  const { mode, monthlyFee, perOrderFee, ordersThisCycle, nextBilledAt, intervalDays } = billing;
+  const { mode, monthlyFee, perOrderFee, ordersThisCycle, nextBilledAt, intervalDays, tiers, currentTierIndex } = billing;
 
   const hasMonthly  = (mode === "monthly"   || mode === "both") && monthlyFee  > 0;
   const hasPerOrder = (mode === "per_order" || mode === "both") && perOrderFee > 0;
@@ -171,7 +171,14 @@ function BillingBanner({ billing }) {
         <div className="space-y-1">
           {hasMonthly && (
             <div className="flex justify-between">
-              <span>Monthly fee</span>
+              <span>
+                Monthly fee
+                {tiers?.length > 0 && (
+                  <span className="opacity-60">
+                    {" "}({currentTierIndex >= 0 ? `tier ${currentTierIndex + 1} of ${tiers.length}` : "default, no tier matched"})
+                  </span>
+                )}
+              </span>
               <span className="font-bold">${Number(monthlyFee).toFixed(2)}</span>
             </div>
           )}
