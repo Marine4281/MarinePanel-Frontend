@@ -54,7 +54,17 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.error("Failed to fetch current user:", err);
-        // Do NOT clear localStorage — prevents logout flicker
+
+        // FIX: a confirmed 401 means the session is genuinely dead —
+        // keeping stale user/localStorage around made isAuthenticated
+        // report true for guests, which then triggered protected-route
+        // calls (e.g. /currencies) that always 401'd. Only clear on a
+        // real 401 — leave it alone on network errors/5xx so a flaky
+        // connection doesn't log someone out.
+        if (err.response?.status === 401) {
+          setUser(null);
+          localStorage.removeItem("user");
+        }
       } finally {
         setLoading(false);
       }
