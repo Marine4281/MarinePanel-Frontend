@@ -6,8 +6,6 @@ import { useAuthContext } from "./AuthContext";
 const CurrencyContext = createContext();
 export const useCurrency = () => useContext(CurrencyContext);
 
-const LS_KEY = "mp_public_currency";
-
 const USD_FALLBACK = {
   _id: null, name: "US Dollar", code: "USD", symbol: "$",
   rate: 1, isDefault: true, isActive: true,
@@ -21,27 +19,23 @@ export const CurrencyProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchCurrencies = useCallback(async () => {
+    if (!isAuthenticated) {
+      // No logged-in user — nothing to fetch, nothing to persist.
+      // Guest/storefront currency is handled entirely by usePublicCurrency.
+      setCurrencies([]);
+      setSelected(USD_FALLBACK);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      if (isAuthenticated) {
-        // logged-in: DB-backed, as before
-        const res = await API.get("/currencies");
-        const list = res.data?.currencies || [];
-        setCurrencies(list);
-        const savedId = res.data?.selectedCurrency;
-        const match = savedId ? list.find((c) => c._id === savedId) : null;
-        setSelected(match || USD_FALLBACK);
-      } else {
-        // guest: public, domain-aware list; selection lives in localStorage
-        const res = await API.get("/currencies/public");
-        const list = res.data?.currencies || [];
-        setCurrencies(list);
-
-        let saved = null;
-        try { saved = JSON.parse(localStorage.getItem(LS_KEY)); } catch { /* ignore */ }
-        const match = saved ? list.find((c) => c._id === saved._id) : null;
-        setSelected(match || USD_FALLBACK);
-      }
+      const res = await API.get("/currencies");
+      const list = res.data?.currencies || [];
+      setCurrencies(list);
+      const savedId = res.data?.selectedCurrency;
+      const match = savedId ? list.find((c) => c._id === savedId) : null;
+      setSelected(match || USD_FALLBACK);
     } catch (err) {
       console.error("Failed to fetch currencies:", err);
       setCurrencies([]);
@@ -56,19 +50,11 @@ export const CurrencyProvider = ({ children }) => {
   }, [fetchCurrencies, user?._id]);
 
   const selectCurrency = async (currency) => {
+    if (!isAuthenticated) return; // no-op for guests — nothing to save
+
     const previous = selected;
     setSelected(currency || USD_FALLBACK);
 
-    if (!isAuthenticated) {
-      // guest: local only, never touches the DB
-      try {
-        if (currency) localStorage.setItem(LS_KEY, JSON.stringify(currency));
-        else localStorage.removeItem(LS_KEY);
-      } catch { /* storage unavailable — ignore, UI state still updates */ }
-      return;
-    }
-
-    // logged-in: persist to DB, as before
     try {
       await API.put("/currencies/select", { currencyId: currency?._id || null });
     } catch (err) {
