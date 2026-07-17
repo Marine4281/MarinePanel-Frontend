@@ -25,7 +25,6 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import TermsPublic from "./pages/TermsPublic";
 import AddFunds              from "./pages/AddFunds";
 import PaymentSuccess        from "./pages/payment/PaymentSuccess";
-import ServicesPublic from "./pages/ServicesPublic";
 
 // User pages
 import Home from "./pages/Home";
@@ -271,8 +270,6 @@ function AppRoutes() {
         <Route path="/add-funds"      element={<ProtectedRoute><AddFunds /></ProtectedRoute>} />
         <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
         <Route path="/withdraw" element={<Withdraw />} />
-        <Route path="/services-public" element={<ServicesPublic />} />
-
          
         {/* ================================================
             USER ROUTES
@@ -445,4 +442,4 @@ export default function App() {
       </AuthProvider>
     </QueryClientProvider>
   );
-}
+           }
