@@ -1,44 +1,107 @@
 // src/api/axios.js
+
 import axios from "axios";
 
-const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://restopos-backend-fj8n.onrender.com/api",
-  timeout: 10000,
-  withCredentials: true, // send/receive the httpOnly auth cookie
+const BASE_DOMAIN = "marinepanel.online";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "/api",
+  withCredentials: true,
+  timeout: 30000, // 30s — long enough for image uploads / Render cold starts, still bounded
+  headers: {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+    Expires: "0",
+  },
 });
 
-// Nuke Content-Type from all default header slots at creation time
-delete API.defaults.headers.common["Content-Type"];
-delete API.defaults.headers.post["Content-Type"];
-delete API.defaults.headers.patch["Content-Type"];
-delete API.defaults.headers.put["Content-Type"];
-
-API.interceptors.request.use(
+/* =========================================================
+REQUEST INTERCEPTOR
+========================================================= */
+api.interceptors.request.use(
   (config) => {
-    if (config.data instanceof FormData) {
-      // Setting to undefined (not delete) ensures axios skips it entirely
-      // and lets the browser set multipart/form-data with the correct boundary
-      config.headers["Content-Type"] = undefined;
-    } else {
-      // Explicitly set JSON for non-FormData requests
-      config.headers["Content-Type"] = "application/json";
+    /* =====================================================
+    1. LOAD USER SAFELY
+    ===================================================== */
+    let user = {};
+    try {
+      user = JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      user = {};
     }
+
+    /* =====================================================
+    2. TOKEN
+    ===================================================== */
+    const token = localStorage.getItem("token") || user?.token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    /* =====================================================
+    2b. FILE UPLOADS (FormData)
+       The instance default Content-Type is "application/json".
+       If that header is still present when the payload is
+       FormData, axios will serialize the FormData into a JSON
+       string instead of sending it as multipart — the file
+       never reaches the server and multer sees req.file as
+       undefined. Strip it here so the browser sets the correct
+       "multipart/form-data; boundary=..." header itself.
+    ===================================================== */
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+      if (typeof config.headers.delete === "function") {
+        config.headers.delete("Content-Type");
+      }
+    }
+
+    /* =====================================================
+    3. DOMAIN DETECTION
+    ===================================================== */
+    const hostname = window.location.hostname;
+    const fullHost = window.location.host;
+
+    const isMainPlatform =
+      hostname === BASE_DOMAIN ||
+      hostname === `www.${BASE_DOMAIN}` ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1";
+
+    /* =====================================================
+    4. MAIN PLATFORM — no extra headers
+    ===================================================== */
+    if (isMainPlatform) return config;
+
+    /* =====================================================
+    5. NON-MAIN DOMAIN
+       Send BOTH headers so the backend can detect which type
+       this domain is without us needing to know up front.
+       The backend middleware (reseller first, then childPanel)
+       picks up whichever one matches.
+       This is intentional — do NOT remove one of them.
+       detectDomainType() calls /child-panel/branding and
+       /end-user/branding WITHOUT a user token, so it needs
+       the domain headers to let the backend identify the panel.
+    ===================================================== */
+    config.headers["x-childpanel-domain"] = fullHost;
+    config.headers["x-reseller-domain"]   = fullHost;
 
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Redirect to staff login on session expiry
-API.interceptors.response.use(
-  (res) => res,
+/* =========================================================
+RESPONSE INTERCEPTOR
+========================================================= */
+api.interceptors.response.use(
+  (response) => response,
   (error) => {
+    // Log for debugging — never swallow silently
     if (error.code === "ECONNABORTED" || !error.response) {
+      // Network / timeout error — the detectDomainType retry loop handles this
       console.warn("Network error or timeout:", error.message);
-    } else if (error.response?.status === 401) {
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
-      }
     } else {
       console.error("API Error:", error?.response?.data || error.message);
     }
@@ -46,4 +109,4 @@ API.interceptors.response.use(
   }
 );
 
-export default API;
+export default api;
