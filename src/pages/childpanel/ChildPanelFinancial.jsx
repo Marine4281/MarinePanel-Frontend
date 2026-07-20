@@ -6,8 +6,7 @@ import CPFinancialProfit           from "../../components/childpanel/financial/C
 import CPFinancialUserBalances     from "../../components/childpanel/financial/CPFinancialUserBalances";
 import CPFinancialWithdrawals      from "../../components/childpanel/financial/CPFinancialWithdrawals";
 import CPFinancialResellerEarnings from "../../components/childpanel/financial/CPFinancialResellerEarnings";
-import ChildPanelSidebar           from "../../components/childpanel/ChildPanelSidebar";
-import CPHeader                    from "../../components/childpanel/CPHeader";
+import ChildPanelLayout            from "../../components/childpanel/ChildPanelLayout";
 
 const TABS = [
   { key: "overview",    label: "Overview" },
@@ -18,8 +17,7 @@ const TABS = [
 ];
 
 export default function ChildPanelFinancial() {
-  const [tab, setTab]             = useState("overview");
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [tab, setTab] = useState("overview");
 
   // ── Summary ──────────────────────────────────────────────────
   const [summary, setSummary]               = useState(null);
@@ -137,93 +135,80 @@ export default function ChildPanelFinancial() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <ChildPanelSidebar
-        mobileOpen={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-      />
+    <ChildPanelLayout>
+      <div className="max-w-7xl mx-auto space-y-6">
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <CPHeader onMenuClick={() => setMobileOpen(true)} />
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Financial Overview</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Wallet balances, profit, withdrawals &amp; earnings
+          </p>
+        </div>
 
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
+        {/* Tab nav */}
+        <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit shadow-sm overflow-x-auto">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                tab === t.key
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-            {/* Header */}
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Financial Overview</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Wallet balances, profit, withdrawals &amp; earnings
-              </p>
-            </div>
+        {/* Tab content */}
+        {tab === "overview" && (
+          <CPFinancialOverview summary={summary} loading={loadingSummary} />
+        )}
 
-            {/* Tab nav */}
-            <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit shadow-sm overflow-x-auto">
-              {TABS.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                    tab === t.key
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-500 hover:text-gray-800"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+        {tab === "profit" && (
+          <CPFinancialProfit
+            profitData={profitData}   loading={loadingProfit}
+            range={range}             setRange={setRange}
+            country={country}         setCountry={setCountry}
+            customStart={customStart} setCustomStart={setCustomStart}
+            customEnd={customEnd}     setCustomEnd={setCustomEnd}
+            onApply={fetchProfit}
+          />
+        )}
 
-            {/* Tab content */}
-            {tab === "overview" && (
-              <CPFinancialOverview summary={summary} loading={loadingSummary} />
-            )}
+        {tab === "users" && (
+          <CPFinancialUserBalances
+            users={users}         loading={loadingUsers}
+            userPage={userPage}   setUserPage={setUserPage}
+            userTotal={userTotal}
+          />
+        )}
 
-            {tab === "profit" && (
-              <CPFinancialProfit
-                profitData={profitData}   loading={loadingProfit}
-                range={range}             setRange={setRange}
-                country={country}         setCountry={setCountry}
-                customStart={customStart} setCustomStart={setCustomStart}
-                customEnd={customEnd}     setCustomEnd={setCustomEnd}
-                onApply={fetchProfit}
-              />
-            )}
+        {tab === "withdrawals" && (
+          <CPFinancialWithdrawals
+            withdrawals={withdrawals}     loading={loadingW}
+            wPage={wPage}                 setWPage={setWPage}
+            wTotal={wTotal}
+            wStatusFilter={wStatusFilter} setWStatusFilter={setWStatusFilter}
+            actionLoading={actionLoading}
+            onApprove={handleApprove}
+            onDecline={handleDecline}
+            onSetStatus={handleSetStatus}
+          />
+        )}
 
-            {tab === "users" && (
-              <CPFinancialUserBalances
-                users={users}         loading={loadingUsers}
-                userPage={userPage}   setUserPage={setUserPage}
-                userTotal={userTotal}
-              />
-            )}
+        {tab === "resellers" && (
+          <CPFinancialResellerEarnings
+            resellerEarnings={resellerEarnings} loading={loadingRe}
+            rePage={rePage}                     setRePage={setRePage}
+            reTotal={reTotal}
+          />
+        )}
 
-            {tab === "withdrawals" && (
-              <CPFinancialWithdrawals
-                withdrawals={withdrawals}     loading={loadingW}
-                wPage={wPage}                 setWPage={setWPage}
-                wTotal={wTotal}
-                wStatusFilter={wStatusFilter} setWStatusFilter={setWStatusFilter}
-                actionLoading={actionLoading}
-                onApprove={handleApprove}
-                onDecline={handleDecline}
-                onSetStatus={handleSetStatus}
-              />
-            )}
-
-            {tab === "resellers" && (
-              <CPFinancialResellerEarnings
-                resellerEarnings={resellerEarnings} loading={loadingRe}
-                rePage={rePage}                     setRePage={setRePage}
-                reTotal={reTotal}
-              />
-            )}
-
-          </div>
-        </main>
       </div>
-    </div>
+    </ChildPanelLayout>
   );
-        }
+            }
