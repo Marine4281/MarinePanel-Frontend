@@ -19,15 +19,15 @@ const CodeBlock = ({ code, accent }) => {
   };
 
   return (
-    <div className="relative bg-[#0f172a] rounded-lg overflow-hidden">
+    <div className="relative bg-slate-900 rounded-lg overflow-hidden">
       <button
         onClick={handleCopy}
-        className="absolute top-2 right-2 text-gray-400 hover:opacity-80 transition"
+        className="absolute top-2 right-2 text-slate-400 hover:text-white transition"
         style={{ color: copied ? accent : undefined }}
       >
         {copied ? <Check size={16} /> : <Copy size={16} />}
       </button>
-      <pre className="text-sm text-green-400 p-4 overflow-x-auto whitespace-pre-wrap">
+      <pre className="text-sm text-slate-200 p-4 overflow-x-auto whitespace-pre-wrap font-mono">
         {code}
       </pre>
     </div>
@@ -35,22 +35,19 @@ const CodeBlock = ({ code, accent }) => {
 };
 
 const ParamTable = ({ rows, accent }) => (
-  <div className="overflow-x-auto rounded-lg border border-gray-700">
+  <div className="overflow-x-auto rounded-lg border border-gray-200">
     <table className="w-full text-sm">
-      <thead className="bg-gray-800 text-gray-300">
+      <thead className="bg-gray-50 text-gray-500">
         <tr>
-          <th className="px-4 py-2 text-left">Parameter</th>
-          <th className="px-4 py-2 text-left">Description</th>
+          <th className="px-4 py-2 text-left font-medium">Parameter</th>
+          <th className="px-4 py-2 text-left font-medium">Description</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="divide-y divide-gray-100">
         {rows.map(([param, desc], i) => (
-          <tr
-            key={i}
-            className={i % 2 === 0 ? "bg-gray-900" : "bg-gray-800/50"}
-          >
+          <tr key={i} className="bg-white">
             <td className="px-4 py-2 font-mono" style={{ color: accent }}>{param}</td>
-            <td className="px-4 py-2 text-gray-300">{desc}</td>
+            <td className="px-4 py-2 text-gray-600">{desc}</td>
           </tr>
         ))}
       </tbody>
@@ -58,25 +55,28 @@ const ParamTable = ({ rows, accent }) => (
   </div>
 );
 
-const Section = ({ title, children, accent }) => {
+const Section = ({ title, blurb, children, accent }) => {
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden mb-4">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4 shadow-sm">
       <button
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-800 transition"
+        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition"
       >
-        <span className="text-white font-semibold text-base">{title}</span>
+        <div>
+          <span className="text-gray-900 font-semibold text-base">{title}</span>
+          {blurb && <p className="text-gray-500 text-sm mt-0.5">{blurb}</p>}
+        </div>
         {open ? (
-          <ChevronUp size={18} style={{ color: accent }} />
+          <ChevronUp size={18} style={{ color: accent }} className="shrink-0 ml-4" />
         ) : (
-          <ChevronDown size={18} style={{ color: accent }} />
+          <ChevronDown size={18} style={{ color: accent }} className="shrink-0 ml-4" />
         )}
       </button>
 
       {open && (
-        <div className="px-6 pb-6 space-y-4 border-t border-gray-700 pt-4">
+        <div className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
           {children}
         </div>
       )}
@@ -142,13 +142,13 @@ const ApiDocsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white px-4 py-10">
+    <div className="min-h-screen bg-gray-50 text-gray-900 px-4 py-10">
       <div className="max-w-4xl mx-auto space-y-8">
 
         {/* ── Back Button ── */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-400 hover:opacity-80 transition text-sm"
+          className="flex items-center gap-2 text-gray-500 hover:opacity-80 transition text-sm"
           onMouseEnter={(e) => (e.currentTarget.style.color = accent)}
           onMouseLeave={(e) => (e.currentTarget.style.color = "")}
         >
@@ -159,13 +159,14 @@ const ApiDocsPage = () => {
         {/* ── Header ── */}
         <div>
           <h1 className="text-3xl font-bold mb-1">API Documentation</h1>
-          <p className="text-gray-400 text-sm">
-            Integrate {brand.name} into your own platform using our API.
+          <p className="text-gray-500 text-sm">
+            Everything you need to plug {brand.name} into your own app or reselling
+            setup — send orders, check on them, and manage refills.
           </p>
         </div>
 
         {/* ── API Info Card ── */}
-        <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 space-y-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-gray-500 mb-1">HTTP Method</p>
@@ -179,15 +180,18 @@ const ApiDocsPage = () => {
 
           <div>
             <p className="text-gray-500 mb-1 text-sm">Response Format</p>
-            <span className="text-gray-300 text-sm">JSON</span>
+            <span className="text-gray-700 text-sm">JSON</span>
           </div>
 
           {/* API Key */}
           <div>
             <p className="text-gray-500 mb-1 text-sm">Your API Key</p>
+            <p className="text-gray-400 text-xs mb-2">
+              Send this with every request. Keep it private — anyone with this key can place orders on your balance.
+            </p>
             {apiKey ? (
               <div className="flex items-center gap-2">
-                <code className="bg-gray-800 px-3 py-1.5 rounded text-sm break-all flex-1" style={{ color: accent }}>
+                <code className="bg-gray-100 px-3 py-1.5 rounded text-sm break-all flex-1" style={{ color: accent }}>
                   {apiKey}
                 </code>
                 <button
@@ -199,11 +203,11 @@ const ApiDocsPage = () => {
                 </button>
               </div>
             ) : (
-              <div className="bg-gray-800 px-3 py-3 rounded text-sm flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="text-gray-400">
+              <div className="bg-gray-100 px-3 py-3 rounded text-sm flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-gray-500">
                   {user
                     ? "You don't have an API key yet."
-                    : "Login to see your API key."}
+                    : "Log in to see your API key."}
                 </span>
                 {user && (
                   <button
@@ -221,7 +225,11 @@ const ApiDocsPage = () => {
         </div>
 
         {/* ── Service List ── */}
-        <Section title="📦 Service List" accent={accent}>
+        <Section
+          title="📦 Service List"
+          blurb="Pulls every service you can order, with current pricing and limits."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -252,7 +260,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Add Order ── */}
-        <Section title="➕ Add Order" accent={accent}>
+        <Section
+          title="➕ Add Order"
+          blurb="Places a new order. On success you get back the order ID you'll use to check status later."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -267,7 +279,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Order Status ── */}
-        <Section title="📊 Order Status" accent={accent}>
+        <Section
+          title="📊 Order Status"
+          blurb="Check where one order stands — how much has been delivered and how much is left."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -293,7 +309,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Multiple Orders Status ── */}
-        <Section title="📊 Multiple Orders Status" accent={accent}>
+        <Section
+          title="📊 Multiple Orders Status"
+          blurb="Same as above, but for a batch — send up to 100 order IDs in one call instead of looping."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -329,7 +349,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Create Refill ── */}
-        <Section title="🔄 Create Refill" accent={accent}>
+        <Section
+          title="🔄 Create Refill"
+          blurb="Requests a refill on an order that dropped after delivery, if the service supports it."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -342,7 +366,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Multiple Refill ── */}
-        <Section title="🔄 Create Multiple Refill" accent={accent}>
+        <Section
+          title="🔄 Create Multiple Refill"
+          blurb="Requests refills on several orders at once."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -366,7 +394,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Refill Status ── */}
-        <Section title="📋 Get Refill Status" accent={accent}>
+        <Section
+          title="📋 Get Refill Status"
+          blurb="Check whether a refill request was approved, rejected, or is still pending."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -379,7 +411,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Multiple Refill Status ── */}
-        <Section title="📋 Get Multiple Refill Status" accent={accent}>
+        <Section
+          title="📋 Get Multiple Refill Status"
+          blurb="Same check, batched for up to 100 refill IDs."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -403,7 +439,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Cancel ── */}
-        <Section title="❌ Cancel Orders" accent={accent}>
+        <Section
+          title="❌ Cancel Orders"
+          blurb="Cancels orders that haven't finished yet, where the service allows cancellation."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -426,7 +466,11 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Balance ── */}
-        <Section title="💰 User Balance" accent={accent}>
+        <Section
+          title="💰 User Balance"
+          blurb="Returns your current account balance, so you can check funds before placing an order."
+          accent={accent}
+        >
           <ParamTable
             accent={accent}
             rows={[
@@ -438,7 +482,7 @@ const ApiDocsPage = () => {
         </Section>
 
         {/* ── Footer ── */}
-        <p className="text-center text-gray-600 text-xs pb-6">
+        <p className="text-center text-gray-400 text-xs pb-6">
           {brand.name} API v2 · {apiUrl}
         </p>
       </div>
