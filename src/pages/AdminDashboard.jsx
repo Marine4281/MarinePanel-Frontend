@@ -31,7 +31,7 @@ const AdminDashboard = () => {
   const fetchUsers = useCallback(async () => {
     try {
       const { data } = await API.get("/admin/users");
-      setUsers(data);
+      setUsers(Array.isArray(data?.data) ? data.data : []);
     } catch (err) {
       console.error("Failed to fetch users", err);
     }
