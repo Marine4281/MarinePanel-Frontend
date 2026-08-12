@@ -6,6 +6,8 @@ import API from "../../api/axios";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
+import ChildPanelRevenueTrendChart from "../../components/childpanel/ChildPanelRevenueTrendChart";
+import ChildPanelTopPerformers from "../../components/childpanel/ChildPanelTopPerformers";
 import {
   FiUsers,
   FiShoppingCart,
@@ -44,7 +46,7 @@ function StatCard({ title, value, icon, sub, color = "blue" }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md transition">
       <div className={`p-3 rounded-xl text-xl ${colors[color]}`}>
         {icon}
       </div>
@@ -63,7 +65,7 @@ function MiniTable({ title, rows, columns, emptyMsg }) {
   const [visible, setVisible] = useState(5);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
         <span className="text-xs text-gray-400">{rows.length} total</span>
@@ -282,7 +284,7 @@ export default function ChildPanelDashboard() {
 
         {/* Panel link */}
         {panelDomain && (
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase">
               Your Panel Link
             </p>
@@ -361,6 +363,12 @@ export default function ChildPanelDashboard() {
           ))}
         </div>
 
+        {/* Revenue trend chart */}
+        <ChildPanelRevenueTrendChart />
+
+        {/* Top performers */}
+        <ChildPanelTopPerformers />
+
         {/* Recent users table */}
         <MiniTable
           title="Recent Users"
@@ -398,4 +406,4 @@ export default function ChildPanelDashboard() {
       </div>
     </ChildPanelLayout>
   );
-                }
+}
