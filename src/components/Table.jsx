@@ -14,8 +14,13 @@ const Table = ({ data = [], type }) => {
   const [showAll, setShowAll] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
 
+  // Defensive: data should always be an array by the time it gets here,
+  // but a non-array payload (error body, shape change) would otherwise
+  // throw "not iterable" on the spread below.
+  const safeData = Array.isArray(data) ? data : [];
+
   // Sort newest first
-  const sortedData = [...data].sort((a, b) => {
+  const sortedData = [...safeData].sort((a, b) => {
     const dateA = new Date(a.createdAt || a.date || 0);
     const dateB = new Date(b.createdAt || b.date || 0);
     return dateB - dateA;
@@ -60,16 +65,11 @@ const Table = ({ data = [], type }) => {
 
     if (type === "orders") {
       const isExpanded = expandedRow === item._id;
-      // customOrderId is the sequential, human-readable ID; fall back to
-      // orderId or a Mongo _id fragment only for legacy rows that predate it.
       const displayOrderId =
         item.customOrderId != null
           ? `#${item.customOrderId}`
           : item.orderId || `#${item._id?.slice(-6)}`;
 
-      // Same status presentation as AdminUserOrdersList.jsx: color keyed off
-      // the internal status (includes "partial"), text shown via the
-      // backend's friendly displayStatus when available.
       const statusClass =
         statusStyles[item.status] || "bg-gray-100 text-gray-600";
       const statusLabel = item.displayStatus || item.status;
@@ -163,7 +163,7 @@ const Table = ({ data = [], type }) => {
         </tbody>
       </table>
 
-      {data.length > 3 && (
+      {safeData.length > 3 && (
         <div className="text-center py-4">
           <button
             onClick={() => setShowAll(!showAll)}
