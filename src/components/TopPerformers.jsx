@@ -8,8 +8,9 @@ const METRICS = [
 ];
 
 const PerfList = ({ title, rows, metric }) => {
+  const safeRows = Array.isArray(rows) ? rows : [];
   const key = metric === "orders" ? "orders" : "revenue";
-  const sorted = [...rows].sort((a, b) => b[key] - a[key]);
+  const sorted = [...safeRows].sort((a, b) => (b[key] || 0) - (a[key] || 0));
   const max = sorted[0]?.[key] || 1;
 
   return (
@@ -28,8 +29,8 @@ const PerfList = ({ title, rows, metric }) => {
                 <span className="truncate pr-2 text-gray-700">{r.name}</span>
                 <span className="text-xs text-gray-400 shrink-0">
                   {metric === "orders"
-                    ? r.orders.toLocaleString()
-                    : `$${r.revenue.toLocaleString(undefined, {
+                    ? (r.orders || 0).toLocaleString()
+                    : `$${(r.revenue || 0).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}`}
@@ -38,7 +39,7 @@ const PerfList = ({ title, rows, metric }) => {
               <div className="h-2 bg-orange-50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-orange-500 rounded-full transition-all"
-                  style={{ width: `${(r[key] / max) * 100}%` }}
+                  style={{ width: `${((r[key] || 0) / max) * 100}%` }}
                 />
               </div>
             </div>
@@ -57,13 +58,13 @@ const TopPerformers = ({ dateRange = "30days", country = "All" }) => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await API.get("/admin/top-performers", {
+      const res = await API.get("/admin/top-performers", {
         params: { dateRange, country },
       });
       setData({
-        platforms: data.platforms || [],
-        categories: data.categories || [],
-        services: data.services || [],
+        platforms: Array.isArray(res.data?.platforms) ? res.data.platforms : [],
+        categories: Array.isArray(res.data?.categories) ? res.data.categories : [],
+        services: Array.isArray(res.data?.services) ? res.data.services : [],
       });
     } catch (err) {
       console.error("Failed to fetch top performers", err);
