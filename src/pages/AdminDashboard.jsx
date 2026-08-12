@@ -6,6 +6,8 @@ import Topbar from "../components/Topbar";
 import StatsCard from "../components/StatsCard";
 import Table from "../components/Table";
 import SearchFilter from "../components/SearchFilter";
+import RevenueTrendChart from "../components/RevenueTrendChart";
+import TopPerformers from "../components/TopPerformers";
 import API from "../api/axios";
 
 const ORDERS_PER_PAGE = 10;
@@ -31,7 +33,7 @@ const AdminDashboard = () => {
   const fetchUsers = useCallback(async () => {
     try {
       const { data } = await API.get("/admin/users");
-      setUsers(Array.isArray(data?.data) ? data.data : []);
+      setUsers(data);
     } catch (err) {
       console.error("Failed to fetch users", err);
     }
@@ -132,6 +134,14 @@ const AdminDashboard = () => {
             value={`$${Number(stats.totalRevenue || 0).toFixed(4)}`}
             color="green"
           />
+        </div>
+
+        <div className="mt-6">
+          <RevenueTrendChart country={country} />
+        </div>
+
+        <div className="mt-6">
+          <TopPerformers dateRange={dateRange} country={country} />
         </div>
 
         <div className="mt-6">
