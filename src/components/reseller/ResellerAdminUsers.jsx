@@ -1,17 +1,34 @@
 //src/components/reseller/ResellerAdminUsers.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { io } from "socket.io-client";
 import API from "../../api/axios";
 
 const ResellerAdminUsers = ({ resellerId }) => {
   const [users, setUsers] = useState([]);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const res = await API.get(`/admin/resellers/${resellerId}/users`);
-      setUsers(res.data.data);
-    };
-    fetch();
+  const fetchUsers = useCallback(async () => {
+    const res = await API.get(`/admin/resellers/${resellerId}/users`);
+    setUsers(res.data.data);
   }, [resellerId]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  // ------------------------------
+  // Real-time wallet updates
+  // ------------------------------
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_URL);
+
+    socket.on("wallet:update", ({ userId, balance }) => {
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u._id === userId ? { ...u, balance } : u
+        )
+      );
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   return (
     <div className="bg-white p-4 rounded shadow">
