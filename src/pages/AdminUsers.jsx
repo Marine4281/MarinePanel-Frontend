@@ -1,6 +1,7 @@
 // src/pages/AdminUsers.jsx
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import API from "../api/axios";
 import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
@@ -44,7 +45,7 @@ const AdminUsers = () => {
   const fetchUsers = useCallback(async () => {
     try {
       const res = await API.get("/admin/users");
-      setUsers(res.data);
+      setUsers(res.data?.data || []);
     } catch {
       toast.error("Failed to fetch users");
     }
@@ -54,6 +55,31 @@ const AdminUsers = () => {
 
   // Reset to page 1 whenever search changes
   useEffect(() => { setCurrentPage(1); }, [search]);
+
+  // ------------------------------
+  // Real-time wallet updates
+  // ------------------------------
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_API_URL);
+
+    socket.on("connect", () => {
+      console.log("Connected to Socket.IO server:", socket.id);
+    });
+
+    socket.on("wallet:update", ({ userId, balance, transactions }) => {
+      setUsers((prevUsers) =>
+        prevUsers.map((u) =>
+          u._id === userId ? { ...u, balance, transactions } : u
+        )
+      );
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Disconnected from Socket.IO server");
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   const filteredUsers = users.filter((u) => {
     const q = search.toLowerCase();
