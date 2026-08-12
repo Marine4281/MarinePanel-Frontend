@@ -19,6 +19,11 @@ const OrderDetailsModal = ({ order, onClose }) => {
           </p>
 
           <p>
+            <strong>Platform:</strong>{" "}
+            {order.platform || "—"}
+          </p>
+
+          <p>
             <strong>Service ID:</strong>{" "}
             {order.serviceId || "—"}
           </p>
