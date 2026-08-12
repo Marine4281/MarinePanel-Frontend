@@ -45,7 +45,7 @@ const AdminUsers = () => {
   const fetchUsers = useCallback(async () => {
     try {
       const res = await API.get("/admin/users");
-      setUsers(Array.isArray(res.data) ? res.data : []);
+      setUsers(res.data?.data || []);
     } catch {
       toast.error("Failed to fetch users");
     }
