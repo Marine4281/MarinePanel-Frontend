@@ -44,7 +44,8 @@ const AdminUsers = () => {
   const fetchUsers = useCallback(async () => {
     try {
       const res = await API.get("/admin/users");
-      setUsers(res.data);
+      // Backend returns { data: [...], pagination: {...} } — unwrap it.
+      setUsers(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch {
       toast.error("Failed to fetch users");
     }
