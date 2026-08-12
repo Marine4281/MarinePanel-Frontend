@@ -36,7 +36,7 @@ const AdminDashboard = () => {
       // Guard like every other fetch here — protects against a non-array
       // payload (error body, shape change, etc.) reaching Table's
       // [...data].sort(), which throws "not iterable" if data isn't an array.
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(Array.isArray(data?.data) ? data.data : []);
     } catch (err) {
       console.error("Failed to fetch users", err);
     }
