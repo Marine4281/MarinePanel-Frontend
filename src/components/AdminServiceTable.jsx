@@ -9,6 +9,8 @@ import DescriptionModal from "./AdminServiceTable/DescriptionModal";
 
 const AdminServiceTable = ({
   services = [],
+  search,
+  setSearch,
   isLoading,
   onEdit,
   onDelete,
@@ -18,33 +20,21 @@ const AdminServiceTable = ({
   onCommissionSaved,
   pageOffset = 0,
 }) => {
-  const [search, setSearch] = useState("");
   const [selectedDescription, setSelectedDescription] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const filteredServices = useMemo(() => {
-    if (!search) return services;
-    const q = search.toLowerCase();
-    return services.filter((s) =>
-      String(s.providerServiceId || "").toLowerCase().includes(q) ||
-      String(s.serviceId || "").includes(search) ||
-      String(s._id || "").toLowerCase().includes(q) ||
-      String(s.category || "").toLowerCase().includes(q) ||
-      String(s.name || "").toLowerCase().includes(q) ||
-      String(s.rate || "").includes(search)
-    );
-  }, [search, services]);
-
+  // `services` is already filtered + paginated by the parent —
+  // just group it by category for display.
   const groupedServices = useMemo(() => {
     return Object.entries(
-      filteredServices.reduce((acc, s) => {
+      services.reduce((acc, s) => {
         const cat = s.category || "Uncategorized";
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(s);
         return acc;
       }, {})
     );
-  }, [filteredServices]);
+  }, [services]);
 
   if (isLoading) {
     return (
