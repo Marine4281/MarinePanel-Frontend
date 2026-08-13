@@ -7,8 +7,9 @@ const AdminUserOrdersStats = ({ search, status, fromDate, toDate }) => {
     total: 0,
     pending: 0,
     processing: 0,
+    inProgress: 0,
     completed: 0,
-    partial: 0, // ✅ added
+    partial: 0, 
     failed: 0,
   });
 
@@ -31,8 +32,9 @@ const AdminUserOrdersStats = ({ search, status, fromDate, toDate }) => {
         total: res.data.total || 0,
         pending: res.data.pending || 0,
         processing: res.data.processing || 0,
+        inProgress: res.data.inProgress || 0,
         completed: res.data.completed || 0,
-        partial: res.data.partial || 0, // ✅ added
+        partial: res.data.partial || 0, 
         failed: res.data.failed || 0,
       });
     } catch (err) {
@@ -57,12 +59,13 @@ const AdminUserOrdersStats = ({ search, status, fromDate, toDate }) => {
   );
 
   return (
-    <div className="grid grid-cols-6 gap-4 mb-6"> {/* ✅ updated cols */}
+    <div className="grid grid-cols-6 gap-4 mb-6"> 
       <Card title="Total Orders" value={stats.total} />
       <Card title="Pending" value={stats.pending} />
       <Card title="Processing" value={stats.processing} />
+        <Card title="In Progress" value={stats.inProgress} />
       <Card title="Completed" value={stats.completed} />
-      <Card title="Partial" value={stats.partial} /> {/* ✅ added */}
+      <Card title="Partial" value={stats.partial} /> 
       <Card title="Failed" value={stats.failed} />
     </div>
   );
