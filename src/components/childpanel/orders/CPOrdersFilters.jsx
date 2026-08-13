@@ -12,7 +12,7 @@ const QUICK = [
   { label: "This Year", value: "year" },
 ];
 
-const STATUSES = ["", "pending", "processing", "completed", "partial", "failed", "refunded"];
+const STATUSES = ["", "pending", "processing", "in progress", "completed", "partial", "failed", "refunded"];
 
 function applyQuick(value) {
   const now = new Date();
