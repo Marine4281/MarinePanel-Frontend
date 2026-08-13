@@ -108,6 +108,7 @@ const AdminUserOrdersFilters = ({
         <option value="">All</option>
         <option value="pending">Pending</option>
         <option value="processing">Processing</option>
+          <option value="in progress">In Progress</option>
         <option value="completed">Completed</option>
         <option value="partial">Partial</option>
         <option value="failed">Failed</option>
