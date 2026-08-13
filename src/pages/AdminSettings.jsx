@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import API from "../api/axios";
 import AdminCurrencySettings from "../components/admin/AdminCurrencySettings";
+import NotificationManager from "../components/admin/NotificationManager/NotificationManager";
 
 const AdminSettings = () => {
   const [commission, setCommission] = useState(50);
@@ -125,6 +126,7 @@ const AdminSettings = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
+      <NotificationManager />
 
       <main className="flex-1 p-6 max-w-4xl mx-auto">
 
