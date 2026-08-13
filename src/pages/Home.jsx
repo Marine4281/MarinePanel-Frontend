@@ -15,6 +15,7 @@ import InfoBanner from "../components/home/InfoBanner";
 import CategoryIcons from "../components/home/CategoryIcons";
 import CategorySelect from "../components/home/CategorySelect";
 import ServiceSelect from "../components/home/ServiceSelect";
+import NotificationModal from "../components/home/NotificationModal";
 
 const isCustomComments = (serviceData) =>
   serviceData?.serviceType === "Custom Comments" ||
@@ -239,6 +240,7 @@ const Home = () => {
 
   return (
     <div className="bg-gray-200 min-h-screen flex flex-col">
+      <NotificationModal />
       <Header />
 
       <main className="flex-1 overflow-y-auto p-4">
