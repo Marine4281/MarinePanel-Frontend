@@ -126,11 +126,15 @@ const AdminSettings = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar />
-      <NotificationManager />
 
       <main className="flex-1 p-6 max-w-4xl mx-auto">
 
         <h1 className="text-2xl font-bold mb-6">Admin Settings</h1>
+
+        {/* SITE NOTIFICATION */}
+        <div className="bg-white rounded-2xl shadow p-6 mb-6">
+          <NotificationManager />
+        </div>
 
         {/* COMMISSION SETTINGS */}
         <div className="bg-white rounded-2xl shadow p-6 mb-6">
