@@ -40,6 +40,7 @@ const AdminService = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState("");
 
   const [commission, setCommission] = useState(null);
   const [categoryCommissions, setCategoryCommissions] = useState({});
@@ -77,12 +78,34 @@ const AdminService = () => {
     },
   });
 
-  const totalPages = Math.ceil(services.length / SERVICES_PER_PAGE) || 1;
+  /* =============================
+     SEARCH — filter BEFORE paginating
+  ============================= */
+  const filteredServices = useMemo(() => {
+    if (!search.trim()) return services;
+    const q = search.toLowerCase();
+    return services.filter((s) =>
+      String(s.providerServiceId || "").toLowerCase().includes(q) ||
+      String(s.serviceId || "").includes(search) ||
+      String(s._id || "").toLowerCase().includes(q) ||
+      String(s.category || "").toLowerCase().includes(q) ||
+      String(s.name || "").toLowerCase().includes(q) ||
+      String(s.rate || "").includes(search)
+    );
+  }, [search, services]);
+
+  // Jump back to page 1 whenever the search term changes so results
+  // aren't hidden behind whatever page you happened to be on.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.ceil(filteredServices.length / SERVICES_PER_PAGE) || 1;
 
   const paginatedServices = useMemo(() => {
     const start = (currentPage - 1) * SERVICES_PER_PAGE;
-    return services.slice(start, start + SERVICES_PER_PAGE);
-  }, [services, currentPage]);
+    return filteredServices.slice(start, start + SERVICES_PER_PAGE);
+  }, [filteredServices, currentPage]);
 
   const getPageNumbers = () => {
     const pages = [];
@@ -191,6 +214,8 @@ const AdminService = () => {
 
         <AdminServiceTable
           services={paginatedServices}
+          search={search}
+          setSearch={setSearch}
           commission={commission}
           categoryCommissions={categoryCommissions}
           onCommissionSaved={handleCommissionSaved}
@@ -238,7 +263,7 @@ const AdminService = () => {
             </button>
 
             <span className="text-xs text-gray-400 ml-2">
-              {services.length} total · Page {currentPage} of {totalPages}
+              {filteredServices.length} total · Page {currentPage} of {totalPages}
             </span>
           </div>
         )}
