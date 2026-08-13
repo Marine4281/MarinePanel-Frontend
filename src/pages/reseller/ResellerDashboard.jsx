@@ -18,6 +18,8 @@ import Sidebar from "../../components/reseller/Sidebar";
 import StatCard from "../../components/reseller/StatCard";
 import Table from "../../components/reseller/Table";
 import { useAuth } from "../../context/AuthContext";
+import ResellerCommissionTrendChart from "../../components/reseller/ResellerCommissionTrendChart";
+import ResellerOrderVolumeChart from "../../components/reseller/ResellerOrderVolumeChart";
 
 export default function ResellerDashboard() {
   const navigate = useNavigate();
@@ -126,6 +128,12 @@ export default function ResellerDashboard() {
             <StatCard title="Earnings" value={`$${dashboardData?.earnings || 0}`} icon={<FiDollarSign />} />
             <StatCard title="Wallet" value={`$${dashboardData?.wallet || 0}`} icon={<FiCreditCard />} />
           </div>
+
+          {/* Charts */}
+         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mb-6 w-full max-w-full">
+           <ResellerCommissionTrendChart />
+           <ResellerOrderVolumeChart />
+         </div>
 
           {/* Tables */}
           <div className="space-y-6 w-full max-w-full">
