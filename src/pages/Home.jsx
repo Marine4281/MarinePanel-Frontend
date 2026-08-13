@@ -242,9 +242,9 @@ const Home = () => {
     <div className="bg-gray-200 min-h-screen flex flex-col">
       
       <Header />
-      <NotificationModal />
-
+  
       <main className="flex-1 overflow-y-auto p-4">
+        <NotificationModal />
         <InfoBanner />
 
         <CategoryIcons
