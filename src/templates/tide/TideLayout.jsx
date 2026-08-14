@@ -22,6 +22,7 @@ const NAV = [
   { label: "Services", to: "/services" },
   { label: "Wallet",   to: "/wallet" },
   { label: "Reseller", to: "/resellers" },
+  { label: "Support",  to: "/support" },
   { label: "Profile",  to: "/profile" },
   { label: "API",      to: "/api-access" },
   { label: "Profile",  to: "/profile" },
