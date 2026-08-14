@@ -327,8 +327,24 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
-        <Route path="/support/:id" element={<ProtectedRoute><SupportChatPage /></ProtectedRoute>} />
+
+        <Route
+          path="/support"
+          element={
+            <ProtectedRoute>
+              <TemplateRouter page="support" defaultPage={<SupportPage />} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/support/:id"
+          element={
+            <ProtectedRoute>
+              <TemplateRouter page="supportChat" defaultPage={<SupportChatPage />} />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Resellers tab — templates don't override this. */}
         <Route
@@ -447,4 +463,4 @@ export default function App() {
       </AuthProvider>
     </QueryClientProvider>
   );
-                                                                        }
+           }
