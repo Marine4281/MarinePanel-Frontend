@@ -225,7 +225,7 @@ export default function TideProfile() {
                   <h3 className="font-black text-gray-900">API Access</h3>
                   <p className="text-xs text-gray-400 mt-0.5">
                     Use your API key to integrate programmatically.{" "}
-                    <a href="/api-docs" className="font-semibold hover:underline" style={{ color: brand.color }}>
+                    <a href="/api-access" className="font-semibold hover:underline" style={{ color: brand.color }}>
                       View docs →
                     </a>
                   </p>
