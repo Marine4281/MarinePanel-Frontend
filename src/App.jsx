@@ -265,7 +265,7 @@ function AppRoutes() {
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/api-access" element={<ApiDocsPage />} />
+        <Route path="/api-access" element={<TemplateRouter page="apiDocs" defaultPage={<ApiDocsPage />} />}
         <Route path="/terms" element={<ProtectedRoute><TermsAndConditions /></ProtectedRoute>} />
         <Route path="/terms-public" element={<TermsPublic />} />
 
@@ -335,7 +335,7 @@ function AppRoutes() {
           path="/resellers"
           element={
             <ProtectedRoute>
-              <Reseller />
+              <TemplateRouter page="reseller" defaultPage={<Reseller />} />
             </ProtectedRoute>
           }
         />
