@@ -9,6 +9,8 @@ import TideLayout from "./TideLayout";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import FloatingSupport from "../../components/FloatingSupport";
+import TideNotificationBanner from "./TideNotificationBanner";
+
 import {
   FiSend, FiChevronDown, FiGift, FiInfo,
 } from "react-icons/fi";
@@ -219,6 +221,7 @@ export default function TideHome() {
 
   return (
     <TideLayout>
+      <TideNotificationBanner />
       <div className="grid lg:grid-cols-3 gap-6">
         {/* ── Main form ── */}
         <div className="lg:col-span-2">
