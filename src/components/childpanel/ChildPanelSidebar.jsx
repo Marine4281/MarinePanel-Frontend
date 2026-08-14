@@ -19,6 +19,7 @@ import {
   FiTag,
   FiShield,
   FiMessageSquare,
+  FiBell,
 } from "react-icons/fi";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -78,6 +79,7 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
     { to: "/child-panel/financial", icon: <FiDollarSign />, label: "Financial" },
     { to: "/child-panel/categories", icon: <FiTag />, label: "Categories" },
     { to: "/child-panel/logs", icon: <FiShield />, label: "Staff Actions" },
+    { to: "/child-panel/notifications", icon: <FiBell />, label: "Notifications" },
     { to: "/child-panel/settings", icon: <FiSliders />, label: "Settings" },
     {
       to: "/child-panel/reseller-guides",
@@ -164,4 +166,4 @@ export default function ChildPanelSidebar({ mobileOpen, onClose }) {
       )}
     </>
   );
-            }
+    }
