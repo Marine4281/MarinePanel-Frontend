@@ -322,7 +322,7 @@ const Profile = () => {
                     <h3 className="font-semibold text-gray-800">API Access</h3>
                     <p className="text-xs text-gray-400 mt-0.5">
                       Use your API key to integrate with Marine Panel.{" "}
-                      <a href="/api-docs" className="text-orange-500 hover:underline">
+                      <a href="/api-access" className="text-orange-500 hover:underline">
                         View docs →
                       </a>
                     </p>
