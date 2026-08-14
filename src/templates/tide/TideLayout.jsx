@@ -23,6 +23,8 @@ const NAV = [
   { label: "Wallet",   to: "/wallet" },
   { label: "Reseller", to: "/resellers" },
   { label: "Profile",  to: "/profile" },
+  { label: "API",      to: "/api-access" },
+  { label: "Profile",  to: "/profile" },
 ];
 
 export default function TideLayout({ children }) {
@@ -162,7 +164,7 @@ export default function TideLayout({ children }) {
             © {new Date().getFullYear()} {brand.name}. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            {NAV.slice(0, 5).map((item) => (
+            {NAV.slice(0, 6).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
