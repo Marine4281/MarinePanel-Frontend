@@ -34,6 +34,8 @@ import PulseWallet   from "./pulse/PulseWallet";
 import PulseOrders   from "./pulse/PulseOrders";
 import PulseServices from "./pulse/PulseServices";
 import PulseProfile  from "./pulse/PulseProfile";
+import TideReseller from "./tide/TideReseller";
+import TideApiDocs  from "./tide/TideApiDocs";
 
 // ── Neon (cyberpunk dark + neon accents, persistent left sidebar)
 import NeonLogin    from "./neon/NeonLogin";
@@ -101,6 +103,8 @@ const TEMPLATES = [
       orders:   PulseOrders,
       services: PulseServices,
       profile:  PulseProfile,
+      reseller: TideReseller,
+      apiDocs:  TideApiDocs,
     },
   },
   {
