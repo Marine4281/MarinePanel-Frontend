@@ -1,9 +1,10 @@
 // src/context/ServicesContext.jsx
 
-import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useMemo } from "react";
 import { io } from "socket.io-client";
 import API from "../api/axios";
 import { getResellerSlug } from "../utils/domain";
+import { useAuth } from "./AuthContext";
 
 const ServicesContext = createContext();
 
@@ -69,6 +70,14 @@ export const ServicesProvider = ({ children }) => {
   const [loading,    setLoading]    = useState(true);
   const [domainType, setDomainType] = useState(null);
 
+  // Logged-in user — used only to detect the "just logged in" transition
+  // so a reseller-domain fetch that 401'd before the token existed gets
+  // retried automatically, instead of requiring a manual page refresh.
+  const { user } = useAuth() || {};
+  const domainTypeRef = useRef(null);
+  const hasInitializedRef = useRef(false);
+  const lastUserIdRef = useRef(null);
+
   const fetchServices = async (type) => {
     try {
       setLoading(true);
@@ -102,7 +111,10 @@ export const ServicesProvider = ({ children }) => {
     const init = async () => {
       const type = await detectDomainType();
       setDomainType(type);
+      domainTypeRef.current = type;
+
       await fetchServices(type);
+      hasInitializedRef.current = true;
 
       if (type === "main" || type === "reseller" || type === "childPanel") {
         socket = io("https://marinepanel-backend.onrender.com", {
@@ -137,6 +149,31 @@ export const ServicesProvider = ({ children }) => {
       if (socket) socket.disconnect();
     };
   }, []);
+
+  /* =====================================================
+  RE-FETCH ON LOGIN
+  /reseller/services is an authenticated route. If this
+  provider's initial fetch ran before the login token was
+  in place (e.g. the user was mid-login when the app
+  mounted), it 401s and services stays empty forever —
+  the only fix used to be a hard refresh. Watch for the
+  user identity actually appearing (null/undefined -> a
+  real _id) and retry the fetch once that happens.
+  ===================================================== */
+  useEffect(() => {
+    const currentUserId = user?._id || null;
+
+    if (
+      hasInitializedRef.current &&
+      domainTypeRef.current === "reseller" &&
+      !lastUserIdRef.current &&
+      currentUserId
+    ) {
+      fetchServices("reseller");
+    }
+
+    lastUserIdRef.current = currentUserId;
+  }, [user?._id]);
 
   const refreshServices = async () => {
     if (domainType) await fetchServices(domainType);
