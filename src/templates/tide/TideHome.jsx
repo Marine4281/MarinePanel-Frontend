@@ -300,6 +300,15 @@ export default function TideHome() {
                 </div>
               </div>
 
+              {/* Service description */}
+              {selectedServiceData?.description && (
+                <div className="rounded-xl px-4 py-3 border border-gray-100 bg-gray-50">
+                  <p className="text-xs text-gray-500 whitespace-pre-line leading-relaxed">
+                    {selectedServiceData.description}
+                  </p>
+                </div>
+              )}
+
               {/* Service info */}
               {selectedServiceData && !selectedServiceData.isFree && (
                 <div className="grid grid-cols-3 gap-3">
