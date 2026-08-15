@@ -43,6 +43,10 @@ import NeonWallet   from "./neon/NeonWallet";
 import NeonOrders   from "./neon/NeonOrders";
 import NeonServices from "./neon/NeonServices";
 import NeonProfile  from "./neon/NeonProfile";
+import NeonReseller   from "./neon/NeonReseller";
+import NeonApiDocs    from "./neon/NeonApiDocs";
+import NeonSupport    from "./neon/NeonSupport";
+import NeonSupportChat from "./neon/NeonSupportChat";
 
 // ── Tide (professional ocean blue, classic top header + footer)
 import TideLogin    from "./tide/TideLogin";
@@ -122,6 +126,10 @@ const TEMPLATES = [
       orders:   NeonOrders,
       services: NeonServices,
       profile:  NeonProfile,
+      reseller: NeonReseller,
+      apiDocs:  NeonApiDocs,
+      support:      NeonSupport,
+      supportChat:  NeonSupportChat,
     },
   },
   {
