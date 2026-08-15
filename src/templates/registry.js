@@ -60,6 +60,8 @@ import TideReseller from "./tide/TideReseller";
 import TideApiDocs  from "./tide/TideApiDocs";
 import TideSupport     from "./tide/TideSupport";
 import TideSupportChat from "./tide/TideSupportChat";
+import TideAddFunds from "./tide/TideAddFunds";
+import TideWithdraw from "./tide/TideWithdraw";
 
 // ─────────────────────────────────────────────────────────────
 // REGISTRY
@@ -150,7 +152,9 @@ const TEMPLATES = [
       reseller: TideReseller,
       apiDocs:  TideApiDocs,
       support:      TideSupport,
-      supportChat:  TideSupportChat
+      supportChat:  TideSupportChat,
+      addFunds: TideAddFunds,
+      withdraw: TideWithdraw
     },
   },
 ];
