@@ -269,9 +269,9 @@ function AppRoutes() {
         <Route path="/terms" element={<ProtectedRoute><TermsAndConditions /></ProtectedRoute>} />
         <Route path="/terms-public" element={<TermsPublic />} />
 
-        <Route path="/add-funds"      element={<ProtectedRoute><AddFunds /></ProtectedRoute>} />
+        <Route path="/add-funds"      element={<ProtectedRoute> <TemplateRouter page="addFunds" defaultPage={<AddFunds />} /></ProtectedRoute>} />
         <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
-        <Route path="/withdraw" element={<Withdraw />} />
+        <Route path="/withdraw" element={<ProtectedRoute><TemplateRouter page="withdraw" defaultPage={<Withdraw />} /></ProtectedRoute>}/>
         <Route path="/services-public" element={<ServicesPublic />} />
 
          
