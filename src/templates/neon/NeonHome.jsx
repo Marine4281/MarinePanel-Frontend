@@ -66,6 +66,18 @@ export default function NeonHome() {
   const [comments, setComments]     = useState("");
   const [charge, setCharge]         = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [categoryMeta, setCategoryMeta] = useState([]);
+
+  /* ---------- FEATURED CATEGORY META ---------- */
+  useEffect(() => {
+    API.get("/category-meta").then((r) => setCategoryMeta(r.data || [])).catch(() => setCategoryMeta([]));
+  }, []);
+
+  const metaMap = useMemo(() => {
+    const m = {};
+    categoryMeta.forEach((c) => { m[`${c.platform}::${c.category}`] = c; });
+    return m;
+  }, [categoryMeta]);
 
   /* ---------- REPLACE / PREFILL (from Orders "Replace") ---------- */
   useEffect(() => {
@@ -96,10 +108,22 @@ export default function NeonHome() {
     return services.filter((s) => s.platform === platform);
   }, [services, platform]);
 
-  const categories = useMemo(
-    () => [...new Set(platformServices.map((s) => s.category))],
-    [platformServices]
+  const getCatMeta = useCallback(
+    (cat) => {
+      const svc = platformServices.find((s) => s.category === cat);
+      return metaMap[`${svc?.platform}::${cat}`];
+    },
+    [platformServices, metaMap]
   );
+
+  const categories = useMemo(() => {
+    const list = [...new Set(platformServices.map((s) => s.category))];
+    return list.sort((a, b) => {
+      const orderA = getCatMeta(a)?.sortOrder ?? 999;
+      const orderB = getCatMeta(b)?.sortOrder ?? 999;
+      return orderA - orderB;
+    });
+  }, [platformServices, getCatMeta]);
 
   /* ---------- DEFAULT CATEGORY ---------- */
   useEffect(() => {
@@ -282,7 +306,11 @@ export default function NeonHome() {
                 onFocus={(e) => (e.target.style.borderColor = neon)} onBlur={(e) => (e.target.style.borderColor = `${neon}22`)}
               >
                 <option value="" style={{ background: "#1b1b2a" }}>Select category…</option>
-                {categories.map((c) => <option key={c} value={c} style={{ background: "#1b1b2a" }}>{c}</option>)}
+                {categories.map((c) => {
+                  const meta = getCatMeta(c);
+                  const star = meta?.isFeatured ? (meta.featuredColor === "blue" ? "🔵 " : "⭐ ") : "";
+                  return <option key={c} value={c} style={{ background: "#1b1b2a" }}>{star}{c}</option>;
+                })}
               </select>
               <FiChevronDown size={13} className="absolute right-4 top-3.5 pointer-events-none" style={{ color: `${neon}44` }} />
             </div>
@@ -420,4 +448,4 @@ export default function NeonHome() {
       </div>
     </NeonLayout>
   );
-            }
+  }
