@@ -12,7 +12,7 @@ import API from "../../api/axios";
 import { io } from "socket.io-client";
 import {
   FiHome, FiList, FiDollarSign, FiGlobe, FiUser,
-  FiCode, FiLogOut, FiMenu, FiX, FiShare2,
+  FiCode, FiLogOut, FiMenu, FiX, FiShare2, FiHeadphones,
 } from "react-icons/fi";
 
 const baseURL =
@@ -25,6 +25,7 @@ const NAV = [
   { label: "Wallet",   to: "/wallet",     icon: <FiDollarSign size={17} /> },
   { label: "Services", to: "/services",   icon: <FiGlobe size={17} /> },
   { label: "Reseller", to: "/resellers",  icon: <FiShare2 size={17} /> },
+  { label: "Support",  to: "/support",    icon: <FiHeadphones size={17} /> },
   { label: "API",      to: "/api-access", icon: <FiCode size={17} /> },
   { label: "Profile",  to: "/profile",    icon: <FiUser size={17} /> },
 ];
@@ -64,7 +65,7 @@ export default function NeonLayout({ children }) {
       className="flex flex-col h-full"
       style={{
         width: mobile ? "100%" : SIDEBAR_W,
-        background: "#080810",
+        background: "#101018",
         borderRight: `1px solid ${neon}22`,
       }}
     >
@@ -103,7 +104,7 @@ export default function NeonLayout({ children }) {
 
       {/* Balance */}
       <div className="px-5 py-3" style={{ borderBottom: `1px solid ${neon}12` }}>
-        <p className="text-xs mb-1" style={{ color: "#3a3a5a" }}>Balance</p>
+        <p className="text-xs mb-1" style={{ color: "#5c5c82" }}>Balance</p>
         <p
           className="text-lg font-black"
           style={{ color: neon, textShadow: `0 0 10px ${neon}66` }}
@@ -123,12 +124,12 @@ export default function NeonLayout({ children }) {
               className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-semibold"
               style={{
                 background: active ? `${neon}14` : "transparent",
-                color: active ? neon : "#4a4a6a",
+                color: active ? neon : "#6c6c92",
                 boxShadow: active ? `inset 0 0 16px ${neon}10` : "none",
                 border: `1px solid ${active ? neon + "30" : "transparent"}`,
               }}
             >
-              <span style={{ color: active ? neon : "#3a3a5a", filter: active ? `drop-shadow(0 0 6px ${neon})` : "none" }}>
+              <span style={{ color: active ? neon : "#5c5c82", filter: active ? `drop-shadow(0 0 6px ${neon})` : "none" }}>
                 {item.icon}
               </span>
               {item.label}
@@ -139,7 +140,7 @@ export default function NeonLayout({ children }) {
 
       {/* User + logout */}
       <div className="px-3 py-4" style={{ borderTop: `1px solid ${neon}12` }}>
-        <p className="text-xs px-4 mb-3 truncate" style={{ color: "#3a3a5a" }}>{user?.email}</p>
+        <p className="text-xs px-4 mb-3 truncate" style={{ color: "#5c5c82" }}>{user?.email}</p>
         <button
           onClick={() => { logout(); navigate("/login"); }}
           className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
@@ -155,7 +156,7 @@ export default function NeonLayout({ children }) {
   return (
     <div
       className="flex min-h-screen"
-      style={{ background: "#0a0a14", color: "#c4c4e0", fontFamily: "'Inter', sans-serif" }}
+      style={{ background: "#15151f", color: "#c4c4e0", fontFamily: "'Inter', sans-serif" }}
     >
       {/* Desktop sidebar */}
       <div className="hidden lg:flex flex-col fixed left-0 top-0 h-full z-30" style={{ width: SIDEBAR_W }}>
@@ -168,7 +169,7 @@ export default function NeonLayout({ children }) {
           <div className="flex flex-col" style={{ width: 260 }}>
             <Sidebar mobile />
           </div>
-          <div className="flex-1" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setMobileOpen(false)} />
+          <div className="flex-1" style={{ background: "rgba(0,0,0,0.6)" }} onClick={() => setMobileOpen(false)} />
         </div>
       )}
 
@@ -178,7 +179,7 @@ export default function NeonLayout({ children }) {
         <div
           className="lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-20"
           style={{
-            background: "#080810",
+            background: "#101018",
             borderBottom: `1px solid ${neon}18`,
           }}
         >
@@ -212,4 +213,4 @@ export default function NeonLayout({ children }) {
       `}</style>
     </div>
   );
-    }
+}
