@@ -9,6 +9,7 @@ import NeonLayout from "./NeonLayout";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
 import { FiZap, FiChevronDown, FiGift } from "react-icons/fi";
+import NeonNotificationBanner from "./NeonNotificationBanner";
 import {
   FaTiktok, FaInstagram, FaYoutube, FaFacebook,
   FaWhatsapp, FaTelegram, FaLinkedin, FaSnapchat, FaSpotify,
@@ -227,6 +228,7 @@ export default function NeonHome() {
 
   return (
     <NeonLayout>
+       <NeonNotificationBanner />
       <div className="space-y-5 max-w-2xl">
         {/* Header */}
         <div>
