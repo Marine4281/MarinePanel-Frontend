@@ -27,13 +27,19 @@ import AuroraServices from "./aurora/AuroraServices";
 import AuroraProfile  from "./aurora/AuroraProfile";
 
 // ── Pulse (minimal white, floating bottom nav, mobile-first card layout)
-import PulseLogin    from "./pulse/PulseLogin";
-import PulseRegister from "./pulse/PulseRegister";
-import PulseHome     from "./pulse/PulseHome";
-import PulseWallet   from "./pulse/PulseWallet";
-import PulseOrders   from "./pulse/PulseOrders";
-import PulseServices from "./pulse/PulseServices";
-import PulseProfile  from "./pulse/PulseProfile";
+import PulseLogin              from "./pulse/PulseLogin";
+import PulseRegister           from "./pulse/PulseRegister";
+import PulseHome               from "./pulse/PulseHome";
+import PulseWallet             from "./pulse/PulseWallet";
+import PulseOrders             from "./pulse/PulseOrders";
+import PulseServices           from "./pulse/PulseServices";
+import PulseProfile            from "./pulse/PulseProfile";
+import PulseReseller           from "./pulse/PulseReseller";
+import PulseApiDocs            from "./pulse/PulseApiDocs";
+import PulseSupport            from "./pulse/PulseSupport";
+import PulseSupportChat        from "./pulse/PulseSupportChat";
+import PulseAddFunds           from "./pulse/PulseAddFunds";
+import PulseWithdraw           from "./pulse/PulseWithdraw";
 
 // ── Neon (cyberpunk dark + neon accents, persistent left sidebar)
 import NeonLogin    from "./neon/NeonLogin";
@@ -106,13 +112,19 @@ const TEMPLATES = [
     accent: "#6366f1",
     style: "Bottom Nav · Minimal · Mobile-First",
     pages: {
-      login:    PulseLogin,
+       login:    PulseLogin,
       register: PulseRegister,
       home:     PulseHome,
       wallet:   PulseWallet,
       orders:   PulseOrders,
       services: PulseServices,
       profile:  PulseProfile,
+      reseller: PulseReseller,
+      apiDocs:  PulseApiDocs,
+      support:      PulseSupport,
+      supportChat:  PulseSupportChat,
+      addFunds: PulseAddFunds,
+      withdraw: PulseWithdraw,
     },
   },
   {
