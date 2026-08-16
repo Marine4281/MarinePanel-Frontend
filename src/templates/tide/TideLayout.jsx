@@ -8,9 +8,11 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useChildPanel } from "../../context/ChildPanelContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import API from "../../api/axios";
 import { io } from "socket.io-client";
 import { FiMenu, FiX } from "react-icons/fi";
+import TideCurrencySelector from "./TideCurrencySelector";
 
 const baseURL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
@@ -23,7 +25,6 @@ const NAV = [
   { label: "Wallet",   to: "/wallet" },
   { label: "Reseller", to: "/resellers" },
   { label: "Support",  to: "/support" },
-  { label: "Profile",  to: "/profile" },
   { label: "API",      to: "/api-access" },
   { label: "Profile",  to: "/profile" },
 ];
@@ -31,6 +32,7 @@ const NAV = [
 export default function TideLayout({ children }) {
   const { user, logout } = useAuth();
   const { childPanel } = useChildPanel();
+  const { formatMoney } = useCurrency();
   const location = useLocation();
   const navigate = useNavigate();
   const [balance, setBalance] = useState(0);
@@ -100,10 +102,15 @@ export default function TideLayout({ children }) {
 
           {/* Right side */}
           <div className="flex items-center gap-3">
+            {/* Currency selector */}
+            <div className="hidden sm:block">
+              <TideCurrencySelector brandColor={brand.color} />
+            </div>
+
             {/* Balance */}
             <div className="hidden sm:flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1.5">
               <span className="text-white/70 text-xs">Balance:</span>
-              <span className="text-white text-xs font-black">${Number(balance).toFixed(2)}</span>
+              <span className="text-white text-xs font-black">{formatMoney(balance, 2)}</span>
             </div>
 
             {/* Logout desktop */}
@@ -128,6 +135,12 @@ export default function TideLayout({ children }) {
         {/* Mobile menu dropdown */}
         {menuOpen && (
           <div className="md:hidden" style={{ background: brand.color, borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+            <div className="px-6 py-3 flex items-center justify-between border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+              <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+                Balance: {formatMoney(balance, 2)}
+              </span>
+              <TideCurrencySelector brandColor={brand.color} />
+            </div>
             {NAV.map((item) => (
               <Link
                 key={item.to}
@@ -180,4 +193,4 @@ export default function TideLayout({ children }) {
       </footer>
     </div>
   );
-                }
+            }
