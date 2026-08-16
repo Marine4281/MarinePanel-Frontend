@@ -47,6 +47,8 @@ import NeonReseller   from "./neon/NeonReseller";
 import NeonApiDocs    from "./neon/NeonApiDocs";
 import NeonSupport    from "./neon/NeonSupport";
 import NeonSupportChat from "./neon/NeonSupportChat";
+import NeonAddFunds from "./neon/NeonAddFunds";
+import NeonWithdraw from "./neon/NeonWithdraw";
 
 // ── Tide (professional ocean blue, classic top header + footer)
 import TideLogin    from "./tide/TideLogin";
@@ -132,6 +134,8 @@ const TEMPLATES = [
       apiDocs:  NeonApiDocs,
       support:      NeonSupport,
       supportChat:  NeonSupportChat,
+      addFunds: NeonAddFunds,
+      withdraw: NeonWithdraw,
     },
   },
   {
