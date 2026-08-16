@@ -40,6 +40,7 @@ import PulseSupport            from "./pulse/PulseSupport";
 import PulseSupportChat        from "./pulse/PulseSupportChat";
 import PulseAddFunds           from "./pulse/PulseAddFunds";
 import PulseWithdraw           from "./pulse/PulseWithdraw";
+import PulseTerms from "./pulse/PulseTerms";
 
 // ── Neon (cyberpunk dark + neon accents, persistent left sidebar)
 import NeonLogin    from "./neon/NeonLogin";
@@ -55,6 +56,7 @@ import NeonSupport    from "./neon/NeonSupport";
 import NeonSupportChat from "./neon/NeonSupportChat";
 import NeonAddFunds from "./neon/NeonAddFunds";
 import NeonWithdraw from "./neon/NeonWithdraw";
+import NeonTerms  from "./neon/NeonTerms";
 
 // ── Tide (professional ocean blue, classic top header + footer)
 import TideLogin    from "./tide/TideLogin";
@@ -70,6 +72,7 @@ import TideSupport     from "./tide/TideSupport";
 import TideSupportChat from "./tide/TideSupportChat";
 import TideAddFunds from "./tide/TideAddFunds";
 import TideWithdraw from "./tide/TideWithdraw";
+import TideTerms  from "./tide/TideTerms";
 
 // ─────────────────────────────────────────────────────────────
 // REGISTRY
@@ -125,6 +128,7 @@ const TEMPLATES = [
       supportChat:  PulseSupportChat,
       addFunds: PulseAddFunds,
       withdraw: PulseWithdraw,
+      terms: PulseTerms,
     },
   },
   {
@@ -148,6 +152,7 @@ const TEMPLATES = [
       supportChat:  NeonSupportChat,
       addFunds: NeonAddFunds,
       withdraw: NeonWithdraw,
+      terms: NeonTerms,
     },
   },
   {
@@ -170,7 +175,8 @@ const TEMPLATES = [
       support:      TideSupport,
       supportChat:  TideSupportChat,
       addFunds: TideAddFunds,
-      withdraw: TideWithdraw
+      withdraw: TideWithdraw,
+      terms: TideTerms
     },
   },
 ];
