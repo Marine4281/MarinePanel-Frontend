@@ -1,19 +1,21 @@
 // src/templates/neon/NeonLayout.jsx
 //
-// Neon template — persistent left sidebar, dark background,
-// glowing neon accents. No floating nav, no top header bar.
-// Reseller link added so child panel users can access API + Reseller Panel.
+// Neon template — persistent left sidebar, dark background, glowing neon accents.
+// Sidebar is a real flex sibling (not position:fixed), so no manual margin-push
+// hack is needed and the reveal breakpoint matches Tide's (md, 768px).
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useChildPanel } from "../../context/ChildPanelContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import API from "../../api/axios";
 import { io } from "socket.io-client";
 import {
   FiHome, FiList, FiDollarSign, FiGlobe, FiUser,
   FiCode, FiLogOut, FiMenu, FiX, FiShare2, FiHeadphones,
 } from "react-icons/fi";
+import NeonCurrencySelector from "./NeonCurrencySelector";
 
 const baseURL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
@@ -35,6 +37,7 @@ const SIDEBAR_W = 220;
 export default function NeonLayout({ children }) {
   const { user, logout } = useAuth();
   const { childPanel } = useChildPanel();
+  const { formatMoney } = useCurrency();
   const location = useLocation();
   const navigate = useNavigate();
   const [balance, setBalance] = useState(0);
@@ -90,26 +93,29 @@ export default function NeonLayout({ children }) {
           </div>
         )}
         <span
-          className="font-black text-sm tracking-tight"
+          className="font-black text-sm tracking-tight truncate"
           style={{ color: neon, textShadow: `0 0 12px ${neon}88` }}
         >
           {brand.name}
         </span>
         {mobile && (
-          <button onClick={() => setMobileOpen(false)} className="ml-auto" style={{ color: neon }}>
+          <button onClick={() => setMobileOpen(false)} className="ml-auto flex-shrink-0" style={{ color: neon }}>
             <FiX size={18} />
           </button>
         )}
       </div>
 
-      {/* Balance */}
-      <div className="px-5 py-3" style={{ borderBottom: `1px solid ${neon}12` }}>
-        <p className="text-xs mb-1" style={{ color: "#5c5c82" }}>Balance</p>
+      {/* Balance + currency */}
+      <div className="px-5 py-3 space-y-2" style={{ borderBottom: `1px solid ${neon}12` }}>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs" style={{ color: "#5c5c82" }}>Balance</p>
+          <NeonCurrencySelector brandColor={neon} compact />
+        </div>
         <p
           className="text-lg font-black"
           style={{ color: neon, textShadow: `0 0 10px ${neon}66` }}
         >
-          ${Number(balance).toFixed(2)}
+          {formatMoney(balance, 2)}
         </p>
       </div>
 
@@ -158,14 +164,14 @@ export default function NeonLayout({ children }) {
       className="flex min-h-screen"
       style={{ background: "#15151f", color: "#c4c4e0", fontFamily: "'Inter', sans-serif" }}
     >
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex flex-col fixed left-0 top-0 h-full z-30" style={{ width: SIDEBAR_W }}>
+      {/* Desktop sidebar — real flex sibling, no position:fixed, no manual margin hack */}
+      <div className="hidden md:flex flex-shrink-0">
         <Sidebar />
       </div>
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="flex flex-col" style={{ width: 260 }}>
             <Sidebar mobile />
           </div>
@@ -174,10 +180,10 @@ export default function NeonLayout({ children }) {
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Mobile topbar */}
         <div
-          className="lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-20"
+          className="md:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-20"
           style={{
             background: "#101018",
             borderBottom: `1px solid ${neon}18`,
@@ -193,24 +199,17 @@ export default function NeonLayout({ children }) {
             className="text-xs font-black px-3 py-1 rounded-full"
             style={{ background: `${neon}14`, color: neon, border: `1px solid ${neon}33` }}
           >
-            ${Number(balance).toFixed(2)}
+            {formatMoney(balance, 2)}
           </span>
         </div>
 
         {/* Page */}
-        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto">
           <div style={{ maxWidth: 860, marginLeft: "auto", marginRight: "auto" }}>
             {children}
           </div>
         </main>
       </div>
-
-      {/* Desktop left margin */}
-      <style>{`
-        @media (min-width: 1024px) {
-          main { margin-left: ${SIDEBAR_W}px; }
-        }
-      `}</style>
     </div>
   );
 }
