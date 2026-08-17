@@ -2,41 +2,44 @@
 //
 // Shared layout for all Aurora template pages.
 // - No top header, no footer
-// - Full-screen dark gradient background
-// - Hidden slide-in drawer triggered by ≡ (hamburger) button
-// - Drawer overlays content from the left
-// - Wallet balance shown as a pill in the top-right corner
-// - Reseller link added so child panel users can access API + Reseller Panel
+// - Full-bleed dark gradient background (this stays edge-to-edge — it's the identity)
+// - Hidden slide-in drawer triggered by ≡ (hamburger) button, at ALL screen sizes
+// - Content itself is centered with a max-width so large screens don't feel empty
+// - Wallet balance shown as a pill in the top-right corner, currency-aware
 
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useChildPanel } from "../../context/ChildPanelContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import API from "../../api/axios";
 import { io } from "socket.io-client";
 import {
-  FiMenu, FiX, FiHome, FiShoppingBag, FiList,
+  FiMenu, FiX, FiHome, FiList,
   FiUser, FiLogOut, FiGlobe, FiCode, FiDollarSign,
-  FiShare2,
+  FiShare2, FiHeadphones,
 } from "react-icons/fi";
+import AuroraCurrencySelector from "./AuroraCurrencySelector";
 
 const baseURL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
   "https://marinepanel-backend.onrender.com";
 
 const NAV = [
-  { label: "Home",     to: "/home",      icon: <FiHome size={18} /> },
-  { label: "Orders",   to: "/orders",    icon: <FiList size={18} /> },
-  { label: "Services", to: "/services",  icon: <FiGlobe size={18} /> },
-  { label: "Wallet",   to: "/wallet",    icon: <FiDollarSign size={18} /> },
-  { label: "Reseller", to: "/resellers", icon: <FiShare2 size={18} /> },
+  { label: "Home",     to: "/home",       icon: <FiHome size={18} /> },
+  { label: "Orders",   to: "/orders",     icon: <FiList size={18} /> },
+  { label: "Services", to: "/services",   icon: <FiGlobe size={18} /> },
+  { label: "Wallet",   to: "/wallet",     icon: <FiDollarSign size={18} /> },
+  { label: "Reseller", to: "/resellers",  icon: <FiShare2 size={18} /> },
+  { label: "Support",  to: "/support",    icon: <FiHeadphones size={18} /> },
   { label: "API",      to: "/api-access", icon: <FiCode size={18} /> },
-  { label: "Profile",  to: "/profile",   icon: <FiUser size={18} /> },
+  { label: "Profile",  to: "/profile",    icon: <FiUser size={18} /> },
 ];
 
 export default function AuroraLayout({ children }) {
   const { user, logout } = useAuth();
   const { childPanel } = useChildPanel();
+  const { formatMoney } = useCurrency();
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -48,7 +51,6 @@ export default function AuroraLayout({ children }) {
     logo:  childPanel?.logo       || null,
   };
 
-  // Fetch + live wallet
   useEffect(() => {
     if (!user) return;
     API.get("/wallet").then((r) => setBalance(r.data.balance || 0)).catch(() => {});
@@ -59,7 +61,6 @@ export default function AuroraLayout({ children }) {
     return () => socket.disconnect();
   }, [user]);
 
-  // Close drawer on route change
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
   const handleLogout = () => { logout(); navigate("/login"); };
@@ -74,36 +75,39 @@ export default function AuroraLayout({ children }) {
       }}
     >
       {/* ── TOP BAR ── */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3">
-        {/* Hamburger */}
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 sm:px-6 py-3">
+        {/* Hamburger — stays at every screen size, it's Aurora's whole identity */}
         <button
           onClick={() => setOpen(true)}
-          className="w-9 h-9 rounded-xl flex items-center justify-center"
+          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
           style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(10px)" }}
         >
           <FiMenu size={20} color="#e2e8f0" />
         </button>
 
         {/* Brand center */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {brand.logo && (
-            <img src={brand.logo} alt="" className="w-6 h-6 rounded object-contain" />
+            <img src={brand.logo} alt="" className="w-6 h-6 rounded object-contain flex-shrink-0" />
           )}
-          <span className="font-bold text-sm" style={{ color: brand.color }}>
+          <span className="font-bold text-sm truncate" style={{ color: brand.color }}>
             {brand.name}
           </span>
         </div>
 
-        {/* Balance pill */}
-        <div
-          className="text-xs font-semibold px-3 py-1.5 rounded-full"
-          style={{
-            background: "rgba(167,139,250,0.15)",
-            color: brand.color,
-            border: `1px solid ${brand.color}40`,
-          }}
-        >
-          ${Number(balance).toFixed(2)}
+        {/* Right: currency + balance */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <AuroraCurrencySelector brandColor={brand.color} />
+          <div
+            className="text-xs font-semibold px-3 py-1.5 rounded-full"
+            style={{
+              background: "rgba(167,139,250,0.15)",
+              color: brand.color,
+              border: `1px solid ${brand.color}40`,
+            }}
+          >
+            {formatMoney(balance, 2)}
+          </div>
         </div>
       </div>
 
@@ -120,7 +124,7 @@ export default function AuroraLayout({ children }) {
       <div
         className="fixed top-0 left-0 h-full z-50 flex flex-col transition-transform duration-300"
         style={{
-          width: 270,
+          width: 280,
           transform: open ? "translateX(0)" : "translateX(-100%)",
           background: "linear-gradient(180deg, #1a1730 0%, #0f0c29 100%)",
           borderRight: "1px solid rgba(167,139,250,0.15)",
@@ -128,15 +132,15 @@ export default function AuroraLayout({ children }) {
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(167,139,250,0.15)" }}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {brand.logo && (
-              <img src={brand.logo} alt="" className="w-8 h-8 rounded-lg object-contain" />
+              <img src={brand.logo} alt="" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
             )}
-            <span className="font-bold text-base" style={{ color: brand.color }}>
+            <span className="font-bold text-base truncate" style={{ color: brand.color }}>
               {brand.name}
             </span>
           </div>
-          <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-white">
+          <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-white flex-shrink-0">
             <FiX size={20} />
           </button>
         </div>
@@ -150,7 +154,7 @@ export default function AuroraLayout({ children }) {
               className="mt-2 inline-block text-xs font-bold px-2 py-1 rounded-full"
               style={{ background: `${brand.color}22`, color: brand.color }}
             >
-              ${Number(balance).toFixed(2)} balance
+              {formatMoney(balance, 2)} balance
             </div>
           </div>
         )}
@@ -190,9 +194,13 @@ export default function AuroraLayout({ children }) {
       </div>
 
       {/* ── PAGE CONTENT ── */}
-      <div className="pt-16 pb-6 px-4 min-h-screen">
-        {children}
+      {/* Background stays full-bleed (that's Aurora's identity); content itself is centered
+          with a max-width so it doesn't stretch thin and empty-feeling on large screens. */}
+      <div className="pt-16 pb-6 px-4 sm:px-6 min-h-screen">
+        <div className="max-w-3xl mx-auto w-full">
+          {children}
+        </div>
       </div>
     </div>
   );
-        }
+                                                               }
