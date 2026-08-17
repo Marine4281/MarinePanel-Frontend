@@ -101,7 +101,7 @@ export default function PulseApiDocs() {
 
   return (
     <PulseLayout>
-      <div className="max-w-lg mx-auto space-y-4">
+      <div className="max-w-lg mx-auto space-y-4 → max-w-2xl mx-auto space-y-4">
         <div className="pt-1">
           <p className="text-xs text-gray-400 font-semibold">Docs</p>
           <h2 className="text-xl font-black text-gray-900">API Documentation</h2>
