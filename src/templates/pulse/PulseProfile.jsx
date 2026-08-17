@@ -122,7 +122,7 @@ export default function PulseProfile() {
 
   return (
     <PulseLayout>
-      <div className="max-w-lg mx-auto space-y-5">
+      <div className="max-w-lg mx-auto space-y-5 → max-w-2xl mx-auto space-y-5">
         {/* User card */}
         <div
           className="rounded-3xl p-5 flex items-center gap-4"
