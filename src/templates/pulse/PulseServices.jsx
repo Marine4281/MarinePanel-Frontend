@@ -61,7 +61,7 @@ export default function PulseServices() {
 
   return (
     <PulseLayout>
-      <div className="max-w-lg mx-auto space-y-4">
+      <div className="max-w-lg mx-auto space-y-4 → max-w-2xl mx-auto space-y-4 ">
         <h2 className="text-xl font-black text-gray-900 pt-1">Services</h2>
 
         {/* Search */}
