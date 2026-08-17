@@ -59,6 +59,7 @@ import AdminSupportPage from "./pages/AdminSupportPage";
 import AdminMaintenance from "./pages/AdminMaintenance";
 import AdminSeoSettings from "./components/admin/AdminSeoSettings";
 import AdminSyncMonitor from "./pages/AdminSyncMonitor";
+import AdminApi from "./pages/AdminApi";
 
 // Reseller pages
 import ResellerPanel from "./pages/reseller/ResellerPanel";
@@ -423,6 +424,7 @@ function AppRoutes() {
         <Route path="/admin/maintenance"        element={<AdminRoute><AdminMaintenance /></AdminRoute>} />
          <Route path="/admin/seo" element={<AdminRoute><AdminSeoSettings /></AdminRoute>} />
          <Route path="/admin/sync-monitor" element={<AdminRoute><AdminSyncMonitor /></AdminRoute>} />
+         <Route path="/admin/api" element={<AdminRoute><AdminApi /></AdminRoute>} />
          
       </Routes>
     </>
