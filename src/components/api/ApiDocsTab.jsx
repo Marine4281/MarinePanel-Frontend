@@ -5,7 +5,7 @@ const ApiDocsTab = () => (
     <p className="text-xs text-gray-400 mb-4">Read-only preview of what end users see at /api-docs</p>
     <iframe
       title="API Docs"
-      src="/api-docs"
+      src="/api-access"
       className="w-full h-[70vh] border border-gray-100 rounded-xl"
     />
   </div>
