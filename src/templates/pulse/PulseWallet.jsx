@@ -99,7 +99,7 @@ export default function PulseWallet() {
 
   return (
     <PulseLayout>
-      <div className="max-w-lg mx-auto space-y-5">
+      <div className="max-w-lg mx-auto space-y-5 → max-w-2xl mx-auto space-y-5">
 
         {/* Balance hero card */}
         <div
