@@ -87,7 +87,7 @@ export default function PulseSupport() {
 
   return (
     <PulseLayout>
-      <div className="max-w-lg mx-auto space-y-4">
+      <div className="max-w-lg mx-auto space-y-4 → max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between pt-1">
           <h2 className="text-xl font-black text-gray-900">Support</h2>
           <button
