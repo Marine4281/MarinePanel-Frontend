@@ -14,6 +14,7 @@ import { useSEO } from "./hooks/useSEO";
 import { ResellerActivationFeedProvider } from "./context/ResellerActivationFeedContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { PaymentAlertsProvider } from "./context/PaymentAlertsContext";
+import AdminAnalytics from "./pages/AdminAnalytics";
 
 // Public pages
 import LandingPage from "./pages/LandingPage";
@@ -425,6 +426,7 @@ function AppRoutes() {
          <Route path="/admin/seo" element={<AdminRoute><AdminSeoSettings /></AdminRoute>} />
          <Route path="/admin/sync-monitor" element={<AdminRoute><AdminSyncMonitor /></AdminRoute>} />
          <Route path="/admin/api" element={<AdminRoute><AdminApi /></AdminRoute>} />
+         <Route path="/admin/analytics" element={<AdminRoute><AdminAnalytics /></AdminRoute>} />
          
       </Routes>
     </>
