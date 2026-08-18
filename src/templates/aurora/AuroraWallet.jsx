@@ -1,75 +1,101 @@
 // src/templates/aurora/AuroraWallet.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import { useAuth } from "../../context/AuthContext";
 import { useChildPanel } from "../../context/ChildPanelContext";
+import { useCurrency } from "../../context/CurrencyContext";
 import AuroraLayout from "./AuroraLayout";
 import API from "../../api/axios";
 import toast from "react-hot-toast";
-import { FiPlus, FiArrowUpRight, FiArrowDownLeft, FiClock } from "react-icons/fi";
+import { FiPlus, FiMinus, FiArrowUpRight, FiArrowDownLeft, FiClock } from "react-icons/fi";
+
+const baseURL = import.meta.env.VITE_API_URL?.replace("/api", "");
+const PAGE_SIZE = 10;
+
+const STATUS_COLOR = { Completed: "#34d399", Pending: "#fbbf24" };
+
+const describe = (tx) => {
+  const note = tx.note?.trim() || "";
+  switch (tx.type) {
+    case "Deposit": return tx.method ? `Deposit via ${tx.method}` : note || "Funds deposited";
+    case "Withdrawal": return note ? note.replace(/^Method:\s*/i, "Withdrawal via ") : "Withdrawal request";
+    case "Order": return note || "Order placement";
+    case "Refund": return note || "Order refund";
+    case "Admin Adjustment":
+    case "CP Admin Adjustment": return note || "Balance adjustment";
+    case "Commission": return note || "Commission earned";
+    default: return note || tx.type;
+  }
+};
 
 export default function AuroraWallet() {
   const { user } = useAuth();
   const { childPanel } = useChildPanel();
+  const { formatMoney, selected } = useCurrency();
+  const navigate = useNavigate();
 
-  const [balance, setBalance]             = useState(0);
-  const [transactions, setTransactions]   = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [method, setMethod]               = useState("");
-  const [amount, setAmount]               = useState("");
-  const [loading, setLoading]             = useState(true);
-  const [submitting, setSubmitting]       = useState(false);
+  const [balance, setBalance]           = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [visible, setVisible]           = useState(PAGE_SIZE);
+  const loaderRef = useRef(null);
 
-  const brand = {
-    color: childPanel?.themeColor || "#a78bfa",
-    name:  childPanel?.brandName  || "Panel",
-  };
+  const brand = { color: childPanel?.themeColor || "#a78bfa" };
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [walletRes, methodsRes] = await Promise.all([
-          API.get("/wallet"),
-          API.get("/payment-methods"),
-        ]);
-        setBalance(walletRes.data.balance || 0);
-        setTransactions(
-          (walletRes.data.transactions || []).sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-          )
-        );
-        setPaymentMethods(methodsRes.data.methods || []);
-      } catch {
-        toast.error("Failed to load wallet");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const sortTx = (list) => [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const fetchWallet = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await API.get("/wallet");
+      setBalance(res.data.balance || 0);
+      setTransactions(sortTx(res.data.transactions || []));
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to load wallet");
+    } finally { setLoading(false); }
   }, []);
 
-  const handleDeposit = async () => {
-    if (!method || !amount) return toast.error("Select method and enter amount");
-    setSubmitting(true);
-    try {
-      const res = await API.post("/payment/initiate", {
-        methodId: method,
-        amount: Number(amount),
-      });
-      if (res.data.paymentUrl) window.location.href = res.data.paymentUrl;
-      else toast.success("Deposit initiated — check instructions");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to initiate deposit");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  useEffect(() => { fetchWallet(); }, [fetchWallet]);
 
-  const txIcon = (type) => {
-    if (type === "credit" || type === "deposit")
-      return <FiArrowDownLeft size={14} className="text-green-400" />;
-    return <FiArrowUpRight size={14} className="text-red-400" />;
-  };
+  /* realtime */
+  useEffect(() => {
+    if (!user?._id) return;
+    const socket = io(baseURL);
+    socket.on("wallet:update", ({ userId, balance: newBalance, transactions: newTxs }) => {
+      if (String(userId) !== String(user._id)) return;
+      setBalance(newBalance);
+      if (Array.isArray(newTxs)) {
+        const sorted = sortTx(newTxs);
+        setTransactions(sorted);
+        sorted
+          .filter((tx) => tx.status === "Completed" && !tx._notified)
+          .forEach((tx) => {
+            toast.success(`Deposit of ${formatMoney(tx.amount, 4)} confirmed!`);
+            tx._notified = true;
+          });
+      }
+    });
+    return () => socket.disconnect();
+  }, [user, formatMoney]);
+
+  /* infinite scroll */
+  useEffect(() => {
+    if (!loaderRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visible < transactions.length) {
+          setVisible((v) => v + PAGE_SIZE);
+        }
+      },
+      { threshold: 1 }
+    );
+    observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [visible, transactions.length]);
+
+  const displayed = transactions.slice(0, visible);
+  const hasMore = visible < transactions.length;
 
   return (
     <AuroraLayout>
@@ -91,80 +117,46 @@ export default function AuroraWallet() {
             Available Balance
           </p>
           <p className="text-5xl font-black text-white">
-            ${Number(balance).toFixed(2)}
+            {formatMoney(balance, 4)}
           </p>
           <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.35)" }}>
-            {user?.email}
+            {selected?.code === "USD" || !selected?._id ? user?.email : `Displayed in ${selected.code} · ${user?.email}`}
           </p>
         </div>
 
-        {/* Deposit */}
-        <div
-          className="rounded-2xl p-5 space-y-4"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255,255,255,0.07)",
-          }}
-        >
-          <p className="text-sm font-bold text-white flex items-center gap-2">
-            <FiPlus size={15} style={{ color: brand.color }} />
-            Add Funds
-          </p>
-
-          <select
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-sm appearance-none outline-none"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: method ? "#e2e8f0" : "rgba(255,255,255,0.35)",
-            }}
-          >
-            <option value="">Select payment method…</option>
-            {paymentMethods.map((m) => (
-              <option key={m._id} value={m._id} style={{ background: "#1a1730", color: "#e2e8f0" }}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Amount (USD)"
-            className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-            style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "#e2e8f0",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = brand.color)}
-            onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
-          />
-
+        {/* Actions */}
+        <div className="flex gap-3">
           <button
-            onClick={handleDeposit}
-            disabled={submitting}
-            className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-60"
+            onClick={() => navigate("/add-funds")}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold"
             style={{
               background: `linear-gradient(135deg, ${brand.color}, ${brand.color}bb)`,
               color: "#fff",
               boxShadow: `0 4px 24px ${brand.color}40`,
             }}
           >
-            {submitting ? "Processing..." : "Deposit"}
+            <FiPlus size={15} /> Add Funds
+          </button>
+          <button
+            onClick={() => navigate("/withdraw")}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold"
+            style={{ background: "rgba(248,113,113,0.12)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}
+          >
+            <FiMinus size={15} /> Withdraw
           </button>
         </div>
 
         {/* Transactions */}
         <div>
-          <p className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-            <FiClock size={14} style={{ color: brand.color }} />
-            Transaction History
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold text-white flex items-center gap-2">
+              <FiClock size={14} style={{ color: brand.color }} />
+              Transaction History
+            </p>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: `${brand.color}20`, color: brand.color }}>
+              {transactions.length} total
+            </span>
+          </div>
 
           {loading ? (
             <div className="flex justify-center py-8">
@@ -175,47 +167,55 @@ export default function AuroraWallet() {
               No transactions yet
             </p>
           ) : (
-            <div className="space-y-2">
-              {transactions.slice(0, 20).map((tx) => (
-                <div
-                  key={tx._id}
-                  className="flex items-center justify-between rounded-xl px-4 py-3"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                  }}
-                >
-                  <div className="flex items-center gap-3">
+            <>
+              <div className="space-y-2">
+                {displayed.map((tx) => {
+                  const isCredit = tx.amount > 0;
+                  return (
                     <div
-                      className="w-8 h-8 rounded-xl flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.06)" }}
+                      key={tx._id}
+                      className="flex items-center justify-between rounded-xl px-4 py-3"
+                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
                     >
-                      {txIcon(tx.type)}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: isCredit ? "rgba(52,211,153,0.12)" : "rgba(248,113,113,0.12)" }}
+                        >
+                          {isCredit
+                            ? <FiArrowDownLeft size={15} className="text-green-400" />
+                            : <FiArrowUpRight size={15} className="text-red-400" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-white">{tx.type}</p>
+                          <p className="text-xs truncate max-w-[160px]" style={{ color: "rgba(255,255,255,0.4)" }}>{describe(tx)}</p>
+                          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{new Date(tx.createdAt).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-bold" style={{ color: isCredit ? "#4ade80" : "#f87171" }}>
+                          {isCredit ? "+" : "-"}{formatMoney(Math.abs(tx.amount), 4)}
+                        </p>
+                        <p className="text-xs font-semibold" style={{ color: STATUS_COLOR[tx.status] || "rgba(255,255,255,0.35)" }}>
+                          {tx.status}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-white capitalize">
-                        {tx.type}
-                      </p>
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
-                        {new Date(tx.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className="text-sm font-bold"
-                    style={{
-                      color:
-                        tx.type === "credit" || tx.type === "deposit"
-                          ? "#4ade80"
-                          : "#f87171",
-                    }}
-                  >
-                    {tx.type === "credit" || tx.type === "deposit" ? "+" : "-"}
-                    ${Number(tx.amount).toFixed(2)}
-                  </span>
+                  );
+                })}
+              </div>
+
+              {hasMore && (
+                <div ref={loaderRef} className="flex justify-center py-4">
+                  <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: `${brand.color} transparent transparent transparent` }} />
                 </div>
-              ))}
-            </div>
+              )}
+              {!hasMore && (
+                <p className="text-center text-xs py-4" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  All {transactions.length} transactions loaded
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>
