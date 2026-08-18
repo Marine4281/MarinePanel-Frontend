@@ -48,6 +48,7 @@ const Sidebar = () => {
     // ✅ SEO Settings
     { name: "SEO",             icon: "fa-solid fa-globe",           path: "/admin/seo" },
     { name: "API",             icon: "fa-solid fa-plug",            path: "/admin/api" },
+    { name: "Analytics",       icon: "fa-solid fa-chart-simple",    path: "/admin/analytics" },
 
     { name: "Settings",        icon: "fa-solid fa-gear",            path: "/admin/settings" },
     { name: "Maintenance",     icon: "fa-solid fa-triangle-exclamation", path: "/admin/maintenance" },
