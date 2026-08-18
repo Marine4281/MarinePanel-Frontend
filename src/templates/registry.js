@@ -129,7 +129,7 @@ const TEMPLATES = [
     accent: "#6366f1",
     style: "Bottom Nav · Minimal · Mobile-First",
     pages: {
-       login:    PulseLogin,
+      login:    PulseLogin,
       register: PulseRegister,
       home:     PulseHome,
       wallet:   PulseWallet,
