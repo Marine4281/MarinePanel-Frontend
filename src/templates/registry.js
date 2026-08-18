@@ -18,13 +18,20 @@
 //   3. The TemplateRouter picks it up automatically
 
 // ── Aurora (dark gradient, hamburger ≡ hidden side drawer, no header/footer)
-import AuroraLogin    from "./aurora/AuroraLogin";
-import AuroraRegister from "./aurora/AuroraRegister";
-import AuroraHome     from "./aurora/AuroraHome";
-import AuroraWallet   from "./aurora/AuroraWallet";
-import AuroraOrders   from "./aurora/AuroraOrders";
-import AuroraServices from "./aurora/AuroraServices";
-import AuroraProfile  from "./aurora/AuroraProfile";
+import AuroraLogin           from "./aurora/AuroraLogin";
+import AuroraRegister        from "./aurora/AuroraRegister";
+import AuroraHome            from "./aurora/AuroraHome";
+import AuroraWallet          from "./aurora/AuroraWallet";
+import AuroraOrders          from "./aurora/AuroraOrders";
+import AuroraServices        from "./aurora/AuroraServices";
+import AuroraProfile         from "./aurora/AuroraProfile";
+import AuroraReseller        from "./aurora/AuroraReseller";
+import AuroraApiDocs         from "./aurora/AuroraApiDocs";
+import AuroraSupport         from "./aurora/AuroraSupport";
+import AuroraSupportChat     from "./aurora/AuroraSupportChat";
+import AuroraAddFunds        from "./aurora/AuroraAddFunds";
+import AuroraWithdraw        from "./aurora/AuroraWithdraw";
+import AuroraTerms           from "./aurora/AuroraTerms";
 
 // ── Pulse (minimal white, floating bottom nav, mobile-first card layout)
 import PulseLogin              from "./pulse/PulseLogin";
@@ -105,6 +112,13 @@ const TEMPLATES = [
       orders:   AuroraOrders,
       services: AuroraServices,
       profile:  AuroraProfile,
+      reseller: AuroraReseller,
+      apiDocs:  AuroraApiDocs,
+      support:      AuroraSupport,
+      supportChat:  AuroraSupportChat,
+      addFunds: AuroraAddFunds,
+      withdraw: AuroraWithdraw,
+      terms:    AuroraTerms,
     },
   },
   {
