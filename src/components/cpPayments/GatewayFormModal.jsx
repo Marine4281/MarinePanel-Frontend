@@ -2,7 +2,7 @@ import { F, I, Toggle } from "./FormControls";
 import { PAYMENT_MODES, MANUAL_TYPES } from "./constants";
 import LogoGalleryPicker from "../shared/LogoGalleryPicker";
 
-export default function GatewayFormModal({ form, setForm, editing, loading, availProviders, onSave, onClose }) {
+export default function GatewayFormModal({ form, setForm, editing, loading, platformProviders, ownProviders, onSave, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-6 space-y-4 bg-white border border-gray-200 shadow-xl">
@@ -37,20 +37,29 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
 
         {!["binance", "manual"].includes(form.paymentMode) && (
           <F label="Provider">
-            {availProviders.length === 0 ? (
+            {platformProviders.length === 0 && ownProviders.length === 0 ? (
               <p className="text-xs px-3 py-2 rounded-xl bg-yellow-50 text-yellow-700">
-                ⚠ No providers available. Ask your admin to enable providers for CP owners.
+                ⚠ No providers available. Configure one in the Providers tab, or ask your admin to enable one.
               </p>
             ) : (
               <select value={form.providerProfile}
                 onChange={(e) => setForm({ ...form, providerProfile: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl text-gray-900 text-sm outline-none bg-white border border-gray-300 focus:border-orange-400">
                 <option value="">Select provider</option>
-                {availProviders.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.name} ({p.providerType})
-                  </option>
-                ))}
+                {platformProviders.length > 0 && (
+                  <optgroup label="Platform Providers">
+                    {platformProviders.map((p) => (
+                      <option key={p._id} value={p._id}>{p.name} ({p.providerType})</option>
+                    ))}
+                  </optgroup>
+                )}
+                {ownProviders.length > 0 && (
+                  <optgroup label="My Providers">
+                    {ownProviders.map((p) => (
+                      <option key={p._id} value={p._id}>{p.name} ({p.providerType})</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             )}
           </F>
@@ -159,7 +168,6 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
           </F>
         </div>
 
-        {/* ─── DEPOSIT FEE ─── */}
         <div className="space-y-3 p-3 rounded-xl bg-orange-50 border border-orange-100">
           <p className="text-xs font-black text-orange-700 uppercase tracking-wider">Deposit Fee</p>
 
@@ -188,7 +196,6 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
           )}
         </div>
 
-        {/* ─── WITHDRAWAL FEE ─── */}
         <div className="space-y-3 p-3 rounded-xl bg-purple-50 border border-purple-100">
           <p className="text-xs font-black text-purple-700 uppercase tracking-wider">Withdrawal Fee</p>
 
@@ -250,4 +257,4 @@ export default function GatewayFormModal({ form, setForm, editing, loading, avai
       </div>
     </div>
   );
-}
+              }
