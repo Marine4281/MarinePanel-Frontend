@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import ChildPanelLayout from "../../components/childpanel/ChildPanelLayout";
 import OwnGatewaysTab from "../../components/cpPayments/OwnGatewaysTab";
 import PlatformGatewaysTab from "../../components/cpPayments/PlatformGatewaysTab";
+import ProviderTypesTab from "../../components/cpPayments/ProviderTypesTab";
+import ProviderTypeFormModal from "../../components/cpPayments/ProviderTypeFormModal";
 import PendingWithdrawalsTab from "../../components/cpPayments/PendingWithdrawalsTab";
 import PendingDepositsTab from "../../components/cpPayments/PendingDepositsTab";
 import GatewayFormModal from "../../components/cpPayments/GatewayFormModal";
@@ -13,20 +15,24 @@ export default function CpPaymentGateways() {
   const [tab,                setTab]                = useState("own");
   const [ownGateways,        setOwnGateways]        = useState([]);
   const [platformGateways,   setPlatformGateways]   = useState([]);
-  const [availProviders,     setAvailProviders]     = useState([]);
+  const [platformProviders,  setPlatformProviders]  = useState([]);
+  const [ownProviders,       setOwnProviders]       = useState([]);
+  const [providerTypes,      setProviderTypes]      = useState([]);
   const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
   const [pendingDeposits,    setPendingDeposits]    = useState([]);
   const [showForm,           setShowForm]           = useState(false);
   const [editing,            setEditing]            = useState(null);
   const [form,               setForm]               = useState(EMPTY_FORM);
+  const [configuringType,    setConfiguringType]    = useState(null);
   const [loading,            setLoading]            = useState(false);
   const [connecting,         setConnecting]         = useState(null);
   const [disconnecting,      setDisconnecting]      = useState(null);
 
   const fetchAll = async () => {
-    const [gwRes, provRes, wRes, dRes] = await Promise.allSettled([
+    const [gwRes, provRes, ptRes, wRes, dRes] = await Promise.allSettled([
       API.get("/cp/gateways"),
       API.get("/cp/available-providers"),
+      API.get("/cp/provider-types"),
       API.get("/cp/withdrawals/pending"),
       API.get("/cp/deposits/pending"),
     ]);
@@ -39,7 +45,12 @@ export default function CpPaymentGateways() {
     }
 
     if (provRes.status === "fulfilled") {
-      setAvailProviders(provRes.value.data.providers || []);
+      setPlatformProviders(provRes.value.data.platformProviders || []);
+      setOwnProviders(provRes.value.data.ownProviders           || []);
+    }
+
+    if (ptRes.status === "fulfilled") {
+      setProviderTypes(ptRes.value.data.providerTypes || []);
     }
 
     if (wRes.status === "fulfilled") {
@@ -117,9 +128,8 @@ export default function CpPaymentGateways() {
   const handleRotateToken = async (gw) => {
     try {
       const res = await API.post(`/cp/gateways/${gw._id}/rotate-token`);
-      const url = `${import.meta.env.VITE_API_URL}/api/webhooks/${gw.paymentMode}/${res.data.webhookToken}`;
       toast.success("Token rotated");
-      navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(getWebhookUrl({ ...gw, webhookToken: res.data.webhookToken }));
       toast("Webhook URL copied to clipboard", { icon: "📋" });
       fetchAll();
     } catch { toast.error("Failed to rotate token"); }
@@ -187,8 +197,31 @@ export default function CpPaymentGateways() {
     } catch { toast.error("Failed to reject deposit"); }
   };
 
+  const handleSaveProviderType = async ({ name, isActive, credentials }) => {
+    if (!name) return toast.error("Name is required");
+    try {
+      setLoading(true);
+      if (configuringType.ownProvider) {
+        await API.put(`/cp/providers/${configuringType.ownProvider._id}`, { name, isActive, credentials });
+        toast.success("Provider updated");
+      } else {
+        await API.post("/cp/providers", { providerType: configuringType.providerType, name, isActive, credentials });
+        toast.success("Provider configured");
+      }
+      setConfiguringType(null);
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save provider");
+    } finally { setLoading(false); }
+  };
+
+  // Real provider type (paystack/flutterwave/etc), NOT paymentMode — the
+  // webhook route dispatches to a gateway adapter by this value.
   const getWebhookUrl = (gw) =>
-    `${import.meta.env.VITE_API_URL}/api/webhooks/${gw.paymentMode}/${gw.webhookToken}`;
+    `${import.meta.env.VITE_API_URL}/api/webhooks/${gw.providerType}/${gw.webhookToken}`;
+
+  const getPayoutWebhookUrl = (gw) =>
+    `${import.meta.env.VITE_API_URL}/api/webhooks/payout/${gw.providerType}/${gw.webhookToken}`;
 
   const isConnected = (platformGwId) =>
     ownGateways.some((g) => g.platformGatewayRef === platformGwId);
@@ -216,6 +249,7 @@ export default function CpPaymentGateways() {
           {[
             { key: "own",                label: "My Gateways",         count: ownGateways.length },
             { key: "platform",           label: "Platform Gateways",   count: platformGateways.length },
+            { key: "providers",          label: "Providers",           count: providerTypes.length },
             { key: "pendingDeposits",    label: "Pending Deposits",    count: pendingDeposits.length },
             { key: "pendingWithdrawals", label: "Pending Withdrawals", count: pendingWithdrawals.length },
           ].map((t) => (
@@ -242,6 +276,7 @@ export default function CpPaymentGateways() {
             onRotateToken={handleRotateToken}
             onDelete={handleDelete}
             getWebhookUrl={getWebhookUrl}
+            getPayoutWebhookUrl={getPayoutWebhookUrl}
           />
         )}
 
@@ -253,6 +288,13 @@ export default function CpPaymentGateways() {
             disconnecting={disconnecting}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
+          />
+        )}
+
+        {tab === "providers" && (
+          <ProviderTypesTab
+            providerTypes={providerTypes}
+            onConfigure={setConfiguringType}
           />
         )}
 
@@ -278,12 +320,22 @@ export default function CpPaymentGateways() {
             setForm={setForm}
             editing={editing}
             loading={loading}
-            availProviders={availProviders}
+            platformProviders={platformProviders}
+            ownProviders={ownProviders}
             onSave={handleSubmit}
             onClose={() => setShowForm(false)}
+          />
+        )}
+
+        {configuringType && (
+          <ProviderTypeFormModal
+            providerType={configuringType}
+            loading={loading}
+            onSave={handleSaveProviderType}
+            onClose={() => setConfiguringType(null)}
           />
         )}
       </div>
     </ChildPanelLayout>
   );
-    }
+                  }
