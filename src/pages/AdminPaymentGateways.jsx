@@ -3,36 +3,37 @@ import API from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import toast from "react-hot-toast";
 import GatewaysTab from "../components/adminPayments/GatewaysTab";
-import ProvidersTab from "../components/adminPayments/ProvidersTab";
+import ProviderTypesTab from "../components/adminPayments/ProviderTypesTab";
 import PendingDepositsTab from "../components/adminPayments/PendingDepositsTab";
 import PendingWithdrawalsTab from "../components/adminPayments/PendingWithdrawalsTab";
-import ProviderFormModal from "../components/adminPayments/ProviderFormModal";
+import ProviderTypeFormModal from "../components/adminPayments/ProviderTypeFormModal";
 import GatewayFormModal from "../components/adminPayments/GatewayFormModal";
-import { EMPTY_PROVIDER, EMPTY_GATEWAY } from "../components/adminPayments/constants";
+import { EMPTY_GATEWAY } from "../components/adminPayments/constants";
 
 export default function AdminPaymentGateways() {
   const [tab,                 setTab]                 = useState("gateways");
   const [providers,           setProviders]           = useState([]);
+  const [providerTypes,       setProviderTypes]       = useState([]);
   const [gateways,            setGateways]            = useState([]);
   const [pendingDeposits,     setPendingDeposits]     = useState([]);
   const [pendingWithdrawals,  setPendingWithdrawals]  = useState([]);
-  const [showProviderForm,    setShowProviderForm]    = useState(false);
+  const [configuringType,     setConfiguringType]     = useState(null);
   const [showGatewayForm,     setShowGatewayForm]     = useState(false);
-  const [editingProvider,     setEditingProvider]     = useState(null);
   const [editingGateway,      setEditingGateway]      = useState(null);
-  const [providerForm,        setProviderForm]        = useState(EMPTY_PROVIDER);
   const [gatewayForm,         setGatewayForm]         = useState(EMPTY_GATEWAY);
   const [loading,             setLoading]             = useState(false);
 
   const fetchAll = async () => {
     try {
-      const [p, g, d, w] = await Promise.all([
+      const [p, pt, g, d, w] = await Promise.all([
         API.get("/admin/payment-providers"),
+        API.get("/admin/provider-types"),
         API.get("/admin/gateways"),
         API.get("/admin/deposits/pending"),
         API.get("/admin/withdrawals/pending"),
       ]);
       setProviders(p.data.providers || []);
+      setProviderTypes(pt.data.providerTypes || []);
       setGateways(g.data.gateways   || []);
       setPendingDeposits(d.data.deposits || []);
       setPendingWithdrawals(w.data.withdrawals || []);
@@ -41,50 +42,36 @@ export default function AdminPaymentGateways() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // ── Provider handlers ────────────────────────────────────
-  const handleSaveProvider = async () => {
-    if (!providerForm.name || !providerForm.providerType) {
-      return toast.error("Name and type are required");
-    }
+  // ── Provider type handlers ────────────────────────────────
+  const handleToggleTypeVisibility = async (providerType, visibleToCp) => {
+    try {
+      await API.patch(`/admin/provider-types/${providerType}/visibility`, { visibleToCp });
+      setProviderTypes((prev) =>
+        prev.map((t) => (t.providerType === providerType ? { ...t, visibleToCp } : t))
+      );
+    } catch { toast.error("Failed to update visibility"); }
+  };
+
+  const handleSaveProviderType = async ({ name, isActive, visibleToCp, credentials }) => {
+    if (!name) return toast.error("Name is required");
     try {
       setLoading(true);
-      if (editingProvider) {
-        await API.put(`/admin/payment-providers/${editingProvider}`, providerForm);
+      if (configuringType.adminProvider) {
+        await API.put(`/admin/payment-providers/${configuringType.adminProvider._id}`, {
+          name, isActive, visibleToCp, credentials,
+        });
         toast.success("Provider updated");
       } else {
-        await API.post("/admin/payment-providers", providerForm);
-        toast.success("Provider created");
+        await API.post("/admin/payment-providers", {
+          name, providerType: configuringType.providerType, isActive, visibleToCp, credentials,
+        });
+        toast.success("Provider configured");
       }
-      setProviderForm(EMPTY_PROVIDER);
-      setEditingProvider(null);
-      setShowProviderForm(false);
+      setConfiguringType(null);
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to save provider");
     } finally { setLoading(false); }
-  };
-
-  const handleEditProvider = (p) => {
-    setProviderForm({
-      name:         p.name,
-      providerType: p.providerType,
-      credentials:  {},
-      isActive:     p.isActive,
-      visibleToCp:  p.visibleToCp || false,
-    });
-    setEditingProvider(p._id);
-    setShowProviderForm(true);
-  };
-
-  const handleDeleteProvider = async (id) => {
-    if (!confirm("Delete this provider?")) return;
-    try {
-      await API.delete(`/admin/payment-providers/${id}`);
-      toast.success("Provider deleted");
-      fetchAll();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to delete");
-    }
   };
 
   // ── Gateway handlers ─────────────────────────────────────
@@ -215,12 +202,6 @@ export default function AdminPaymentGateways() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800">Payment System</h1>
           <div className="flex gap-2">
-            {tab === "providers" && (
-              <button onClick={() => { setProviderForm(EMPTY_PROVIDER); setEditingProvider(null); setShowProviderForm(true); }}
-                className="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition">
-                + Add Provider
-              </button>
-            )}
             {tab === "gateways" && (
               <button onClick={() => { setGatewayForm(EMPTY_GATEWAY); setEditingGateway(null); setShowGatewayForm(true); }}
                 className="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition">
@@ -230,10 +211,10 @@ export default function AdminPaymentGateways() {
           </div>
         </div>
 
-        <div className="flex gap-1 bg-white rounded-2xl shadow p-1 w-fit">
+        <div className="flex gap-1 bg-white rounded-2xl shadow p-1 w-fit flex-wrap">
           {[
             { key: "gateways",           label: "Gateways",            count: gateways.length },
-            { key: "providers",          label: "Providers",           count: providers.length },
+            { key: "providers",          label: "Provider Types",      count: providerTypes.length },
             { key: "pending",            label: "Pending Deposits",    count: pendingDeposits.length },
             { key: "pendingWithdrawals", label: "Pending Withdrawals", count: pendingWithdrawals.length },
           ].map((t) => (
@@ -262,10 +243,10 @@ export default function AdminPaymentGateways() {
         )}
 
         {tab === "providers" && (
-          <ProvidersTab
-            providers={providers}
-            onEdit={handleEditProvider}
-            onDelete={handleDeleteProvider}
+          <ProviderTypesTab
+            providerTypes={providerTypes}
+            onToggleVisibility={handleToggleTypeVisibility}
+            onConfigure={setConfiguringType}
           />
         )}
 
@@ -286,14 +267,12 @@ export default function AdminPaymentGateways() {
         )}
       </main>
 
-      {showProviderForm && (
-        <ProviderFormModal
-          providerForm={providerForm}
-          setProviderForm={setProviderForm}
-          editingProvider={editingProvider}
+      {configuringType && (
+        <ProviderTypeFormModal
+          providerType={configuringType}
           loading={loading}
-          onSave={handleSaveProvider}
-          onClose={() => setShowProviderForm(false)}
+          onSave={handleSaveProviderType}
+          onClose={() => setConfiguringType(null)}
         />
       )}
 
@@ -310,4 +289,4 @@ export default function AdminPaymentGateways() {
       )}
     </div>
   );
-      }
+            }
