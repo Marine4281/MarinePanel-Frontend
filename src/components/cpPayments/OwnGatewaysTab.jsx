@@ -1,6 +1,6 @@
 import { MODE_ICONS, MODE_COLORS } from "./constants";
 
-export default function OwnGatewaysTab({ ownGateways, onEdit, onRotateToken, onDelete, getWebhookUrl }) {
+export default function OwnGatewaysTab({ ownGateways, onEdit, onRotateToken, onDelete, getWebhookUrl, getPayoutWebhookUrl }) {
   return (
     <div className="space-y-3">
       {ownGateways.length === 0 && (
@@ -70,21 +70,41 @@ export default function OwnGatewaysTab({ ownGateways, onEdit, onRotateToken, onD
               </div>
             </div>
 
-            {gw.webhookToken && !gw.isPlatformConnected && (
-              <div>
-                <p className="text-xs mb-1 text-gray-400">
-                  Webhook URL — paste in your provider dashboard:
-                </p>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
-                  <code className="text-xs flex-1 truncate text-green-600">
-                    {getWebhookUrl(gw)}
-                  </code>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(getWebhookUrl(gw)); }}
-                    className="text-xs px-2 py-1 rounded-md flex-shrink-0 bg-gray-200 text-gray-600 hover:bg-gray-300">
-                    Copy
-                  </button>
+            {gw.webhookToken && !gw.isPlatformConnected && gw.providerType && (
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs mb-1 text-gray-400">
+                    Deposit webhook — paste in your provider dashboard:
+                  </p>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
+                    <code className="text-xs flex-1 truncate text-green-600">
+                      {getWebhookUrl(gw)}
+                    </code>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(getWebhookUrl(gw)); }}
+                      className="text-xs px-2 py-1 rounded-md flex-shrink-0 bg-gray-200 text-gray-600 hover:bg-gray-300">
+                      Copy
+                    </button>
+                  </div>
                 </div>
+
+                {gw.supportsWithdraw && (
+                  <div>
+                    <p className="text-xs mb-1 text-gray-400">
+                      Payout webhook — paste in your provider dashboard:
+                    </p>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200">
+                      <code className="text-xs flex-1 truncate text-purple-600">
+                        {getPayoutWebhookUrl(gw)}
+                      </code>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(getPayoutWebhookUrl(gw)); }}
+                        className="text-xs px-2 py-1 rounded-md flex-shrink-0 bg-gray-200 text-gray-600 hover:bg-gray-300">
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
